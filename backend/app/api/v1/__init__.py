@@ -1,11 +1,12 @@
 from fastapi import APIRouter
-from .endpoints import auth, meetings
+from .endpoints import auth, meetings, scraper
 
 api_router = APIRouter()
 
 # Include existing endpoint routers
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(meetings.router, prefix="/meetings", tags=["meetings"])
+api_router.include_router(scraper.router, prefix="/scraper", tags=["scraper"])
 
 # TODO: Add other routers as they are created
 # api_router.include_router(users.router, prefix="/users", tags=["users"])
