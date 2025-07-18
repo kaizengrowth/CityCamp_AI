@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from app.core.config import Settings
 from app.core.database import get_db
 from app.services.chatbot_service import ChatbotService
 from fastapi import APIRouter, Depends
@@ -25,13 +26,21 @@ class ChatResponse(BaseModel):
     error: Optional[str] = None
 
 
+def get_settings():
+    return Settings()
+
+
 @router.post("/chat", response_model=ChatResponse)
-async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_with_ai(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
     """
-    Send a message to the AI chatbot and get a response
+    Send a message to the AI chatbot and get a response with enhanced research capabilities
     """
     try:
-        chatbot_service = ChatbotService(db)
+        chatbot_service = ChatbotService(db, settings)
 
         # Convert conversation history to the format expected by the service
         history = None
@@ -41,7 +50,7 @@ async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
                 for msg in request.conversation_history
             ]
 
-        # Get AI response
+        # Get AI response with enhanced capabilities
         ai_response = await chatbot_service.get_ai_response(
             user_message=request.message, conversation_history=history
         )
