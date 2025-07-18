@@ -26,6 +26,7 @@ class MeetingResponse(BaseModel):
     status: str
     topics: List[str]
     summary: Optional[str]  # Meeting minutes/summary
+    source: Optional[str]  # Source of the meeting data
 
     class Config:
         from_attributes = True
@@ -47,6 +48,24 @@ class AgendaItemResponse(BaseModel):
 
 class MeetingWithAgenda(MeetingResponse):
     agenda_items: List[AgendaItemResponse]
+
+
+@router.get("/all", response_model=List[MeetingResponse])
+async def get_all_meetings(
+    db: Session = Depends(get_db),
+    limit: int = Query(100, le=500, description="Maximum number of meetings to return"),
+    offset: int = Query(0, ge=0, description="Number of meetings to skip"),
+):
+    """Get all meetings without date filtering"""
+    meeting_service = MeetingService(db)
+    meetings = (
+        db.query(Meeting)
+        .order_by(Meeting.meeting_date.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return meetings
 
 
 @router.get("/public", response_model=List[MeetingResponse])
