@@ -1,12 +1,12 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ChatbotWidget } from './ChatbotWidget';
 
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Meetings', href: '/meetings' },
   { name: 'Campaigns', href: '/campaigns' },
-  { name: 'Chatbot', href: '/chatbot' },
 ];
 
 const userNavigation = [
@@ -216,6 +216,9 @@ export const Layout: React.FC = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Chatbot Widget */}
+      <ChatbotWidget />
     </div>
   );
 }; 
