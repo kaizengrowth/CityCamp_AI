@@ -10,15 +10,15 @@ const getApiBaseUrl = (): string => {
     return '';
   }
 
-  // Default to relative URLs (will be proxied by Vite)
-  return '';
+  // In development, use direct backend URL
+  return 'http://localhost:8001';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
 
 export const API_ENDPOINTS = {
   // Meetings
-  meetings: '/api/v1/meetings/public',
+  meetings: '/api/v1/meetings/all',
   meetingById: (id: number) => `/api/v1/meetings/${id}`,
   meetingAgendaItems: (id: number) => `/api/v1/meetings/${id}/agenda-items`,
 
@@ -42,6 +42,7 @@ export const apiRequest = async <T>(
   options: RequestInit = {}
 ): Promise<T> => {
   const url = `${API_BASE_URL}${endpoint}`;
+  console.log('Making API request to:', url);
 
   const defaultOptions: RequestInit = {
     headers: {
@@ -52,15 +53,28 @@ export const apiRequest = async <T>(
   };
 
   try {
+    console.log('Sending request with options:', defaultOptions);
     const response = await fetch(url, defaultOptions);
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Response error text:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('Response data received:', data);
+    return data;
   } catch (error) {
     console.error('API request failed:', error);
+    console.error('Error type:', typeof error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw error;
   }
 };
