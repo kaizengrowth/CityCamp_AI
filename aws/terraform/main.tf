@@ -338,15 +338,21 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 }
 
+# CloudFront Origin Access Control (OAC)
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  name                              = "${var.project_name}-frontend-oac"
+  description                       = "OAC for ${var.project_name} frontend S3 bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "frontend" {
   origin {
-    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.frontend.bucket}"
-
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.frontend.cloudfront_access_identity_path
-    }
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "S3-${aws_s3_bucket.frontend.bucket}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
   enabled             = true
@@ -378,6 +384,12 @@ resource "aws_cloudfront_distribution" "frontend" {
     response_page_path = "/index.html"
   }
 
+  custom_error_response {
+    error_code         = 403
+    response_code      = "200"
+    response_page_path = "/index.html"
+  }
+
   restrictions {
     geo_restriction {
       restriction_type = "none"
@@ -389,10 +401,6 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   tags = var.common_tags
-}
-
-resource "aws_cloudfront_origin_access_identity" "frontend" {
-  comment = "OAI for ${var.project_name} frontend"
 }
 
 # Random string for bucket naming
@@ -451,4 +459,9 @@ output "ecs_security_group_id" {
 output "alb_target_group_arn" {
   description = "The ARN of the ALB target group"
   value       = aws_lb_target_group.main.arn
+}
+
+output "s3_bucket_name" {
+  description = "The name of the S3 bucket for frontend"
+  value       = aws_s3_bucket.frontend.bucket
 } 
