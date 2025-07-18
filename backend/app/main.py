@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
+import time
 
 from app.core.config import settings
 from app.core.database import create_tables
@@ -24,8 +25,22 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting up CityCamp AI...")
-    create_tables()
-    logger.info("Database tables created/verified")
+    
+    # Try to create tables, but don't fail if database is not ready
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            create_tables()
+            logger.info("Database tables created/verified")
+            break
+        except Exception as e:
+            logger.warning(f"Database connection attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in 2 seconds...")
+                time.sleep(2)
+            else:
+                logger.error("Could not connect to database after multiple attempts")
+                logger.error("The API will start without database functionality")
     
     yield
     
@@ -99,7 +114,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8002,
         reload=settings.debug,
         log_level="info" if settings.debug else "warning"
     ) 
