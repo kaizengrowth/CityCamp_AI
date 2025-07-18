@@ -15,6 +15,8 @@ interface RegisterData {
   username: string;
   full_name: string;
   phone_number?: string;
+  zip_code?: string;
+  interests?: string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
