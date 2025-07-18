@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     twilio_auth_token: Optional[str] = None
     twilio_phone_number: Optional[str] = None
 
+    # Google Custom Search API
+    google_api_key: Optional[str] = None
+    google_cse_id: Optional[str] = None
+
     # AWS
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None

@@ -1,9 +1,12 @@
+import asyncio
+import json
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from app.core.config import settings
+from app.core.config import Settings
 from app.models.campaign import Campaign
 from app.models.meeting import Meeting
+from app.services.research_service import ResearchService
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
@@ -11,39 +14,131 @@ logger = logging.getLogger(__name__)
 
 
 class ChatbotService:
-    """Service to handle AI-powered chatbot conversations about civic engagement"""
+    """Enhanced chatbot service with GPT-4 and research capabilities"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, settings: Settings):
         self.db = db
-        self.client = (
-            OpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
-        )
+        self.settings = settings
+        self.client = OpenAI(api_key=settings.openai_api_key)
+        self.research_service = ResearchService(settings)
 
     def get_system_prompt(self) -> str:
-        """Get the system prompt for the chatbot"""
-        return """You are CityCamp AI, a helpful assistant for the Tulsa Civic
-Engagement Platform. Your role is to help citizens stay informed and engaged
-with their local government.
+        """Get the enhanced system prompt for the chatbot"""
+        return """You are CityCamp AI, a specialized assistant for Tulsa, Oklahoma civic engagement and local government.
+
+IMPORTANT GUARDRAILS:
+- You ONLY answer questions related to Tulsa, Oklahoma local government, civic engagement, and municipal services
+- If asked about other cities, states, or non-Tulsa topics, politely redirect to Tulsa-specific matters
+- Always emphasize "Tulsa" in your responses to maintain local focus
+- Do not provide information about other municipalities unless directly comparing to Tulsa
 
 You can help with:
-- Information about city council meetings, agendas, and minutes
-- Details about local campaigns and civic initiatives
-- Guidance on civic participation and engagement
+- Information about Tulsa City Council meetings, agendas, and minutes
+- Details about local Tulsa campaigns and civic initiatives
+- Guidance on civic participation and engagement in Tulsa
 - General information about Tulsa city government
 - How to use the CityCamp AI platform
+- Current events and news related to Tulsa government
+
+ENHANCED CAPABILITIES:
+- You can search the web for current information about Tulsa government
+- You can retrieve and analyze official documents, PDFs, and meeting minutes
+- You can provide links to relevant resources and documents
+- Use **bold** text for emphasis and proper markdown formatting
+- Always provide clickable links in markdown format: [text](url)
 
 Key guidelines:
-- Be helpful, friendly, and encouraging about civic engagement
-- Provide accurate information about local government processes
-- Encourage users to participate in democracy
-- If you don't know specific details, suggest they check the Meetings or Campaigns pages
-- Keep responses concise but informative
-- Focus on Tulsa, Oklahoma civic matters
-- Format your responses with proper paragraph breaks using double newlines (\n\n) between paragraphs for better readability
-- Use bullet points or numbered lists when appropriate
-- Break up long responses into digestible chunks
+- Be helpful, friendly, and encouraging about civic engagement in Tulsa
+- Provide accurate, up-to-date information about local government processes
+- Encourage users to participate in democracy and civic activities
+- When you find relevant documents or web pages, always provide the links
+- Use markdown formatting for better readability
+- Break up long responses into clear paragraphs with proper spacing
 
-Always be encouraging about civic participation and democracy."""
+If asked about non-Tulsa topics, respond with: "I'm specifically designed to help with **Tulsa, Oklahoma** civic engagement and local government matters. Please ask me about Tulsa-specific topics!\""""
+
+    def get_function_definitions(self) -> List[Dict[str, Any]]:
+        """Define available functions for OpenAI function calling"""
+        return [
+            {
+                "name": "search_web",
+                "description": "Search the web for current information about Tulsa government, meetings, ordinances, or civic matters",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query related to Tulsa government or civic matters",
+                        },
+                        "num_results": {
+                            "type": "integer",
+                            "description": "Number of search results to return (default: 5)",
+                            "default": 5,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+            {
+                "name": "retrieve_document",
+                "description": "Retrieve and analyze a specific document (PDF, webpage) from a URL",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "URL of the document to retrieve and analyze",
+                        }
+                    },
+                    "required": ["url"],
+                },
+            },
+            {
+                "name": "search_tulsa_documents",
+                "description": "Search specifically for Tulsa government documents, PDFs, meeting minutes, and official records",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query for Tulsa government documents",
+                        }
+                    },
+                    "required": ["query"],
+                },
+            },
+        ]
+
+    async def process_function_call(
+        self, function_name: str, arguments: Dict[str, Any]
+    ) -> str:
+        """Process function calls from OpenAI"""
+        try:
+            if function_name == "search_web":
+                query = arguments.get("query", "")
+                num_results = arguments.get("num_results", 5)
+
+                results = await self.research_service.search_web(query, num_results)
+                return self.research_service.format_search_results(results)
+
+            elif function_name == "retrieve_document":
+                url = arguments.get("url", "")
+
+                document = await self.research_service.retrieve_document(url)
+                return self.research_service.format_document_content(document)
+
+            elif function_name == "search_tulsa_documents":
+                query = arguments.get("query", "")
+
+                documents = await self.research_service.search_tulsa_documents(query)
+                return self.research_service.format_search_results(documents)
+
+            else:
+                return f"Unknown function: {function_name}"
+
+        except Exception as e:
+            logger.error(f"Error processing function call {function_name}: {e}")
+            return f"Error executing {function_name}: {str(e)}"
 
     def _get_context_from_recent_meetings(self) -> str:
         """Get context from recent meetings to help answer questions"""
@@ -101,19 +196,11 @@ Always be encouraging about civic participation and democracy."""
         user_message: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
-        """Get AI response using OpenAI"""
-        logger.info(f"Getting AI response for message: {user_message[:50]}...")
-
-        if not self.client:
-            logger.warning("OpenAI client not available, using fallback response")
-            return self._get_fallback_response(user_message)
-
-        logger.info("OpenAI client available, attempting to get AI response")
-
+        """Get AI response with enhanced research capabilities"""
         try:
-            # Build context
-            logger.info("Building context...")
             system_prompt = self.get_system_prompt()
+
+            # Get context from local database
             meeting_context = self._get_context_from_recent_meetings()
             campaign_context = self._get_context_from_campaigns()
 
@@ -122,7 +209,7 @@ Always be encouraging about civic participation and democracy."""
                 {
                     "role": "system",
                     "content": (
-                        f"{system_prompt}\n\nCurrent context:\n"
+                        f"{system_prompt}\n\nCurrent local context:\n"
                         f"{meeting_context}\n{campaign_context}"
                     ),
                 }
@@ -143,88 +230,184 @@ Always be encouraging about civic participation and democracy."""
             # Add current user message
             messages.append({"role": "user", "content": user_message})
 
-            logger.info(f"Calling OpenAI API with {len(messages)} messages...")
+            logger.info(f"Calling OpenAI GPT-4 API with {len(messages)} messages...")
 
-            # Get response from OpenAI
+            # Get response from OpenAI with function calling
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4-turbo-preview",
                 messages=messages,
-                max_tokens=500,
+                max_tokens=1000,
                 temperature=0.7,
+                functions=self.get_function_definitions(),
+                function_call="auto",
             )
 
-            ai_response = response.choices[0].message.content.strip()
-            logger.info(
-                f"OpenAI API call successful, response length: {len(ai_response)}"
-            )
+            message = response.choices[0].message
+
+            # Check if the model wants to call a function
+            if message.function_call:
+                function_name = message.function_call.name
+                function_args = json.loads(message.function_call.arguments)
+
+                logger.info(f"AI requested function call: {function_name}")
+
+                # Execute the function
+                function_result = await self.process_function_call(
+                    function_name, function_args
+                )
+
+                # Add function result to conversation and get final response
+                # Add function call message
+                function_call_message: Dict[str, Any] = {
+                    "role": "assistant",
+                    "content": None,
+                    "function_call": {
+                        "name": function_name,
+                        "arguments": message.function_call.arguments,
+                    },
+                }
+                messages.append(function_call_message)  # type: ignore
+
+                messages.append(
+                    {
+                        "role": "function",
+                        "name": function_name,
+                        "content": function_result,
+                    }
+                )
+
+                # Get final response with function result
+                final_response = self.client.chat.completions.create(
+                    model="gpt-4-turbo-preview",
+                    messages=messages,
+                    max_tokens=1000,
+                    temperature=0.7,
+                )
+
+                ai_response = final_response.choices[0].message.content.strip()
+            else:
+                ai_response = message.content.strip()
+
+            logger.info(f"Generated AI response: {ai_response[:100]}...")
             return ai_response
 
         except Exception as e:
-            logger.error(f"Error getting AI response: {e}", exc_info=True)
+            logger.error(f"Error getting AI response: {e}")
             return self._get_fallback_response(user_message)
 
     def _get_fallback_response(self, user_message: str) -> str:
         """Provide fallback responses when OpenAI is not available"""
         message_lower = user_message.lower()
 
+        # Check for Tulsa-specific keywords - if none found, provide guardrail response
+        tulsa_keywords = [
+            "tulsa",
+            "city",
+            "council",
+            "meeting",
+            "agenda",
+            "minutes",
+            "campaign",
+            "petition",
+            "initiative",
+            "vote",
+            "civic",
+            "government",
+            "local",
+            "mayor",
+            "election",
+            "notification",
+            "alert",
+            "remind",
+        ]
+
+        if not any(keyword in message_lower for keyword in tulsa_keywords):
+            return """I'm specifically designed to help with **Tulsa, Oklahoma** civic engagement and local government matters.
+
+I can assist you with:
+• **Tulsa City Council** meetings and agendas
+• Local **Tulsa** campaigns and initiatives
+• **Tulsa** civic participation opportunities
+• **Tulsa** government services and information
+
+Please ask me about **Tulsa-specific** topics! For general information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)."""
+
         # Meeting-related queries
         if any(
             word in message_lower
             for word in ["meeting", "council", "agenda", "minutes"]
         ):
-            return """I can help you find information about Tulsa City Council meetings!
+            return """I can help you find information about **Tulsa City Council meetings**!
 
 You can:
-- View upcoming meetings and agendas on the Meetings page
-- Read past meeting minutes and summaries
-- Get notifications about meetings that interest you
+• View upcoming meetings and agendas on the Meetings page
+• Read past meeting minutes and summaries
+• Get notifications about meetings that interest you
 
-What specific meeting information are you looking for?"""
+For official information, visit:
+• [Tulsa City Council](https://www.cityoftulsa.org/government/city-council/)
+• [City Clerk's Office](https://www.cityoftulsa.org/government/city-clerk/)
+
+What specific **Tulsa** meeting information are you looking for?"""
 
         # Campaign-related queries
         if any(
             word in message_lower
             for word in ["campaign", "petition", "initiative", "vote"]
         ):
-            return """CityCamp AI helps you stay informed about local campaigns and civic initiatives!
+            return """**CityCamp AI** helps you stay informed about local **Tulsa** campaigns and civic initiatives!
 
 Check out the Campaigns page to:
-- See active petitions and initiatives
-- Learn about local ballot measures
-- Find ways to get involved in your community
+• See active petitions and initiatives in **Tulsa**
+• Learn about local ballot measures
+• Find ways to get involved in your **Tulsa** community
 
-Is there a specific campaign or issue you're interested in?"""
+For election information, visit:
+• [Tulsa Elections](https://www.cityoftulsa.org/government/city-clerk/elections/)
+• [Tulsa County Election Board](https://www.tulsacounty.org/election-board/)
+
+Is there a specific **Tulsa** campaign or issue you're interested in?"""
 
         # Notification queries
         if any(word in message_lower for word in ["notification", "alert", "remind"]):
-            return """You can set up personalized notifications to stay engaged with local government!
+            return """You can set up **personalized notifications** to stay engaged with **Tulsa** local government!
 
 Go to your Profile settings to:
-- Get alerts about upcoming meetings
-- Receive updates on campaigns you care about
-- Set preferences for the topics that matter to you
+• Get alerts about upcoming **Tulsa** meetings
+• Receive updates on **Tulsa** campaigns you care about
+• Set preferences for topics that matter to you
 
-Would you like help setting up notifications?"""
+For city services, you can also use:
+• [Tulsa 311 Services](https://www.cityoftulsa.org/services/311/)
+
+Would you like help setting up notifications for **Tulsa** civic activities?"""
 
         # General greeting
         if any(word in message_lower for word in ["hello", "hi", "help", "start"]):
-            return """Hello! I'm your CityCamp AI assistant, here to help you stay engaged with Tulsa local government.
+            return """Hello! I'm your **CityCamp AI assistant**, here to help you stay engaged with **Tulsa local government**.
 
 I can help you with:
-🏛️ City council meetings and agendas
-📋 Local campaigns and initiatives
-🔔 Setting up notifications
-🗳️ Civic participation opportunities
+🏛️ **Tulsa City Council** meetings and agendas
+📋 Local **Tulsa** campaigns and initiatives
+🔔 Setting up notifications for **Tulsa** civic activities
+🗳️ **Tulsa** civic participation opportunities
 
-What would you like to know about?"""
+For official information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)
+
+What would you like to know about **Tulsa** local government?"""
 
         # Default response
-        return """I'm here to help you stay informed about Tulsa local government and civic engagement.
+        return """I'm here to help you stay informed about **Tulsa local government** and civic engagement.
 
 You can ask me about:
-- Upcoming city council meetings
-- Local campaigns and initiatives
-- How to get more involved in your community
-- Using the CityCamp AI platform
+• Upcoming **Tulsa City Council** meetings
+• Local **Tulsa** campaigns and initiatives
+• How to get more involved in your **Tulsa** community
+• Using the CityCamp AI platform
 
-You can also explore the Meetings and Campaigns pages for the latest information. What would you like to know?"""
+Helpful resources:
+• [City of Tulsa](https://www.cityoftulsa.org/)
+• [Tulsa City Council](https://www.cityoftulsa.org/government/city-council/)
+• [Tulsa 311 Services](https://www.cityoftulsa.org/services/311/)
+
+You can also explore the Meetings and Campaigns pages for the latest information. What would you like to know about **Tulsa**?"""
