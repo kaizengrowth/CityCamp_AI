@@ -8,12 +8,76 @@ interface Message {
   timestamp: Date;
 }
 
+// Utility function to format chatbot messages with proper paragraph spacing
+const formatMessage = (text: string): React.ReactNode => {
+  if (!text) return null;
+
+  // Split by double newlines first (paragraph breaks)
+  const paragraphs = text.split(/\n\s*\n/);
+
+  return paragraphs.map((paragraph, index) => {
+    // Handle single line breaks within paragraphs
+    const lines = paragraph.split('\n').filter(line => line.trim() !== '');
+
+    return (
+      <div key={index} className={index > 0 ? 'mt-3' : ''}>
+        {lines.map((line, lineIndex) => {
+          const trimmedLine = line.trim();
+
+          // Handle bullet points and numbered lists
+          if (trimmedLine.match(/^[•\-\*]\s/) || trimmedLine.match(/^\d+\.\s/)) {
+            return (
+              <div key={lineIndex} className="ml-2 mb-1">
+                {trimmedLine}
+              </div>
+            );
+          }
+
+          // Handle emoji-prefixed lines (like in the fallback responses)
+          if (trimmedLine.match(/^[🏛️📋🔔🗳️]\s/)) {
+            return (
+              <div key={lineIndex} className="mb-1">
+                {trimmedLine}
+              </div>
+            );
+          }
+
+          // Handle "You can:" or similar action lists
+          if (trimmedLine.match(/^(You can|Check out|Go to):/i)) {
+            return (
+              <div key={lineIndex} className={`font-medium ${lineIndex > 0 ? 'mt-2' : ''}`}>
+                {trimmedLine}
+              </div>
+            );
+          }
+
+          // Handle questions at the end
+          if (trimmedLine.match(/\?$/)) {
+            return (
+              <div key={lineIndex} className={`${lineIndex > 0 ? 'mt-2' : ''}`}>
+                {trimmedLine}
+              </div>
+            );
+          }
+
+          // Regular lines
+          return (
+            <div key={lineIndex} className={lineIndex > 0 ? 'mt-1' : ''}>
+              {trimmedLine}
+            </div>
+          );
+        })}
+      </div>
+    );
+  });
+};
+
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm your CityCamp AI assistant. How can I help you today?",
+      text: "Hello! I'm your CityCamp AI assistant.\n\nI can help you with:\n🏛️ City council meetings and agendas\n📋 Local campaigns and initiatives\n🔔 Setting up notifications\n🗳️ Civic participation opportunities\n\nWhat would you like to know about?",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -100,22 +164,22 @@ export const ChatbotWidget: React.FC = () => {
     const input = userInput.toLowerCase();
 
     if (input.includes('meeting') || input.includes('council')) {
-      return "I can help you find information about city council meetings! You can view upcoming meetings, past minutes, and agenda items on the Meetings page. What specific information are you looking for?";
+      return "I can help you find information about city council meetings!\n\nYou can view upcoming meetings, past minutes, and agenda items on the Meetings page.\n\nWhat specific information are you looking for?";
     }
 
     if (input.includes('campaign') || input.includes('petition')) {
-      return "CityCamp AI helps you stay informed about local campaigns and petitions. Check out the Campaigns page to see active initiatives in your area.";
+      return "CityCamp AI helps you stay informed about local campaigns and petitions.\n\nCheck out the Campaigns page to see active initiatives in your area.\n\nIs there a specific campaign or issue you're interested in?";
     }
 
     if (input.includes('notification') || input.includes('alert')) {
-      return "You can set up notifications for meetings, campaigns, and other civic events. Go to your profile settings to customize your notification preferences.";
+      return "You can set up notifications for meetings, campaigns, and other civic events.\n\nGo to your profile settings to customize your notification preferences.\n\nWould you like help setting up notifications?";
     }
 
     if (input.includes('hello') || input.includes('hi')) {
-      return "Hello! I'm here to help you stay engaged with your local government. You can ask me about meetings, campaigns, notifications, or any other civic topics.";
+      return "Hello! I'm here to help you stay engaged with your local government.\n\nYou can ask me about meetings, campaigns, notifications, or any other civic topics.\n\nWhat would you like to know about?";
     }
 
-    return "I'm here to help you stay informed about local government activities. You can ask me about city council meetings, campaigns, notifications, or any other civic topics. What would you like to know?";
+    return "I'm here to help you stay informed about local government activities.\n\nYou can ask me about city council meetings, campaigns, notifications, or any other civic topics.\n\nWhat would you like to know?";
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -165,8 +229,10 @@ export const ChatbotWidget: React.FC = () => {
                         : 'bg-white text-gray-800 border border-gray-200'
                     }`}
                   >
-                    <p className="text-sm">{message.text}</p>
-                    <p className={`text-xs mt-1 ${
+                    <div className="text-sm">
+                      {message.sender === 'bot' ? formatMessage(message.text) : message.text}
+                    </div>
+                    <p className={`text-xs mt-2 ${
                       message.sender === 'user' ? 'text-primary-100' : 'text-gray-500'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
