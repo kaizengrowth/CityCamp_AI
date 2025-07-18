@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 interface Message {
   id: string;
@@ -46,21 +47,53 @@ export const ChatbotWidget: React.FC = () => {
       timestamp: new Date(),
     };
 
+    const messageText = inputValue;
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
+    try {
+      // Prepare conversation history for API
+      const conversationHistory = messages.map(msg => ({
+        text: msg.text,
+        sender: msg.sender
+      }));
+
+      // Call the API
+      const response = await apiRequest<{response: string; success: boolean; error?: string}>(
+        API_ENDPOINTS.chatbot,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            message: messageText,
+            conversation_history: conversationHistory
+          }),
+        }
+      );
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: getBotResponse(inputValue),
+        text: response.response,
         sender: 'bot',
         timestamp: new Date(),
       };
+
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      
+      // Fallback to local response if API fails
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: getBotResponse(messageText),
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   const getBotResponse = (userInput: string): string => {
