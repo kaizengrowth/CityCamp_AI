@@ -65,13 +65,13 @@ def test_agenda_item_model():
         item_number="1.1",
         title="Test Agenda Item",
         description="This is a test agenda item",
-        status="pending"
+        item_type="ordinance"
     )
 
     assert agenda_item.item_number == "1.1"
     assert agenda_item.title == "Test Agenda Item"
     assert agenda_item.description == "This is a test agenda item"
-    assert agenda_item.status == "pending"
+    assert agenda_item.item_type == "ordinance"
 
 def test_meeting_type_determination():
     """Test meeting type determination logic"""
