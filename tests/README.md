@@ -159,4 +159,4 @@ cd frontend && npm test -- --clearCache
 
 # Run with debug output
 cd frontend && npm test -- --verbose
-``` 
+```

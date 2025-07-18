@@ -9,7 +9,7 @@ const getApiBaseUrl = (): string => {
   if (process.env.NODE_ENV === 'production') {
     return '';
   }
-  
+
   // Default to relative URLs (will be proxied by Vite)
   return '';
 };
@@ -21,15 +21,15 @@ export const API_ENDPOINTS = {
   meetings: '/api/v1/meetings/public',
   meetingById: (id: number) => `/api/v1/meetings/${id}`,
   meetingAgendaItems: (id: number) => `/api/v1/meetings/${id}/agenda-items`,
-  
+
   // Auth
   login: '/api/v1/auth/login',
   register: '/api/v1/auth/register',
   profile: '/api/v1/auth/me',
-  
+
   // Chatbot
   chatbot: '/api/v1/chatbot/chat',
-  
+
   // Health
   health: '/health',
 } as const;
@@ -42,7 +42,7 @@ export const apiRequest = async <T>(
   options: RequestInit = {}
 ): Promise<T> => {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -53,11 +53,11 @@ export const apiRequest = async <T>(
 
   try {
     const response = await fetch(url, defaultOptions);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('API request failed:', error);
@@ -69,4 +69,4 @@ export default {
   API_BASE_URL,
   API_ENDPOINTS,
   apiRequest,
-}; 
+};

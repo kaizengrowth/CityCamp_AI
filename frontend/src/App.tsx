@@ -31,7 +31,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/meetings" element={<MeetingsPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
-              
+
               {/* Protected routes */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
@@ -48,12 +48,12 @@ function App() {
                   <NotificationsPage />
                 </ProtectedRoute>
               } />
-              
+
               {/* 404 page */}
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
-          
+
           {/* Toast notifications */}
           <Toaster
             position="top-right"
@@ -85,4 +85,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

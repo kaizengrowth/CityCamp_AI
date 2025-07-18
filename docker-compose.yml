@@ -146,4 +146,4 @@ volumes:
 
 networks:
   citycamp_network:
-    driver: bridge 
+    driver: bridge
