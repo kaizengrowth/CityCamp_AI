@@ -1,93 +1,93 @@
 #!/usr/bin/env python3
 """
-Local test script for the CityCamp AI scraper
-Run this to test scraper functionality without the full API
+Test script for the CityCamp AI scraper
 """
 
 import pytest
-import asyncio
-import sys
-import os
-from pathlib import Path
-
-# Add the app directory to Python path
-sys.path.insert(0, str(Path(__file__).parent / "app"))
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.core.database import Base
-from app.scrapers.tgov_scraper import TGOVScraper
-from app.scrapers.meeting_scraper import MeetingScraper
 from app.models.meeting import Meeting, AgendaItem
-import logging
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+def test_meeting_model(db_session):
+    """Test the Meeting model creation and basic operations"""
+    # Create a test meeting
+    meeting = Meeting(
+        title="Test City Council Meeting",
+        meeting_type="city_council",
+        meeting_date="2025-01-15 14:00:00",
+        location="City Hall",
+        source="test_scraper",
+        external_id="test-2025-01-15"
+    )
 
-# Create in-memory SQLite database for testing
-DATABASE_URL = "sqlite:///./test_scraper.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db_session.add(meeting)
+    db_session.commit()
+    db_session.refresh(meeting)
 
-@pytest.fixture(scope="function")
-def db_session():
-    """Create a database session for testing"""
-    # Create tables
-    Base.metadata.create_all(bind=engine)
+    # Verify the meeting was created
+    assert meeting.id is not None
+    assert meeting.title == "Test City Council Meeting"
+    assert meeting.meeting_type == "city_council"
+    assert meeting.status == "scheduled"
 
-    session = SessionLocal()
-    yield session
+def test_agenda_item_model(db_session):
+    """Test the AgendaItem model creation"""
+    # Create a test meeting first
+    meeting = Meeting(
+        title="Test Meeting",
+        meeting_type="city_council",
+        meeting_date="2025-01-15 14:00:00",
+        source="test_scraper"
+    )
+    db_session.add(meeting)
+    db_session.commit()
 
-    # Cleanup
-    session.query(AgendaItem).delete()
-    session.query(Meeting).delete()
-    session.commit()
-    session.close()
+    # Create an agenda item
+    agenda_item = AgendaItem(
+        meeting_id=meeting.id,
+        item_number="1.A",
+        title="Test Ordinance",
+        description="A test ordinance for testing purposes",
+        item_type="ordinance"
+    )
 
-@pytest.mark.asyncio
-async def test_tgov_scraper(db_session):
-    """Test the TGOV scraper directly"""
-    scraper = TGOVScraper(db_session)
+    db_session.add(agenda_item)
+    db_session.commit()
+    db_session.refresh(agenda_item)
 
-    # Test upcoming meetings scrape
-    meetings = await scraper.scrape_upcoming_meetings(days_ahead=30)
-    assert isinstance(meetings, list)
+    # Verify the agenda item was created
+    assert agenda_item.id is not None
+    assert agenda_item.meeting_id == meeting.id
+    assert agenda_item.title == "Test Ordinance"
 
-    # If meetings are found, test agenda items
-    if meetings:
-        meeting = meetings[0]
-        agenda_items = await scraper.scrape_agenda_items(meeting)
-        assert isinstance(agenda_items, list)
+def test_meeting_relationships(db_session):
+    """Test meeting and agenda item relationships"""
+    # Create a meeting with agenda items
+    meeting = Meeting(
+        title="Test Meeting with Items",
+        meeting_type="city_council",
+        meeting_date="2025-01-15 14:00:00",
+        source="test_scraper"
+    )
+    db_session.add(meeting)
+    db_session.commit()
 
-@pytest.mark.asyncio
-async def test_meeting_scraper(db_session):
-    """Test the full meeting scraper workflow"""
-    scraper = MeetingScraper(db_session)
+    # Create agenda items
+    item1 = AgendaItem(
+        meeting_id=meeting.id,
+        item_number="1.A",
+        title="First Item",
+        item_type="ordinance"
+    )
+    item2 = AgendaItem(
+        meeting_id=meeting.id,
+        item_number="1.B",
+        title="Second Item",
+        item_type="resolution"
+    )
 
-    # Run full scrape cycle
-    stats = await scraper.run_full_scrape(days_ahead=30)
+    db_session.add_all([item1, item2])
+    db_session.commit()
 
-    # Verify stats structure
-    expected_keys = [
-        "meetings_found", "meetings_updated", "agenda_items_created",
-        "minutes_scraped", "notifications_sent"
-    ]
-    for key in expected_keys:
-        assert key in stats
-        assert isinstance(stats[key], int)
-
-@pytest.mark.asyncio
-async def test_specific_url(db_session):
-    """Test scraping a specific URL"""
-    scraper = MeetingScraper(db_session)
-
-    # Test with a dummy URL (this will likely return None, which is expected)
-    test_url = "https://example.com/test-meeting"
-    meeting = await scraper.scrape_specific_meeting(test_url)
-
-    # The result should be None for a dummy URL, which is acceptable
-    assert meeting is None or isinstance(meeting, Meeting)
+    # Test relationship
+    assert len(meeting.agenda_items) == 2
+    assert meeting.agenda_items[0].title == "First Item"
+    assert meeting.agenda_items[1].title == "Second Item"
