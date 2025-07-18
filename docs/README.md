@@ -9,6 +9,8 @@ Welcome to the CityCamp AI documentation! This directory contains all project do
 - **[QUICKSTART.md](QUICKSTART.md)** - Fast setup for local development
 
 ### 🔧 Setup & Configuration
+- **[ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)** - Environment variables and .env files guide
+- **[AWS_CLI_SETUP.md](AWS_CLI_SETUP.md)** - AWS CLI installation guide (avoid committing installers!)
 - **[GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)** - Complete CI/CD setup guide
 - **[aws-deployment-guide.md](aws-deployment-guide.md)** - AWS deployment options and guide
 
