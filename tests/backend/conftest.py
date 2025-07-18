@@ -13,14 +13,21 @@ sys.path.insert(0, str(backend_path))
 
 # Set test environment before importing app modules
 os.environ["ENVIRONMENT"] = "test"
-os.environ["DATABASE_URL"] = "postgresql://user:password@localhost:5435/citycamp_db"
+# Use different database URLs for CI vs local development
+if "GITHUB_ACTIONS" in os.environ:
+    # GitHub Actions CI environment
+    os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/test_db"
+    TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/test_db"
+else:
+    # Local development environment
+    os.environ["DATABASE_URL"] = "postgresql://user:password@localhost:5435/citycamp_db"
+    TEST_DATABASE_URL = "postgresql://user:password@localhost:5435/citycamp_db"
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.database import Base
 
-# Test database configuration - use existing PostgreSQL database from Docker
-TEST_DATABASE_URL = "postgresql://user:password@localhost:5435/citycamp_db"
+# Test database configuration
 engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
