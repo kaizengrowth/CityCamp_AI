@@ -4,20 +4,6 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-  }
-  
   html {
     scroll-behavior: smooth;
   }
@@ -33,7 +19,7 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply text-secondary-900 font-semibold;
+    @apply text-gray-900 font-semibold;
   }
   
   h1 {
@@ -61,7 +47,7 @@
   }
   
   p {
-    @apply text-secondary-700 leading-relaxed;
+    @apply text-gray-700 leading-relaxed;
   }
   
   a {
@@ -79,23 +65,23 @@
   }
   
   .btn-secondary {
-    @apply bg-secondary-100 text-secondary-900 hover:bg-secondary-200 focus:ring-secondary-500;
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500;
   }
   
   .btn-success {
-    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
   }
   
   .btn-warning {
-    @apply bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500;
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
   }
   
   .btn-error {
-    @apply bg-error-600 text-white hover:bg-error-700 focus:ring-error-500;
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
   
   .btn-outline {
-    @apply border border-gray-300 bg-background hover:bg-gray-50 hover:text-gray-900;
+    @apply border border-gray-300 bg-white hover:bg-gray-50 hover:text-gray-900;
   }
   
   .btn-ghost {
@@ -115,15 +101,15 @@
   }
   
   .input {
-    @apply flex h-10 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
   
   .textarea {
-    @apply flex min-h-[80px] w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
   
   .select {
-    @apply flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-background px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
   
   .card {
@@ -159,19 +145,19 @@
   }
   
   .badge-secondary {
-    @apply bg-secondary-100 text-secondary-900;
+    @apply bg-gray-100 text-gray-900;
   }
   
   .badge-success {
-    @apply bg-success-100 text-success-900;
+    @apply bg-green-100 text-green-900;
   }
   
   .badge-warning {
-    @apply bg-warning-100 text-warning-900;
+    @apply bg-yellow-100 text-yellow-900;
   }
   
   .badge-error {
-    @apply bg-error-100 text-error-900;
+    @apply bg-red-100 text-red-900;
   }
   
   .spinner {
@@ -236,15 +222,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-secondary-100;
+  @apply bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-secondary-300 rounded-full;
+  @apply bg-gray-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-secondary-400;
+  @apply bg-gray-400;
 }
 
 /* Focus styles */
