@@ -23,6 +23,7 @@ class MeetingResponse(BaseModel):
     agenda_url: Optional[str]
     status: str
     topics: List[str]
+    summary: Optional[str]  # Meeting minutes/summary
     
     class Config:
         from_attributes = True
@@ -35,6 +36,7 @@ class AgendaItemResponse(BaseModel):
     item_type: Optional[str]
     category: Optional[str]
     keywords: List[str]
+    summary: Optional[str]  # Agenda item summary
     
     class Config:
         from_attributes = True
