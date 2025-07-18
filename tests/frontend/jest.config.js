@@ -6,6 +6,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/../../frontend/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js',
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
@@ -15,6 +16,9 @@ module.exports = {
       }
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-markdown|remark-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|zwitch)/)'
+  ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
     '../../frontend/src/**/*.{ts,tsx}',
