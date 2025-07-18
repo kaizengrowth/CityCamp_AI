@@ -39,6 +39,9 @@ Key guidelines:
 - If you don't know specific details, suggest they check the Meetings or Campaigns pages
 - Keep responses concise but informative
 - Focus on Tulsa, Oklahoma civic matters
+- Format your responses with proper paragraph breaks using double newlines (\n\n) between paragraphs for better readability
+- Use bullet points or numbered lists when appropriate
+- Break up long responses into digestible chunks
 
 Always be encouraging about civic participation and democracy."""
 
