@@ -30,11 +30,12 @@ print_step "2. Waiting for database to be ready..."
 sleep 3
 
 print_step "3. Starting backend server..."
-echo "   Backend will be available at: http://localhost:8000"
-echo "   API documentation: http://localhost:8000/docs"
+echo "   Backend will be available at: http://localhost:8002"
+echo "   API documentation: http://localhost:8002/docs"
+echo "   Health check: http://localhost:8002/health"
 echo ""
 echo "🎯 Press Ctrl+C to stop the server"
 echo ""
 
 # Start the backend server
-cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 
+cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8002 

@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -22,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: citycamp_redis
     ports:
-      - "6379:6379"
+      - "6382:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -41,7 +41,7 @@ services:
       - ENVIRONMENT=development
       - DEBUG=True
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
       - ./backend:/app
       - /app/venv
@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
     container_name: citycamp_frontend
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -129,7 +129,7 @@ services:
       - ENVIRONMENT=development
       - DEBUG=True
     ports:
-      - "5555:5555"
+      - "5557:5555"
     volumes:
       - ./backend:/app
       - /app/venv
