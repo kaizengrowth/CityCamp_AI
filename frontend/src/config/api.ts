@@ -27,6 +27,9 @@ export const API_ENDPOINTS = {
   register: '/api/v1/auth/register',
   profile: '/api/v1/auth/me',
   
+  // Chatbot
+  chatbot: '/api/v1/chatbot/chat',
+  
   // Health
   health: '/health',
 } as const;
