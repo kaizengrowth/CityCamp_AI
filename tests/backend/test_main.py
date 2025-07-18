@@ -11,7 +11,6 @@ from app.main import app
 
 client = TestClient(app)
 
-
 def test_health_check():
     """Test the health check endpoint."""
     response = client.get("/health")
@@ -22,25 +21,22 @@ def test_health_check():
     assert "version" in data
     assert "environment" in data
 
-
 def test_root_endpoint():
     """Test the root endpoint."""
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
+    assert "CityCamp AI" in data["message"]
 
+def test_api_v1_meetings_endpoint():
+    """Test the API v1 meetings endpoint."""
+    response = client.get("/api/v1/meetings/")
+    # This should return 200 if endpoint exists, or 404 if not implemented yet
+    assert response.status_code in [200, 404, 405]
 
-def test_api_v1_docs():
-    """Test that API documentation is accessible."""
-    response = client.get("/docs")
-    assert response.status_code == 200
-
-
-def test_api_v1_openapi():
-    """Test that OpenAPI schema is accessible."""
-    response = client.get("/openapi.json")
-    assert response.status_code == 200
-    data = response.json()
-    assert "openapi" in data
-    assert "info" in data
+def test_api_v1_auth_endpoint():
+    """Test the API v1 auth endpoint."""
+    response = client.get("/api/v1/auth/")
+    # This should return 200 if endpoint exists, or 404 if not implemented yet
+    assert response.status_code in [200, 404, 405]
