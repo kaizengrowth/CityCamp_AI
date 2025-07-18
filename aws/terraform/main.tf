@@ -403,6 +403,12 @@ resource "aws_cloudfront_distribution" "frontend" {
   tags = var.common_tags
 }
 
+# Keep the old OAI temporarily to avoid dependency issues
+# We'll remove this after the CloudFront distribution is updated
+resource "aws_cloudfront_origin_access_identity" "frontend" {
+  comment = "OAI for ${var.project_name} frontend"
+}
+
 # Random string for bucket naming
 resource "random_string" "bucket_suffix" {
   length  = 8
