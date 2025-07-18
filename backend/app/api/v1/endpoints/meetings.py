@@ -42,6 +42,19 @@ class AgendaItemResponse(BaseModel):
 class MeetingWithAgenda(MeetingResponse):
     agenda_items: List[AgendaItemResponse]
 
+@router.get("/public", response_model=List[MeetingResponse])
+async def get_meetings_public(
+    db: Session = Depends(get_db),
+    limit: int = Query(10, le=50, description="Maximum number of meetings to return")
+):
+    """Get meetings - public endpoint (no auth required)"""
+    meeting_service = MeetingService(db)
+    meetings = await meeting_service.get_meetings_by_date_range(
+        datetime.now() - timedelta(days=90),
+        datetime.now() + timedelta(days=90)
+    )
+    return meetings[:limit]
+
 @router.get("/", response_model=List[MeetingResponse])
 async def get_meetings(
     db: Session = Depends(get_db),
