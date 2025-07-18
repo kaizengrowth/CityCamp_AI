@@ -19,7 +19,8 @@ class TGOVScraper:
     
     def __init__(self, db: Session):
         self.db = db
-        self.base_url = "https://tulsacouncil.org"
+        self.base_url = "https://tulsa-ok.granicus.com"
+        self.meetings_url = "https://tulsa-ok.granicus.com/ViewPublisher.php?view_id=4"
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'CityCamp AI Bot 1.0'
@@ -27,35 +28,170 @@ class TGOVScraper:
     
     async def scrape_upcoming_meetings(self, days_ahead: int = 30) -> List[Meeting]:
         """
-        Scrape upcoming meetings from Tulsa City Council website
-        Based on your existing scripts
+        Scrape upcoming meetings from Tulsa City Council Granicus system
         """
         try:
             meetings = []
             
-            # Get the meetings page
-            meetings_url = f"{self.base_url}/meetings"
-            response = self.session.get(meetings_url)
+            # Get the meetings page from Granicus
+            response = self.session.get(self.meetings_url)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Parse meeting information
-            # This would be adapted from your specific scraping logic
-            meeting_elements = soup.find_all('div', class_='meeting-item')  # Adjust selector
+            # Look for upcoming events table
+            upcoming_table = soup.find('table')
+            if upcoming_table:
+                rows = upcoming_table.find_all('tr')[1:]  # Skip header row
+                
+                for row in rows:
+                    meeting_data = await self._parse_granicus_meeting_row(row)
+                    if meeting_data:
+                        meeting = await self._create_or_update_meeting(meeting_data)
+                        meetings.append(meeting)
             
-            for element in meeting_elements:
-                meeting_data = await self._parse_meeting_element(element)
-                if meeting_data:
-                    meeting = await self._create_or_update_meeting(meeting_data)
-                    meetings.append(meeting)
+            # Also scrape recent archived meetings
+            archived_meetings = await self._scrape_archived_meetings()
+            meetings.extend(archived_meetings)
+            
+            logger.info(f"Scraped {len(meetings)} meetings from Granicus")
+            return meetings
+            
+        except Exception as e:
+            logger.error(f"Error scraping meetings from Granicus: {str(e)}")
+            return []
+    
+    async def _parse_granicus_meeting_row(self, row) -> Optional[Dict]:
+        """Parse meeting row from Granicus upcoming events table"""
+        try:
+            cells = row.find_all('td')
+            if len(cells) < 2:
+                return None
+            
+            # Extract meeting name and date
+            meeting_name = cells[0].text.strip()
+            date_str = cells[1].text.strip()
+            
+            # Parse date (format: "July 22, 2025 - 1:00 PM")
+            meeting_date = self._parse_flexible_date(date_str)
+            if not meeting_date:
+                return None
+            
+            # Look for agenda and video links
+            agenda_url = None
+            agenda_link = cells[2].find('a') if len(cells) > 2 else None
+            if agenda_link:
+                agenda_url = agenda_link.get('href')
+                if agenda_url and not agenda_url.startswith('http'):
+                    agenda_url = f"{self.base_url}{agenda_url}"
+            
+            return {
+                'title': meeting_name,
+                'meeting_date': meeting_date,
+                'location': "One Technology Center, Tulsa, OK",
+                'agenda_url': agenda_url,
+                'meeting_type': self._determine_meeting_type(meeting_name),
+                'external_id': f"granicus-{meeting_date.strftime('%Y-%m-%d')}-{meeting_name.lower().replace(' ', '-')}"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error parsing Granicus meeting row: {str(e)}")
+            return None
+    
+    async def _scrape_archived_meetings(self) -> List[Meeting]:
+        """Scrape recent archived meetings that might have minutes/videos"""
+        try:
+            meetings = []
+            
+            # The Granicus page shows archived meetings in tables
+            response = self.session.get(self.meetings_url)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Look for archived meeting tables
+            tables = soup.find_all('table')[1:]  # Skip the upcoming events table
+            
+            for table in tables[:3]:  # Only process first 3 tables (recent meetings)
+                rows = table.find_all('tr')[1:]  # Skip header
+                
+                for row in rows[:5]:  # Only get recent 5 meetings per table
+                    meeting_data = await self._parse_archived_meeting_row(row)
+                    if meeting_data:
+                        meeting = await self._create_or_update_meeting(meeting_data)
+                        meetings.append(meeting)
             
             return meetings
             
         except Exception as e:
-            logger.error(f"Error scraping meetings: {str(e)}")
+            logger.error(f"Error scraping archived meetings: {str(e)}")
             return []
     
+    async def _parse_archived_meeting_row(self, row) -> Optional[Dict]:
+        """Parse archived meeting row from Granicus"""
+        try:
+            cells = row.find_all('td')
+            if len(cells) < 3:
+                return None
+            
+            meeting_name = cells[0].text.strip()
+            date_str = cells[1].text.strip()
+            
+            # Parse date (format: "July 16, 2025 - 5:00 PM")
+            meeting_date = self._parse_flexible_date(date_str)
+            if not meeting_date:
+                return None
+            
+            # Get agenda and video links
+            agenda_url = None
+            video_url = None
+            
+            agenda_link = cells[3].find('a') if len(cells) > 3 else None
+            if agenda_link and 'Agenda' in agenda_link.text:
+                agenda_url = agenda_link.get('href')
+                if agenda_url and not agenda_url.startswith('http'):
+                    agenda_url = f"{self.base_url}{agenda_url}"
+            
+            video_link = cells[4].find('a') if len(cells) > 4 else None
+            if video_link and 'Video' in video_link.text:
+                video_url = video_link.get('href')
+                if video_url and not video_url.startswith('http'):
+                    video_url = f"{self.base_url}{video_url}"
+            
+            return {
+                'title': meeting_name,
+                'meeting_date': meeting_date,
+                'location': "One Technology Center, Tulsa, OK",
+                'agenda_url': agenda_url,
+                'video_url': video_url,
+                'meeting_type': self._determine_meeting_type(meeting_name),
+                'external_id': f"granicus-{meeting_date.strftime('%Y-%m-%d')}-{meeting_name.lower().replace(' ', '-')}",
+                'status': 'completed' if meeting_date < datetime.now() else 'scheduled'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error parsing archived meeting row: {str(e)}")
+            return None
+    
+    def _determine_meeting_type(self, meeting_name: str) -> str:
+        """Determine meeting type from meeting name"""
+        name_lower = meeting_name.lower()
+        
+        if 'regular council' in name_lower:
+            return 'regular_council'
+        elif 'public works' in name_lower:
+            return 'public_works_committee'
+        elif 'urban' in name_lower and 'economic' in name_lower:
+            return 'urban_economic_committee'
+        elif 'budget' in name_lower:
+            return 'budget_committee'
+        elif 'planning commission' in name_lower or 'tmapc' in name_lower:
+            return 'planning_commission'
+        elif 'board of adjustment' in name_lower:
+            return 'board_of_adjustment'
+        else:
+            return 'other'
+
     async def _parse_meeting_element(self, element) -> Optional[Dict]:
         """Parse individual meeting element from HTML"""
         try:
@@ -109,12 +245,16 @@ class TGOVScraper:
     
     def _parse_flexible_date(self, date_str: str) -> Optional[datetime]:
         """Parse date string with multiple possible formats"""
+        # Clean up the date string
+        date_str = date_str.strip()
+        
         formats = [
-            "%B %d, %Y at %I:%M %p",
-            "%B %d, %Y %I:%M %p",
-            "%m/%d/%Y %I:%M %p",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%d",
+            "%B %d, %Y - %I:%M %p",     # "July 22, 2025 - 1:00 PM"
+            "%B %d, %Y at %I:%M %p",    # "July 22, 2025 at 1:00 PM"
+            "%B %d, %Y %I:%M %p",       # "July 22, 2025 1:00 PM"
+            "%m/%d/%Y %I:%M %p",        # "7/22/2025 1:00 PM"
+            "%Y-%m-%d %H:%M:%S",        # "2025-07-22 13:00:00"
+            "%Y-%m-%d",                 # "2025-07-22"
         ]
         
         for fmt in formats:
@@ -123,6 +263,7 @@ class TGOVScraper:
             except ValueError:
                 continue
         
+        logger.warning(f"Could not parse date string: {date_str}")
         return None
     
     async def _create_or_update_meeting(self, meeting_data: Dict) -> Meeting:
