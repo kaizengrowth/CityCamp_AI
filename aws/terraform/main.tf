@@ -416,6 +416,115 @@ resource "random_string" "bucket_suffix" {
   upper   = false
 }
 
+# ECS Task Definition
+resource "aws_ecs_task_definition" "main" {
+  family                   = "${var.project_name}-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "${var.project_name}-backend"
+      image = "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest"
+
+      portMappings = [
+        {
+          containerPort = 8001
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "ENVIRONMENT"
+          value = "production"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "/citycamp-ai/database-url"
+        },
+        {
+          name      = "REDIS_URL"
+          valueFrom = "/citycamp-ai/redis-url"
+        },
+        {
+          name      = "SECRET_KEY"
+          valueFrom = "/citycamp-ai/secret-key"
+        },
+        {
+          name      = "OPENAI_API_KEY"
+          valueFrom = "/citycamp-ai/openai-api-key"
+        },
+        {
+          name      = "TWILIO_ACCOUNT_SID"
+          valueFrom = "/citycamp-ai/twilio-account-sid"
+        },
+        {
+          name      = "TWILIO_AUTH_TOKEN"
+          valueFrom = "/citycamp-ai/twilio-auth-token"
+        },
+        {
+          name      = "TWILIO_PHONE_NUMBER"
+          valueFrom = "/citycamp-ai/twilio-phone-number"
+        },
+        {
+          name      = "SMTP_USERNAME"
+          valueFrom = "/citycamp-ai/smtp-username"
+        },
+        {
+          name      = "SMTP_PASSWORD"
+          valueFrom = "/citycamp-ai/smtp-password"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_backend.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+
+      essential = true
+    }
+  ])
+
+  tags = var.common_tags
+}
+
+# ECS Service
+resource "aws_ecs_service" "main" {
+  name            = "${var.project_name}-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.main.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets         = module.vpc.private_subnets
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.main.arn
+    container_name   = "${var.project_name}-backend"
+    container_port   = 8001
+  }
+
+  depends_on = [aws_lb_listener.main]
+
+  tags = var.common_tags
+}
+
 # Outputs
 output "alb_dns_name" {
   description = "The DNS name of the load balancer"
