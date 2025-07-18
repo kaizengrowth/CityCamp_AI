@@ -11,6 +11,8 @@ factory-boy==3.3.0
 faker==20.1.0
 
 # Code quality
+flake8==6.1.0
+mypy==1.7.0
 isort==5.12.0
 bandit==1.7.5
 safety==2.3.5
