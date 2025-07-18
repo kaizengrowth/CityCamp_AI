@@ -13,7 +13,7 @@ cd CityCamp_AI
 cd backend && python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt && cp env.example .env
 
-# Frontend setup  
+# Frontend setup
 cd ../frontend && npm install
 
 # Start development servers
@@ -25,7 +25,7 @@ cd ../backend && uvicorn app.main:app --reload --port 8001  # Backend
 ## 🌟 Features
 
 - **📅 Meeting Notifications** - Automated alerts for Tulsa City Council meetings
-- **🤖 AI Assistant** - Interactive chatbot for city government questions  
+- **🤖 AI Assistant** - Interactive chatbot for city government questions
 - **📧 Email Generation** - AI-powered tool to contact representatives
 - **🏛️ Meeting Minutes** - Real-time access to city council proceedings
 - **👥 Community Platform** - Connect with other residents and organize
@@ -43,7 +43,7 @@ cd ../backend && uvicorn app.main:app --reload --port 8001  # Backend
 CityCamp_AI/
 ├── 📚 docs/                  # All documentation
 ├── 🧪 tests/                 # Centralized test files
-│   ├── backend/              # Python/FastAPI tests  
+│   ├── backend/              # Python/FastAPI tests
 │   └── frontend/             # React/TypeScript tests
 ├── 🎨 frontend/              # React application
 ├── ⚙️ backend/               # FastAPI backend
@@ -69,7 +69,7 @@ CityCamp_AI/
 # Backend tests
 cd backend && python -m pytest ../tests/backend/ -v
 
-# Frontend tests  
+# Frontend tests
 cd frontend && npm test
 
 # All tests (CI)
@@ -90,7 +90,7 @@ cd frontend && npm test
 ## 📊 Project Status
 
 - ✅ **Backend API** - FastAPI with PostgreSQL
-- ✅ **Frontend** - React with TypeScript  
+- ✅ **Frontend** - React with TypeScript
 - ✅ **Database** - Meeting data and user management
 - ✅ **Authentication** - User accounts and preferences
 - ✅ **AWS Infrastructure** - Production-ready deployment
@@ -100,7 +100,7 @@ cd frontend && npm test
 ## 🛡️ Security
 
 - 🔐 **Environment variables** for secrets
-- 🔑 **IAM roles** with minimal permissions  
+- 🔑 **IAM roles** with minimal permissions
 - 🛡️ **Security scanning** in CI/CD pipeline
 - 📊 **Monitoring** with AWS CloudWatch
 

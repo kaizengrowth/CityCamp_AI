@@ -127,4 +127,4 @@ Once the scraper is working locally:
 - `app/scrapers/tgov_scraper.py`: Core scraping logic
 - `app/scrapers/meeting_scraper.py`: Workflow orchestration
 - `app/api/v1/endpoints/scraper.py`: API endpoints
-- `app/models/meeting.py`: Database models 
+- `app/models/meeting.py`: Database models

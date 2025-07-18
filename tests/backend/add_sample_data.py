@@ -22,15 +22,15 @@ logger = logging.getLogger(__name__)
 
 def create_sample_meetings():
     """Create sample meetings in the main database"""
-    
+
     # Use the same database as the main application
     DATABASE_URL = settings.database_url
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
+
     # Create tables if they don't exist
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     try:
         # Clear existing sample data
@@ -41,7 +41,7 @@ def create_sample_meetings():
         ).delete(synchronize_session=False)
         db.query(Meeting).filter(Meeting.source == "sample_data").delete()
         db.commit()
-        
+
         # Create sample meetings
         meetings_data = [
             {
@@ -92,11 +92,11 @@ ADJOURNMENT: 7:45 PM
 Meeting recorded and available online."""
             },
             {
-                "title": "Public Works Committee Meeting", 
+                "title": "Public Works Committee Meeting",
                 "meeting_date": datetime.now() - timedelta(days=3),
                 "location": "City Hall Committee Room",
                 "meeting_type": "public_works_committee",
-                "status": "completed", 
+                "status": "completed",
                 "external_id": "sample-pw-1",
                 "source": "sample_data",
                 "summary": """PUBLIC WORKS COMMITTEE MINUTES
@@ -136,7 +136,7 @@ NEXT MEETING: February 2, 2025"""
             },
             {
                 "title": "Urban & Economic Development Committee",
-                "meeting_date": datetime.now() + timedelta(days=5), 
+                "meeting_date": datetime.now() + timedelta(days=5),
                 "location": "One Technology Center",
                 "meeting_type": "urban_economic_committee",
                 "status": "scheduled",
@@ -144,14 +144,14 @@ NEXT MEETING: February 2, 2025"""
                 "source": "sample_data"
             }
         ]
-        
+
         created_meetings = []
         for meeting_data in meetings_data:
             meeting = Meeting(**meeting_data)
             db.add(meeting)
             db.flush()  # Get the ID
             created_meetings.append(meeting)
-            
+
             # Add sample agenda items
             if meeting.meeting_type == "regular_council":
                 agenda_items = [
@@ -171,21 +171,21 @@ NEXT MEETING: February 2, 2025"""
                     {"title": "Economic Development", "description": "New business incentives", "item_number": "1"},
                     {"title": "Urban Planning", "description": "Downtown revitalization", "item_number": "2"}
                 ]
-            
+
             for item_data in agenda_items:
                 item_data["meeting_id"] = meeting.id
                 agenda_item = AgendaItem(**item_data)
                 db.add(agenda_item)
-        
+
         db.commit()
         logger.info(f"✅ Successfully created {len(created_meetings)} sample meetings in main database")
-        
+
         # Show what was created
         for meeting in created_meetings:
             logger.info(f"   📅 {meeting.title} ({meeting.meeting_date.strftime('%Y-%m-%d')})")
-            
+
         return created_meetings
-        
+
     except Exception as e:
         logger.error(f"❌ Error creating sample meetings: {e}")
         db.rollback()
@@ -196,11 +196,11 @@ NEXT MEETING: February 2, 2025"""
 if __name__ == "__main__":
     print("🏛️  Adding sample meeting data to CityCamp AI database...")
     meetings = create_sample_meetings()
-    
+
     if meetings:
         print(f"\n🎉 Success! Added {len(meetings)} meetings to the database.")
         print("You should now be able to see this data in the frontend!")
         print("\nTo test the API:")
         print("curl http://localhost:8000/api/v1/meetings/")
     else:
-        print("\n❌ Failed to add sample data") 
+        print("\n❌ Failed to add sample data")

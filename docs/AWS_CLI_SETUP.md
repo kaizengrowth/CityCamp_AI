@@ -6,7 +6,7 @@ This guide helps you install the AWS CLI properly without adding installer files
 
 **Never commit installer packages** (like `AWSCLIV2.pkg`) to your Git repository! They are:
 - ❌ Large binary files (38MB+)
-- ❌ Platform-specific 
+- ❌ Platform-specific
 - ❌ Easily downloadable from AWS
 - ❌ Not source code
 
@@ -171,4 +171,4 @@ aws configure
 
 ---
 
-**Remember**: Never commit installer files like `AWSCLIV2.pkg` to your repository! 
+**Remember**: Never commit installer files like `AWSCLIV2.pkg` to your repository!
