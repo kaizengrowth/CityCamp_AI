@@ -70,8 +70,52 @@ Thumbs.db
 *.log
 logs/
 
-# AWS
+# AWS & Cloud Credentials
 .aws/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+aws-credentials.txt
+credentials.txt
+config.json
+*-key.json
+service-account*.json
+gcp-credentials.json
+azure-credentials.json
+
+# AWS Specific
+.aws-sam/
+samconfig.toml
+.chalice/
+.serverless/
+aws-exports.js
+awsconfiguration.json
+
+# Environment files with potential secrets
+.env*
+!.env.example
+!.env.template
+.env.production
+.env.staging
+.env.development
+.env.test
+.secrets
+secrets.json
+config.local.json
+
+# Deployment scripts with hardcoded values
+deploy-*.sh
+*-deploy.sh
+deployment-config.json
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.ppk
 
 # Coverage reports
 htmlcov/
