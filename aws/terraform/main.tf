@@ -114,6 +114,14 @@ resource "aws_elasticache_cluster" "main" {
   tags = var.common_tags
 }
 
+# CloudWatch Log Group for ECS
+resource "aws_cloudwatch_log_group" "ecs_backend" {
+  name              = "/ecs/citycamp-ai-backend"
+  retention_in_days = 30
+
+  tags = var.common_tags
+}
+
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "${var.project_name}-cluster"
@@ -147,6 +155,29 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Additional policy for SSM parameter access
+resource "aws_iam_role_policy" "ecs_task_execution_ssm_policy" {
+  name = "${var.project_name}-ecs-task-execution-ssm-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = [
+          "arn:aws:ssm:us-east-1:*:parameter/citycamp-ai/*"
+        ]
+      }
+    ]
+  })
 }
 
 # ECS Task Role
@@ -231,10 +262,11 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "main" {
-  name     = "${var.project_name}-tg"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = module.vpc.vpc_id
+  name        = "${var.project_name}-tg-ip"
+  port        = 8000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = module.vpc.vpc_id
 
   health_check {
     enabled             = true
@@ -257,8 +289,12 @@ resource "aws_lb_listener" "main" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.main.arn
+    type = "forward"
+    forward {
+      target_group {
+        arn = aws_lb_target_group.main.arn
+      }
+    }
   }
 }
 
