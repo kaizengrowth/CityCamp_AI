@@ -228,11 +228,20 @@ export const MeetingsPage: React.FC = () => {
   const fetchMeetings = async () => {
     try {
       setLoading(true);
+      console.log('Fetching meetings from API...');
+
+      // Add a small delay to ensure backend is ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const data = await apiRequest<Meeting[]>(API_ENDPOINTS.meetings);
+      console.log('API response received:', data.length, 'meetings');
+      console.log('First meeting:', data[0]);
       setMeetings(data);
       setDemoMode(false);
+      console.log('Demo mode set to false');
     } catch (err) {
       console.log('API not available, using demo data');
+      console.error('API error:', err);
       setMeetings(SAMPLE_MEETINGS);
       setDemoMode(true);
       setError(null);

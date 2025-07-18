@@ -6,7 +6,7 @@ from app.models.meeting import Meeting
 from app.models.user import User
 from app.services.auth import get_current_user
 from app.services.meeting_service import MeetingService
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -57,7 +57,6 @@ async def get_all_meetings(
     offset: int = Query(0, ge=0, description="Number of meetings to skip"),
 ):
     """Get all meetings without date filtering"""
-    meeting_service = MeetingService(db)
     meetings = (
         db.query(Meeting)
         .order_by(Meeting.meeting_date.desc())
