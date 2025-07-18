@@ -129,6 +129,12 @@ coverage.xml
 *.cover
 .hypothesis/
 
+# Test artifacts in centralized tests directory
+tests/backend/__pycache__/
+tests/frontend/coverage/
+tests/backend/htmlcov/
+tests/backend/coverage.xml
+
 # MyPy
 .mypy_cache/
 .dmypy.json
