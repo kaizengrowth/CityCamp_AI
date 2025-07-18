@@ -4,7 +4,7 @@ export const CampaignsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Community Campaigns</h1>
-      
+
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Active Campaigns</h3>
         <div className="space-y-4">
@@ -16,7 +16,7 @@ export const CampaignsPage: React.FC = () => {
               <span className="text-sm text-gray-500">Goal: 500</span>
             </div>
           </div>
-          
+
           <div className="border border-gray-200 rounded-lg p-4">
             <h4 className="font-medium">Parks & Recreation Funding</h4>
             <p className="text-gray-600 mt-2">Increase funding for park maintenance and youth programs.</p>
@@ -29,4 +29,4 @@ export const CampaignsPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

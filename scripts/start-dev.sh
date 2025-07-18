@@ -38,4 +38,4 @@ echo "🎯 Press Ctrl+C to stop the server"
 echo ""
 
 # Start the backend server
-cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8002 
+cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8002

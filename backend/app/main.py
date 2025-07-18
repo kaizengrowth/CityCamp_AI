@@ -1,19 +1,18 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 import logging
 import time
+from contextlib import asynccontextmanager
 
+from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.database import create_tables
-from app.api.v1 import api_router
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO if settings.environment == "development" else logging.WARNING,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting up CityCamp AI...")
-    
+
     # Try to create tables, but don't fail if database is not ready
     max_retries = 5
     for attempt in range(max_retries):
@@ -36,14 +35,14 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Database connection attempt {attempt + 1} failed: {e}")
             if attempt < max_retries - 1:
-                logger.info(f"Retrying in 2 seconds...")
+                logger.info("Retrying in 2 seconds...")
                 time.sleep(2)
             else:
                 logger.error("Could not connect to database after multiple attempts")
                 logger.error("The API will start without database functionality")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down CityCamp AI...")
 
@@ -72,10 +71,7 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     logger.error(f"Global exception handler caught: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 # Health check endpoint
@@ -88,7 +84,7 @@ async def health_check():
         "status": "healthy",
         "service": settings.project_name,
         "version": settings.project_version,
-        "environment": settings.environment
+        "environment": settings.environment,
     }
 
 
@@ -105,16 +101,19 @@ async def root():
     return {
         "message": f"Welcome to {settings.project_name}!",
         "version": settings.project_version,
-        "docs": "/docs" if settings.debug else "Documentation not available in production"
+        "docs": (
+            "/docs" if settings.debug else "Documentation not available in production"
+        ),
     }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - Intentional for development/Docker
         port=8002,
         reload=settings.debug,
-        log_level="info" if settings.debug else "warning"
-    ) 
+        log_level="info" if settings.debug else "warning",
+    )

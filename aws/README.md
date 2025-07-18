@@ -274,4 +274,4 @@ For deployment issues:
 2. Configure SSL certificates
 3. Set up CI/CD pipeline
 4. Implement monitoring and alerting
-5. Configure backup strategies 
+5. Configure backup strategies

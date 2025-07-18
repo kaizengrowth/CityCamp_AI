@@ -212,4 +212,4 @@ mv backend/.env backend/.env        # Keep backend-specific in backend/
 
 ---
 
-**Remember**: Environment files contain secrets - keep them secure and never commit them to Git! 
+**Remember**: Environment files contain secrets - keep them secure and never commit them to Git!

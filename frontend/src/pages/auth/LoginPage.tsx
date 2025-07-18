@@ -7,7 +7,7 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -60,7 +60,7 @@ export const LoginPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
                 placeholder="Enter your email"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -138,4 +138,4 @@ export const LoginPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

@@ -173,4 +173,4 @@ For deployment issues:
 2. Verify security group configurations
 3. Test connectivity between services
 4. Review ECS task definition
-5. Check environment variables 
+5. Check environment variables

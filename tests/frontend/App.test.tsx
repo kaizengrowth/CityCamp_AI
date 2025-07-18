@@ -34,7 +34,7 @@ describe('App', () => {
         <App />
       </AppWrapper>
     );
-    
+
     // The app should render without throwing an error
     expect(document.body).toBeInTheDocument();
   });
@@ -45,10 +45,10 @@ describe('App', () => {
         <App />
       </AppWrapper>
     );
-    
+
     // Check if the main app structure is present
     // This is a basic test - you can expand based on your actual app structure
     const appElement = document.querySelector('#root');
     expect(appElement).toBeInTheDocument();
   });
-}); 
+});

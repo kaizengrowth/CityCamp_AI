@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, validator
-from typing import List, Optional, Dict
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, validator
 
 
 class UserBase(BaseModel):
@@ -15,11 +16,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    
-    @validator('password')
+
+    @validator("password")
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
+            raise ValueError("Password must be at least 8 characters long")
         return v
 
 
@@ -45,7 +46,7 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -69,11 +70,11 @@ class UserInterestCreate(BaseModel):
     category: str
     keywords: List[str] = []
     priority: int = 1
-    
-    @validator('priority')
+
+    @validator("priority")
     def validate_priority(cls, v):
         if v < 1 or v > 5:
-            raise ValueError('Priority must be between 1 and 5')
+            raise ValueError("Priority must be between 1 and 5")
         return v
 
 
@@ -85,7 +86,7 @@ class UserInterestResponse(BaseModel):
     priority: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -93,9 +94,9 @@ class UserInterestResponse(BaseModel):
 class UserInterestUpdate(BaseModel):
     keywords: Optional[List[str]] = None
     priority: Optional[int] = None
-    
-    @validator('priority')
+
+    @validator("priority")
     def validate_priority(cls, v):
         if v is not None and (v < 1 or v > 5):
-            raise ValueError('Priority must be between 1 and 5')
-        return v 
+            raise ValueError("Priority must be between 1 and 5")
+        return v

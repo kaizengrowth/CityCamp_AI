@@ -19,4 +19,4 @@ export const NotFoundPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

@@ -84,4 +84,4 @@ When adding new documentation:
 
 ---
 
-**Need help?** Check the [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide or create an issue in the GitHub repository. 
+**Need help?** Check the [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide or create an issue in the GitHub repository.

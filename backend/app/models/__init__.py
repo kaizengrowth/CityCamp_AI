@@ -1,7 +1,13 @@
+from .campaign import (
+    Campaign,
+    CampaignMembership,
+    CampaignSignature,
+    CampaignUpdate,
+    Representative,
+)
+from .meeting import AgendaItem, Meeting, MeetingCategory
+from .notification import Notification, NotificationPreference, NotificationTemplate
 from .user import User, UserInterests
-from .meeting import Meeting, AgendaItem, MeetingCategory
-from .notification import Notification, NotificationTemplate, NotificationPreference
-from .campaign import Campaign, CampaignMembership, CampaignUpdate, CampaignSignature, Representative
 
 __all__ = [
     "User",
@@ -17,4 +23,4 @@ __all__ = [
     "CampaignUpdate",
     "CampaignSignature",
     "Representative",
-] 
+]

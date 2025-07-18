@@ -90,4 +90,4 @@ variable "common_tags" {
     Environment = "production"
     ManagedBy   = "terraform"
   }
-} 
+}

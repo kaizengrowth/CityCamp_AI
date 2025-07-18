@@ -470,4 +470,4 @@ output "alb_target_group_arn" {
 output "s3_bucket_name" {
   description = "The name of the S3 bucket for frontend"
   value       = aws_s3_bucket.frontend.bucket
-} 
+}

@@ -19,7 +19,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -33,7 +33,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       redis:
         image: redis:7
         options: >-
@@ -150,7 +150,7 @@ jobs:
     - name: Deploy frontend to S3
       run: |
         aws s3 sync frontend/dist/ s3://${{ env.S3_BUCKET }} --delete
-        
+
         # Set correct content types
         aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.html" --content-type "text/html" --metadata-directive REPLACE
         aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.css" --content-type "text/css" --metadata-directive REPLACE
@@ -188,4 +188,4 @@ jobs:
       if: failure()
       run: |
         echo "❌ Deployment failed!"
-        echo "Check the logs above for details." 
+        echo "Check the logs above for details."

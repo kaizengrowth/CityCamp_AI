@@ -253,4 +253,4 @@ aws s3 ls s3://citycamp-ai-frontend-ru8nls0c
 - ✅ Regularly rotate AWS access keys
 - ✅ Monitor AWS CloudTrail for unauthorized access
 
-Your CI/CD pipeline is now ready! 🚀 
+Your CI/CD pipeline is now ready! 🚀

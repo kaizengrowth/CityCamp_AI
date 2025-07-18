@@ -84,7 +84,7 @@ Meeting recorded and available online.`,
       },
       {
         id: 2,
-        item_number: "2", 
+        item_number: "2",
         title: "Zoning Changes",
         description: "71st Street corridor rezoning proposal",
         item_type: "ordinance",
@@ -165,7 +165,7 @@ NEXT MEETING: February 2, 2025`,
       {
         id: 6,
         item_number: "2",
-        title: "Project Updates", 
+        title: "Project Updates",
         description: "Upcoming infrastructure projects",
         item_type: "presentation",
         vote_required: false,
@@ -252,7 +252,7 @@ export const MeetingsPage: React.FC = () => {
 
     try {
       const meeting = await apiRequest<Meeting>(API_ENDPOINTS.meetingById(meetingId));
-      
+
       // Fetch agenda items
       try {
         meeting.agenda_items = await apiRequest<AgendaItem[]>(API_ENDPOINTS.meetingAgendaItems(meetingId));
@@ -260,7 +260,7 @@ export const MeetingsPage: React.FC = () => {
         console.log('No agenda items found for this meeting');
         meeting.agenda_items = [];
       }
-      
+
       setSelectedMeeting(meeting);
     } catch (err) {
       console.error('Error fetching meeting details:', err);
@@ -270,10 +270,10 @@ export const MeetingsPage: React.FC = () => {
   const filteredMeetings = meetings.filter(meeting => {
     const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const now = new Date();
     const meetingDate = new Date(meeting.meeting_date);
-    
+
     switch (filter) {
       case 'upcoming':
         return matchesSearch && meetingDate >= now;
@@ -304,7 +304,7 @@ export const MeetingsPage: React.FC = () => {
       cancelled: 'bg-red-100 text-red-800',
       postponed: 'bg-yellow-100 text-yellow-800'
     };
-    
+
     return (
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -327,7 +327,7 @@ export const MeetingsPage: React.FC = () => {
           <div className="ml-3">
             <h3 className="text-sm font-medium text-red-800">Error loading meetings</h3>
             <p className="mt-2 text-sm text-red-700">{error}</p>
-            <button 
+            <button
               onClick={fetchMeetings}
               className="mt-3 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
             >
@@ -349,7 +349,7 @@ export const MeetingsPage: React.FC = () => {
               Demo Mode
             </span>
           )}
-          <button 
+          <button
             onClick={fetchMeetings}
             className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
           >
@@ -402,21 +402,21 @@ export const MeetingsPage: React.FC = () => {
         {/* Meetings List Column */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            {filter === 'all' ? 'All Meetings' : 
+            {filter === 'all' ? 'All Meetings' :
              filter === 'upcoming' ? 'Upcoming Meetings' : 'Past Meetings'}
             <span className="ml-2 text-sm font-normal text-gray-500">
               ({filteredMeetings.length})
             </span>
           </h2>
-          
+
           {filteredMeetings.length === 0 ? (
             <div className="bg-gray-50 rounded-lg p-8 text-center">
               <p className="text-gray-500">No meetings found matching your criteria.</p>
             </div>
           ) : (
             filteredMeetings.map((meeting) => (
-              <div 
-                key={meeting.id} 
+              <div
+                key={meeting.id}
                 className={`bg-white p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
                   selectedMeeting?.id === meeting.id ? 'ring-2 ring-primary-500' : ''
                 }`}
@@ -426,7 +426,7 @@ export const MeetingsPage: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
                   {getStatusBadge(meeting.status)}
                 </div>
-                
+
                 <div className="space-y-2 text-sm text-gray-600">
                   <p className="flex items-center">
                     <span className="font-medium">Date:</span>
@@ -449,10 +449,10 @@ export const MeetingsPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                
+
                 {meeting.agenda_url && (
                   <div className="mt-3">
-                    <a 
+                    <a
                       href={meeting.agenda_url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -530,4 +530,4 @@ export const MeetingsPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

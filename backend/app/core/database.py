@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 from .config import settings
 
 # Create database engine
@@ -40,4 +41,4 @@ def drop_tables():
     """
     Drop all database tables (use with caution!)
     """
-    Base.metadata.drop_all(bind=engine) 
+    Base.metadata.drop_all(bind=engine)

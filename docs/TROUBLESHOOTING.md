@@ -148,7 +148,7 @@ npm run dev
    # Required for development
    SECRET_KEY=your-secret-key-here
    DATABASE_URL=postgresql://user:password@localhost/citycamp_db
-   
+
    # Optional for full functionality
    OPENAI_API_KEY=your-openai-key
    TWILIO_ACCOUNT_SID=your-twilio-sid
@@ -282,4 +282,4 @@ docker system prune -a
 # Start fresh
 ./scripts/fix-dependencies.sh
 docker-compose up --build
-``` 
+```

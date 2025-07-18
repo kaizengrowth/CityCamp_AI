@@ -21,7 +21,7 @@ print_warning() {
 # Update backend Dockerfile for production
 update_backend_dockerfile() {
     print_status "Updating backend Dockerfile for production..."
-    
+
     cat > backend/Dockerfile.prod << 'EOF'
 FROM python:3.11-slim
 
@@ -67,7 +67,7 @@ EOF
 # Update frontend Dockerfile for production
 update_frontend_dockerfile() {
     print_status "Updating frontend Dockerfile for production..."
-    
+
     cat > frontend/Dockerfile.prod << 'EOF'
 # Build stage
 FROM node:18-alpine AS builder
@@ -150,7 +150,7 @@ EOF
 # Create production docker-compose file
 create_production_compose() {
     print_status "Creating production docker-compose file..."
-    
+
     cat > docker-compose.prod.yml << 'EOF'
 version: '3.8'
 
@@ -199,7 +199,7 @@ EOF
 # Create production environment file template
 create_production_env_template() {
     print_status "Creating production environment file template..."
-    
+
     cat > .env.production.template << 'EOF'
 # Production Environment Variables for CityCamp AI
 
@@ -251,7 +251,7 @@ EOF
 # Create production build script
 create_production_build_script() {
     print_status "Creating production build script..."
-    
+
     cat > scripts/build-production.sh << 'EOF'
 #!/bin/bash
 
@@ -303,13 +303,13 @@ EOF
 # Main function
 main() {
     print_status "Setting up production Dockerfiles and configuration..."
-    
+
     update_backend_dockerfile
     update_frontend_dockerfile
     create_production_compose
     create_production_env_template
     create_production_build_script
-    
+
     print_status "Production setup completed!"
     print_warning "Next steps:"
     print_warning "1. Copy .env.production.template to .env.production"
@@ -319,4 +319,4 @@ main() {
 }
 
 # Run main function
-main "$@" 
+main "$@"

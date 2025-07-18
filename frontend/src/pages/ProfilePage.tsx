@@ -7,7 +7,7 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-      
+
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
         <div className="space-y-3">
@@ -35,4 +35,4 @@ export const ProfilePage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

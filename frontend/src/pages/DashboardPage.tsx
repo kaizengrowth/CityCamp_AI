@@ -18,12 +18,12 @@ export const DashboardPage: React.FC = () => {
           <h3 className="text-lg font-semibold mb-2">Upcoming Meetings</h3>
           <p className="text-gray-600">You have 3 upcoming meetings to attend.</p>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Active Campaigns</h3>
           <p className="text-gray-600">You're participating in 2 campaigns.</p>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Notifications</h3>
           <p className="text-gray-600">You have 5 unread notifications.</p>
@@ -49,4 +49,4 @@ export const DashboardPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

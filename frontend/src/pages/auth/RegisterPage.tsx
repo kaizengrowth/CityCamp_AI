@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -77,7 +77,7 @@ export const RegisterPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -95,7 +95,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Enter your full name"
               />
             </div>
-            
+
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
@@ -111,7 +111,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Choose a username"
               />
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -128,7 +128,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Enter your email"
               />
             </div>
-            
+
             <div>
               <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
                 Phone Number (optional)
@@ -143,7 +143,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Enter your phone number"
               />
             </div>
-            
+
             <div>
               <label htmlFor="zip_code" className="block text-sm font-medium text-gray-700">
                 ZIP Code (optional)
@@ -158,7 +158,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Enter your ZIP code"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -175,7 +175,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Create a password"
               />
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password
@@ -214,4 +214,4 @@ export const RegisterPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

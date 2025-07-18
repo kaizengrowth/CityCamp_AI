@@ -32,4 +32,4 @@ def test_api_v1_openapi():
     assert response.status_code == 200
     data = response.json()
     assert "openapi" in data
-    assert "info" in data 
+    assert "info" in data

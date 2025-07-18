@@ -38,28 +38,28 @@ command_exists() {
 # Check prerequisites
 check_prerequisites() {
     print_status "Checking prerequisites..."
-    
+
     if ! command_exists aws; then
         print_error "AWS CLI is not installed. Please install it first."
         exit 1
     fi
-    
+
     if ! command_exists docker; then
         print_error "Docker is not installed. Please install it first."
         exit 1
     fi
-    
+
     if ! command_exists terraform; then
         print_error "Terraform is not installed. Please install it first."
         exit 1
     fi
-    
+
     # Check AWS credentials
     if ! aws sts get-caller-identity >/dev/null 2>&1; then
         print_error "AWS credentials not configured. Please run 'aws configure' first."
         exit 1
     fi
-    
+
     print_status "Prerequisites check passed!"
 }
 
@@ -71,9 +71,9 @@ get_account_id() {
 # Create ECR repositories
 create_ecr_repositories() {
     print_status "Creating ECR repositories..."
-    
+
     local account_id=$(get_account_id)
-    
+
     # Create backend repository
     if ! aws ecr describe-repositories --repository-names "$ECR_REPOSITORY_BACKEND" --region "$AWS_REGION" >/dev/null 2>&1; then
         aws ecr create-repository --repository-name "$ECR_REPOSITORY_BACKEND" --region "$AWS_REGION"
@@ -81,7 +81,7 @@ create_ecr_repositories() {
     else
         print_status "ECR repository already exists: $ECR_REPOSITORY_BACKEND"
     fi
-    
+
     # Create frontend repository
     if ! aws ecr describe-repositories --repository-names "$ECR_REPOSITORY_FRONTEND" --region "$AWS_REGION" >/dev/null 2>&1; then
         aws ecr create-repository --repository-name "$ECR_REPOSITORY_FRONTEND" --region "$AWS_REGION"
@@ -94,114 +94,114 @@ create_ecr_repositories() {
 # Build and push Docker images
 build_and_push_images() {
     print_status "Building and pushing Docker images..."
-    
+
     local account_id=$(get_account_id)
     local ecr_backend_uri="${account_id}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_BACKEND}"
     local ecr_frontend_uri="${account_id}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_FRONTEND}"
-    
+
     # Login to ECR
     aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ecr_backend_uri"
-    
+
     # Build and push backend image
     print_status "Building backend image..."
     docker build -t "$ecr_backend_uri:latest" ./backend
     docker push "$ecr_backend_uri:latest"
-    
+
     # Build and push frontend image
     print_status "Building frontend image..."
     docker build -t "$ecr_frontend_uri:latest" ./frontend
     docker push "$ecr_frontend_uri:latest"
-    
+
     print_status "Docker images built and pushed successfully!"
 }
 
 # Deploy infrastructure with Terraform
 deploy_infrastructure() {
     print_status "Deploying infrastructure with Terraform..."
-    
+
     cd aws/terraform
-    
+
     # Initialize Terraform
     terraform init
-    
+
     # Plan the deployment
     terraform plan -out=tfplan
-    
+
     # Apply the plan
     terraform apply tfplan
-    
+
     # Get outputs
     ALB_DNS_NAME=$(terraform output -raw alb_dns_name)
     CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain_name)
     RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
     REDIS_ENDPOINT=$(terraform output -raw redis_endpoint)
     ECS_CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
-    
+
     print_status "Infrastructure deployed successfully!"
     print_status "ALB DNS Name: $ALB_DNS_NAME"
     print_status "CloudFront Domain: $CLOUDFRONT_DOMAIN"
     print_status "RDS Endpoint: $RDS_ENDPOINT"
     print_status "Redis Endpoint: $REDIS_ENDPOINT"
     print_status "ECS Cluster: $ECS_CLUSTER_NAME"
-    
+
     cd ../..
 }
 
 # Store secrets in AWS Systems Manager Parameter Store
 store_secrets() {
     print_status "Storing secrets in AWS Systems Manager Parameter Store..."
-    
+
     # Generate a secure secret key if not provided
     if [ -z "$SECRET_KEY" ]; then
         SECRET_KEY=$(openssl rand -hex 32)
         print_warning "Generated new SECRET_KEY. Please save this value securely."
     fi
-    
+
     # Store secrets
     aws ssm put-parameter --name "/citycamp-ai/database-url" --value "$DATABASE_URL" --type "SecureString" --region "$AWS_REGION" --overwrite
     aws ssm put-parameter --name "/citycamp-ai/redis-url" --value "$REDIS_URL" --type "SecureString" --region "$AWS_REGION" --overwrite
     aws ssm put-parameter --name "/citycamp-ai/secret-key" --value "$SECRET_KEY" --type "SecureString" --region "$AWS_REGION" --overwrite
-    
+
     # Store optional secrets if provided
     if [ ! -z "$OPENAI_API_KEY" ]; then
         aws ssm put-parameter --name "/citycamp-ai/openai-api-key" --value "$OPENAI_API_KEY" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     if [ ! -z "$TWILIO_ACCOUNT_SID" ]; then
         aws ssm put-parameter --name "/citycamp-ai/twilio-account-sid" --value "$TWILIO_ACCOUNT_SID" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     if [ ! -z "$TWILIO_AUTH_TOKEN" ]; then
         aws ssm put-parameter --name "/citycamp-ai/twilio-auth-token" --value "$TWILIO_AUTH_TOKEN" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     if [ ! -z "$TWILIO_PHONE_NUMBER" ]; then
         aws ssm put-parameter --name "/citycamp-ai/twilio-phone-number" --value "$TWILIO_PHONE_NUMBER" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     if [ ! -z "$SMTP_USERNAME" ]; then
         aws ssm put-parameter --name "/citycamp-ai/smtp-username" --value "$SMTP_USERNAME" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     if [ ! -z "$SMTP_PASSWORD" ]; then
         aws ssm put-parameter --name "/citycamp-ai/smtp-password" --value "$SMTP_PASSWORD" --type "SecureString" --region "$AWS_REGION" --overwrite
     fi
-    
+
     print_status "Secrets stored successfully!"
 }
 
 # Deploy ECS services
 deploy_ecs_services() {
     print_status "Deploying ECS services..."
-    
+
     local account_id=$(get_account_id)
-    
+
     # Update task definition with correct account ID and region
     sed "s/ACCOUNT_ID/$account_id/g; s/REGION/$AWS_REGION/g" aws/ecs/task-definition.json > aws/ecs/task-definition-updated.json
-    
+
     # Register task definition
     aws ecs register-task-definition --cli-input-json file://aws/ecs/task-definition-updated.json --region "$AWS_REGION"
-    
+
     # Create or update service
     aws ecs create-service \
         --cluster "$ECS_CLUSTER_NAME" \
@@ -216,60 +216,60 @@ deploy_ecs_services() {
         --service "${PROJECT_NAME}-backend" \
         --task-definition "${PROJECT_NAME}-backend" \
         --region "$AWS_REGION"
-    
+
     print_status "ECS services deployed successfully!"
 }
 
 # Deploy frontend to S3
 deploy_frontend() {
     print_status "Deploying frontend to S3..."
-    
+
     # Build frontend for production
     cd frontend
     npm run build
-    
+
     # Get S3 bucket name from Terraform output
     cd ../aws/terraform
     S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "${PROJECT_NAME}-frontend")
     cd ../..
-    
+
     # Sync build files to S3
     aws s3 sync frontend/dist/ s3://"$S3_BUCKET" --delete --region "$AWS_REGION"
-    
+
     # Invalidate CloudFront cache
     CLOUDFRONT_DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='OAI for ${PROJECT_NAME} frontend'].Id" --output text --region "$AWS_REGION")
     if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
         aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*" --region "$AWS_REGION"
     fi
-    
+
     print_status "Frontend deployed successfully!"
 }
 
 # Main deployment function
 main() {
     print_status "Starting CityCamp AI deployment to AWS..."
-    
+
     # Check prerequisites
     check_prerequisites
-    
+
     # Create ECR repositories
     create_ecr_repositories
-    
+
     # Build and push Docker images
     build_and_push_images
-    
+
     # Deploy infrastructure
     deploy_infrastructure
-    
+
     # Store secrets
     store_secrets
-    
+
     # Deploy ECS services
     deploy_ecs_services
-    
+
     # Deploy frontend
     deploy_frontend
-    
+
     print_status "Deployment completed successfully!"
     print_status "Your application should be available at the CloudFront URL shown above."
 }
@@ -291,4 +291,4 @@ if [ -z "$DATABASE_URL" ] || [ -z "$REDIS_URL" ]; then
 fi
 
 # Run main function
-main "$@" 
+main "$@"

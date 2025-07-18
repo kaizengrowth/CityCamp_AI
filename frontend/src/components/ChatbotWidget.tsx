@@ -81,7 +81,7 @@ export const ChatbotWidget: React.FC = () => {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
-      
+
       // Fallback to local response if API fails
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -98,23 +98,23 @@ export const ChatbotWidget: React.FC = () => {
 
   const getBotResponse = (userInput: string): string => {
     const input = userInput.toLowerCase();
-    
+
     if (input.includes('meeting') || input.includes('council')) {
       return "I can help you find information about city council meetings! You can view upcoming meetings, past minutes, and agenda items on the Meetings page. What specific information are you looking for?";
     }
-    
+
     if (input.includes('campaign') || input.includes('petition')) {
       return "CityCamp AI helps you stay informed about local campaigns and petitions. Check out the Campaigns page to see active initiatives in your area.";
     }
-    
+
     if (input.includes('notification') || input.includes('alert')) {
       return "You can set up notifications for meetings, campaigns, and other civic events. Go to your profile settings to customize your notification preferences.";
     }
-    
+
     if (input.includes('hello') || input.includes('hi')) {
       return "Hello! I'm here to help you stay engaged with your local government. You can ask me about meetings, campaigns, notifications, or any other civic topics.";
     }
-    
+
     return "I'm here to help you stay informed about local government activities. You can ask me about city council meetings, campaigns, notifications, or any other civic topics. What would you like to know?";
   };
 
@@ -174,7 +174,7 @@ export const ChatbotWidget: React.FC = () => {
                   </div>
                 </div>
               ))}
-              
+
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-lg">
@@ -231,4 +231,4 @@ export const ChatbotWidget: React.FC = () => {
       </button>
     </div>
   );
-}; 
+};
