@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
@@ -6,7 +8,12 @@ module.exports = {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': [
+      path.resolve(__dirname, '../../frontend/node_modules/ts-jest'),
+      {
+        tsconfig: path.resolve(__dirname, '../../frontend/tsconfig.json')
+      }
+    ],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
@@ -17,11 +24,16 @@ module.exports = {
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   testMatch: [
-    '<rootDir>/**/*.{ts,tsx}',
     '<rootDir>/**/*.(test|spec).{ts,tsx}',
   ],
   rootDir: '.',
   testEnvironmentOptions: {
     customExportConditions: [''],
   },
+  // Ensure Jest can find node_modules from the frontend directory
+  moduleDirectories: ['node_modules', path.resolve(__dirname, '../../frontend/node_modules')],
+  // Transform node_modules if needed
+  transformIgnorePatterns: [
+    'node_modules/(?!(date-fns)/)'
+  ]
 };
