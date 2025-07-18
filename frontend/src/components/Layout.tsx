@@ -75,7 +75,7 @@ export const Layout: React.FC = () => {
                       </Link>
                     ))}
                   </nav>
-                  
+
                   {/* User Info & Logout */}
                   <div className="flex items-center space-x-3">
                     <span className="text-sm text-gray-700">
@@ -135,7 +135,7 @@ export const Layout: React.FC = () => {
                   {item.name}
                 </Link>
               ))}
-              
+
               {user ? (
                 <>
                   {userNavigation.map((item) => (
@@ -216,9 +216,9 @@ export const Layout: React.FC = () => {
           </div>
         </div>
       </footer>
-      
+
       {/* Chatbot Widget */}
       <ChatbotWidget />
     </div>
   );
-}; 
+};

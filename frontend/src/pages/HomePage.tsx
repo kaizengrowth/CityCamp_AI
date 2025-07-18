@@ -14,11 +14,11 @@ export const HomePage: React.FC = () => {
             CityCamp AI
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">
-            Connecting Tulsa residents with their city government through AI-powered 
+            Connecting Tulsa residents with their city government through AI-powered
             notifications, community organizing, and civic engagement.
           </p>
         </div>
-        
+
         {!user && (
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -162,4 +162,4 @@ export const HomePage: React.FC = () => {
       )}
     </div>
   );
-}; 
+};
