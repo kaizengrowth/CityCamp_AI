@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.services.chatbot_service import ChatbotService
 from fastapi import APIRouter, Depends
@@ -26,8 +26,21 @@ class ChatResponse(BaseModel):
     error: Optional[str] = None
 
 
-def get_settings():
-    return Settings()
+@router.get("/status")
+async def get_chatbot_status(settings: Settings = Depends(get_settings)):
+    """
+    Get chatbot configuration status
+    """
+    return {
+        "openai_configured": settings.is_openai_configured,
+        "model": "gpt-4-turbo-preview",
+        "features": {
+            "web_search": bool(settings.google_api_key),
+            "document_retrieval": True,
+            "function_calling": True,
+        },
+        "status": "ready" if settings.is_openai_configured else "degraded",
+    }
 
 
 @router.post("/chat", response_model=ChatResponse)

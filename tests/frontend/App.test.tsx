@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
 
 const AppWrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={queryClient}>
-    {children}
+        {children}
   </QueryClientProvider>
 );
 

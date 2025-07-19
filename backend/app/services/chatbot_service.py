@@ -19,7 +19,16 @@ class ChatbotService:
     def __init__(self, db: Session, settings: Settings):
         self.db = db
         self.settings = settings
-        self.client = OpenAI(api_key=settings.openai_api_key)
+
+        # Validate OpenAI API key
+        if not settings.is_openai_configured:
+            logger.warning(
+                "OpenAI API key is missing or using placeholder value. Chatbot will use fallback responses only."
+            )
+            self.client = None
+        else:
+            self.client = OpenAI(api_key=settings.openai_api_key)
+
         self.research_service = ResearchService(settings)
 
     def get_system_prompt(self) -> str:
@@ -198,6 +207,11 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
     ) -> str:
         """Get AI response with enhanced research capabilities"""
         try:
+            # Check if OpenAI client is available
+            if self.client is None:
+                logger.warning("OpenAI client not available. Using fallback response.")
+                return self._get_fallback_response(user_message)
+
             system_prompt = self.get_system_prompt()
 
             # Get context from local database
@@ -292,7 +306,21 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
             return ai_response
 
         except Exception as e:
-            logger.error(f"Error getting AI response: {e}")
+            error_message = str(e)
+
+            # Log specific OpenAI API errors for better debugging
+            if (
+                "Incorrect API key" in error_message
+                or "Invalid API key" in error_message
+            ):
+                logger.error(f"OpenAI API key is invalid: {error_message}")
+            elif "Rate limit" in error_message:
+                logger.error(f"OpenAI API rate limit exceeded: {error_message}")
+            elif "quota" in error_message.lower():
+                logger.error(f"OpenAI API quota exceeded: {error_message}")
+            else:
+                logger.error(f"Error getting AI response: {error_message}")
+
             return self._get_fallback_response(user_message)
 
     def _get_fallback_response(self, user_message: str) -> str:
