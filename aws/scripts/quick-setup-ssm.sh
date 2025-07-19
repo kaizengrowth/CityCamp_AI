@@ -50,13 +50,23 @@ aws ssm put-parameter \
     --overwrite
 
 # Create placeholder parameters for optional services
-echo "Creating placeholder parameters for optional services..."
+echo "Creating parameters for optional services..."
+
+# Prompt for OpenAI API key (required for chatbot functionality)
+echo "🤖 Please enter your OpenAI API key for chatbot functionality:"
+read -s -p "Enter OpenAI API Key: " OPENAI_KEY
+echo
+
+if [ -z "$OPENAI_KEY" ]; then
+    echo "⚠️  No OpenAI API key provided. Using placeholder - chatbot will not work until updated."
+    OPENAI_KEY="sk-placeholder-openai-key"
+fi
 
 aws ssm put-parameter \
     --name "${PARAMETER_PREFIX}/openai-api-key" \
-    --value "sk-placeholder-openai-key" \
+    --value "$OPENAI_KEY" \
     --type "SecureString" \
-    --description "OpenAI API key (placeholder - update with real key)" \
+    --description "OpenAI API key for chatbot functionality" \
     --region "$AWS_REGION" \
     --overwrite
 
@@ -106,12 +116,20 @@ echo "📋 Created parameters:"
 echo "  ✅ ${PARAMETER_PREFIX}/database-url (with real RDS endpoint)"
 echo "  ✅ ${PARAMETER_PREFIX}/redis-url (with real Redis endpoint)"
 echo "  ✅ ${PARAMETER_PREFIX}/secret-key (generated)"
-echo "  📝 ${PARAMETER_PREFIX}/openai-api-key (placeholder - update with real key)"
+if [ "$OPENAI_KEY" != "sk-placeholder-openai-key" ]; then
+    echo "  ✅ ${PARAMETER_PREFIX}/openai-api-key (configured with your key)"
+else
+    echo "  ⚠️  ${PARAMETER_PREFIX}/openai-api-key (placeholder - update with real key)"
+fi
 echo "  📝 ${PARAMETER_PREFIX}/twilio-* (placeholders)"
 echo "  📝 ${PARAMETER_PREFIX}/smtp-* (placeholders)"
 echo ""
-echo "⚠️  IMPORTANT: Update the OpenAI API key with your real key:"
-echo "   aws ssm put-parameter --name '${PARAMETER_PREFIX}/openai-api-key' --value 'your-real-openai-key' --type 'SecureString' --overwrite --region ${AWS_REGION}"
+if [ "$OPENAI_KEY" != "sk-placeholder-openai-key" ]; then
+    echo "🎉 Your OpenAI API key has been configured! The chatbot should work in production."
+else
+    echo "⚠️  IMPORTANT: Update the OpenAI API key with your real key:"
+    echo "   aws ssm put-parameter --name '${PARAMETER_PREFIX}/openai-api-key' --value 'your-real-openai-key' --type 'SecureString' --overwrite --region ${AWS_REGION}"
+fi
 echo ""
 echo "🚀 Your ECS deployment should now work!"
 echo "   Run: aws ecs update-service --cluster citycamp-ai-cluster --service citycamp-ai-service --force-new-deployment --region ${AWS_REGION}"

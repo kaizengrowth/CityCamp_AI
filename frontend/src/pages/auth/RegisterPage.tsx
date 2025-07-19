@@ -60,8 +60,8 @@ export const RegisterPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">C</span>
+            <div className="w-16 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">Tulsa</span>
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

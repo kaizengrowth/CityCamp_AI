@@ -23,16 +23,16 @@ export const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">C</span>
+                <div className="w-12 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">Tulsa</span>
                 </div>
                 <span className="text-xl font-bold text-gray-900">CityCamp AI</span>
               </Link>
@@ -186,33 +186,17 @@ export const Layout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
-              </div>
-              <span className="text-sm text-gray-600">
-                © 2024 CityCamp AI. Connecting Tulsa residents with their city government.
-              </span>
-            </div>
-            <div className="flex space-x-6">
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
-                Terms of Service
-              </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
-                Contact
-              </a>
-            </div>
+      <footer className="bg-white border-t border-gray-200 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center">
+            <span className="text-sm text-gray-600">
+              © 2025 <span className="text-primary-600 font-semibold">CityCamp AI</span>. Connecting Tulsa residents to city government and neighborhood organizations.
+            </span>
           </div>
         </div>
       </footer>

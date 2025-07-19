@@ -1,216 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+import { Meeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 
-interface AgendaItem {
-  id: number;
-  item_number: string;
-  title: string;
-  description?: string;
-  item_type?: string;
-  vote_required: boolean;
-  vote_result?: string;
-}
 
-interface Meeting {
-  id: number;
-  title: string;
-  meeting_date: string;
-  location: string;
-  meeting_type: string;
-  status: string;
-  agenda_url?: string;
-  summary?: string;
-  agenda_items?: AgendaItem[];
-}
-
-// Sample data for demo purposes
-const SAMPLE_MEETINGS: Meeting[] = [
-  {
-    id: 1,
-    title: "Regular City Council Meeting",
-    meeting_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    location: "One Technology Center, Tulsa, OK",
-    meeting_type: "regular_council",
-    status: "completed",
-    agenda_url: "https://example.com/agenda",
-    summary: `TULSA CITY COUNCIL MEETING MINUTES
-January 15, 2025
-
-CALL TO ORDER
-The Regular Meeting of the Tulsa City Council was called to order at 5:00 PM by Council Chair.
-
-ROLL CALL
-Present: Councilors District 1-9
-Absent: None
-
-AGENDA ITEMS DISCUSSED:
-
-1. BUDGET APPROPRIATIONS
-   - Motion to approve $2.3M for street repairs
-   - Passed 8-1
-
-2. ZONING CHANGES
-   - Rezoning request for 71st Street corridor
-   - Public hearing held
-   - Approved unanimously
-
-3. PUBLIC SAFETY INITIATIVES
-   - New police substations proposal
-   - Community policing expansion
-   - Approved with amendments
-
-4. INFRASTRUCTURE PROJECTS
-   - Bridge maintenance funding
-   - Water system upgrades
-   - Road resurfacing schedule
-
-CITIZEN COMMENTS:
-- 12 citizens spoke on various issues
-- Main concerns: traffic, housing, parks
-
-ADJOURNMENT: 7:45 PM
-
-Meeting recorded and available online.`,
-    agenda_items: [
-      {
-        id: 1,
-        item_number: "1",
-        title: "Budget Appropriations",
-        description: "Review and approve city budget items",
-        item_type: "motion",
-        vote_required: true,
-        vote_result: "passed"
-      },
-      {
-        id: 2,
-        item_number: "2",
-        title: "Zoning Changes",
-        description: "71st Street corridor rezoning proposal",
-        item_type: "ordinance",
-        vote_required: true,
-        vote_result: "passed"
-      },
-      {
-        id: 3,
-        item_number: "3",
-        title: "Public Safety",
-        description: "New police substation locations",
-        item_type: "presentation",
-        vote_required: false,
-        vote_result: undefined
-      },
-      {
-        id: 4,
-        item_number: "4",
-        title: "Citizen Comments",
-        description: "Public comment period",
-        item_type: "public_comment",
-        vote_required: false,
-        vote_result: undefined
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "Public Works Committee Meeting",
-    meeting_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    location: "City Hall Committee Room",
-    meeting_type: "public_works_committee",
-    status: "completed",
-    summary: `PUBLIC WORKS COMMITTEE MINUTES
-January 19, 2025
-
-ATTENDEES:
-Committee Chair, Committee Members, Public Works Director
-
-AGENDA:
-
-1. STREET MAINTENANCE REPORT
-   - Winter road conditions update
-   - Salt/sand usage statistics
-   - Equipment status report
-
-2. UPCOMING PROJECTS
-   - Spring pothole repair schedule
-   - Sidewalk improvement program
-   - Traffic signal upgrades at 5 intersections
-
-3. BUDGET REVIEW
-   - Q1 spending analysis
-   - Equipment replacement needs
-   - Emergency repair fund status
-
-4. CITIZEN REQUESTS
-   - 23 new service requests reviewed
-   - Priority ranking established
-   - Response timeline set
-
-ACTIONS TAKEN:
-- Approved emergency road repair contract
-- Authorized traffic study for Yale Avenue
-- Scheduled public hearing for bike lane proposal
-
-NEXT MEETING: February 2, 2025`,
-    agenda_items: [
-      {
-        id: 5,
-        item_number: "1",
-        title: "Street Maintenance",
-        description: "Winter road maintenance report",
-        item_type: "report",
-        vote_required: false,
-        vote_result: undefined
-      },
-      {
-        id: 6,
-        item_number: "2",
-        title: "Project Updates",
-        description: "Upcoming infrastructure projects",
-        item_type: "presentation",
-        vote_required: false,
-        vote_result: undefined
-      },
-      {
-        id: 7,
-        item_number: "3",
-        title: "Budget Review",
-        description: "Q1 budget analysis",
-        item_type: "report",
-        vote_required: false,
-        vote_result: undefined
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "Urban & Economic Development Committee",
-    meeting_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    location: "One Technology Center",
-    meeting_type: "urban_economic_committee",
-    status: "scheduled",
-    agenda_items: [
-      {
-        id: 8,
-        item_number: "1",
-        title: "Economic Development",
-        description: "New business incentives",
-        item_type: "discussion",
-        vote_required: false,
-        vote_result: undefined
-      },
-      {
-        id: 9,
-        item_number: "2",
-        title: "Urban Planning",
-        description: "Downtown revitalization",
-        item_type: "presentation",
-        vote_required: false,
-        vote_result: undefined
-      }
-    ]
-  }
-];
 
 export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -218,6 +11,11 @@ export const MeetingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('selectedMeeting state changed:', selectedMeeting ? selectedMeeting.title : 'null');
+  }, [selectedMeeting]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [demoMode, setDemoMode] = useState(false);
 
@@ -233,10 +31,10 @@ export const MeetingsPage: React.FC = () => {
       // Add a small delay to ensure backend is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const data = await apiRequest<Meeting[]>(API_ENDPOINTS.meetings);
-      console.log('API response received:', data.length, 'meetings');
-      console.log('First meeting:', data[0]);
-      setMeetings(data);
+      const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(API_ENDPOINTS.meetings);
+      console.log('API response received:', response.meetings.length, 'meetings');
+      console.log('First meeting:', response.meetings[0]);
+      setMeetings(response.meetings);
       setDemoMode(false);
       console.log('Demo mode set to false');
     } catch (err) {
@@ -251,25 +49,29 @@ export const MeetingsPage: React.FC = () => {
   };
 
   const fetchMeetingDetails = async (meetingId: number) => {
+    console.log('fetchMeetingDetails called with meetingId:', meetingId);
+
     if (demoMode) {
+      console.log('Using demo mode, finding meeting:', meetingId);
       const meeting = SAMPLE_MEETINGS.find(m => m.id === meetingId);
       if (meeting) {
+        console.log('Found demo meeting:', meeting.title);
         setSelectedMeeting(meeting);
       }
       return;
     }
 
     try {
-      const meeting = await apiRequest<Meeting>(API_ENDPOINTS.meetingById(meetingId));
+      console.log('Fetching meeting details from API...');
+      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(API_ENDPOINTS.meetingById(meetingId));
+      console.log('Meeting response received:', response);
 
-      // Fetch agenda items
-      try {
-        meeting.agenda_items = await apiRequest<AgendaItem[]>(API_ENDPOINTS.meetingAgendaItems(meetingId));
-      } catch (agendaErr) {
-        console.log('No agenda items found for this meeting');
-        meeting.agenda_items = [];
-      }
+      const meeting = response.meeting;
+      meeting.agenda_items = response.agenda_items || [];
 
+      console.log('Meeting fetched successfully:', meeting.title);
+      console.log('Agenda items:', meeting.agenda_items.length);
+      console.log('Setting selected meeting:', meeting.title);
       setSelectedMeeting(meeting);
     } catch (err) {
       console.error('Error fetching meeting details:', err);
@@ -307,16 +109,41 @@ export const MeetingsPage: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const styles = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-      postponed: 'bg-yellow-100 text-yellow-800'
+    const statusConfig = {
+      scheduled: {
+        icon: '📅',
+        style: 'bg-blue-100 text-blue-800',
+        title: 'Upcoming Meeting'
+      },
+      completed: {
+        icon: '✅',
+        style: 'bg-green-100 text-green-800',
+        title: 'Completed Meeting'
+      },
+      cancelled: {
+        icon: '❌',
+        style: 'bg-red-100 text-red-800',
+        title: 'Cancelled Meeting'
+      },
+      postponed: {
+        icon: '⏸️',
+        style: 'bg-yellow-100 text-yellow-800',
+        title: 'Postponed Meeting'
+      }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      icon: '📄',
+      style: 'bg-gray-100 text-gray-800',
+      title: status.charAt(0).toUpperCase() + status.slice(1)
     };
 
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span
+        className={`px-2 py-1 text-sm rounded-full ${config.style} flex items-center justify-center`}
+        title={config.title}
+      >
+        {config.icon}
       </span>
     );
   };
@@ -358,12 +185,6 @@ export const MeetingsPage: React.FC = () => {
               Demo Mode
             </span>
           )}
-          <button
-            onClick={fetchMeetings}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-          >
-            Refresh
-          </button>
         </div>
       </div>
 
@@ -375,6 +196,64 @@ export const MeetingsPage: React.FC = () => {
               <p className="mt-2 text-sm text-blue-700">
                 Showing sample meeting data. This demonstrates how your generated meeting minutes will appear when the backend API is connected.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Most Frequent Topics & Keywords */}
+      {!demoMode && meetings.length > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Meetings</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Most Frequent Topics */}
+            <div>
+              <h3 className="text-sm font-medium text-blue-800 mb-2">🏷️ Topics</h3>
+              <div className="flex flex-wrap gap-1">
+                {(() => {
+                  const topicCounts: { [key: string]: number } = {};
+                  meetings.slice(0, 10).forEach(meeting => {
+                    if (meeting.topics) {
+                      meeting.topics.forEach(topic => {
+                        topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+                      });
+                    }
+                  });
+                  return Object.entries(topicCounts)
+                    .sort(([,a], [,b]) => (b as number) - (a as number))
+                    .slice(0, 6)
+                    .map(([topic, count]) => (
+                      <span key={topic} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                        {topic.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} ({count})
+                      </span>
+                    ));
+                })()}
+              </div>
+            </div>
+
+            {/* Most Frequent Keywords */}
+            <div>
+              <h3 className="text-sm font-medium text-green-800 mb-2">🔤 Keywords</h3>
+              <div className="flex flex-wrap gap-1">
+                {(() => {
+                  const keywordCounts: { [key: string]: number } = {};
+                  meetings.slice(0, 10).forEach(meeting => {
+                    if (meeting.keywords) {
+                      meeting.keywords.forEach(keyword => {
+                        keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+                      });
+                    }
+                  });
+                  return Object.entries(keywordCounts)
+                    .sort(([,a], [,b]) => (b as number) - (a as number))
+                    .slice(0, 8)
+                    .map(([keyword, count]) => (
+                      <span key={keyword} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
+                        {keyword} ({count})
+                      </span>
+                    ));
+                })()}
+              </div>
             </div>
           </div>
         </div>
@@ -407,10 +286,10 @@ export const MeetingsPage: React.FC = () => {
       </div>
 
       {/* Meetings List */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="flex gap-6">
         {/* Meetings List Column */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex-1 flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
             {filter === 'all' ? 'All Meetings' :
              filter === 'upcoming' ? 'Upcoming Meetings' : 'Past Meetings'}
             <span className="ml-2 text-sm font-normal text-gray-500">
@@ -418,89 +297,207 @@ export const MeetingsPage: React.FC = () => {
             </span>
           </h2>
 
-          {filteredMeetings.length === 0 ? (
-            <div className="bg-gray-50 rounded-lg p-8 text-center">
-              <p className="text-gray-500">No meetings found matching your criteria.</p>
-            </div>
-          ) : (
-            filteredMeetings.map((meeting) => (
-              <div
-                key={meeting.id}
-                className={`bg-white p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
-                  selectedMeeting?.id === meeting.id ? 'ring-2 ring-primary-500' : ''
-                }`}
-                onClick={() => fetchMeetingDetails(meeting.id)}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
-                  {getStatusBadge(meeting.status)}
-                </div>
+          <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
+            {filteredMeetings.length === 0 ? (
+              <div className="bg-gray-50 rounded-lg p-8 text-center">
+                <p className="text-gray-500">No meetings found matching your criteria.</p>
+              </div>
+            ) : (
+              filteredMeetings.map((meeting) => (
+                <div
+                  key={meeting.id}
+                  className={`bg-white p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
+                    selectedMeeting?.id === meeting.id ? 'ring-2 ring-primary-500' : ''
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Meeting clicked:', meeting.id, meeting.title);
+                    fetchMeetingDetails(meeting.id);
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
+                    {getStatusBadge(meeting.status)}
+                  </div>
 
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p className="flex items-center">
-                    <span className="font-medium">Date:</span>
-                    <span className="ml-2">
-                      {format(new Date(meeting.meeting_date), 'MMMM d, yyyy \'at\' h:mm a')}
-                    </span>
-                  </p>
-                  <p className="flex items-center">
-                    <span className="font-medium">Type:</span>
-                    <span className="ml-2">{getMeetingTypeLabel(meeting.meeting_type)}</span>
-                  </p>
-                  <p className="flex items-center">
-                    <span className="font-medium">Location:</span>
-                    <span className="ml-2">{meeting.location}</span>
-                  </p>
-                  {meeting.summary && (
+                  <div className="space-y-2 text-sm text-gray-600">
                     <p className="flex items-center">
-                      <span className="font-medium">Minutes:</span>
-                      <span className="ml-2 text-green-600">Available</span>
+                      <span className="font-medium">Date:</span>
+                      <span className="ml-2">
+                        {format(new Date(meeting.meeting_date), 'MMMM d, yyyy \'at\' h:mm a')}
+                      </span>
                     </p>
+                    <p className="flex items-center">
+                      <span className="font-medium">Type:</span>
+                      <span className="ml-2">{getMeetingTypeLabel(meeting.meeting_type)}</span>
+                    </p>
+                    <p className="flex items-center">
+                      <span className="font-medium">Location:</span>
+                      <span className="ml-2">{meeting.location}</span>
+                    </p>
+                                          {meeting.summary && (
+                        <div className="flex items-center mb-2">
+                          <span className="font-medium">Status:</span>
+                          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${meeting.summary.includes('Minutes imported from PDF') ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                            {meeting.summary.includes('Minutes imported from PDF') ? '📄 PDF Only' : '🤖 AI Summary'}
+                          </span>
+                        </div>
+                      )}
+                      {meeting.topics && meeting.topics.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Topics:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {meeting.topics.slice(0, 3).map((topic, index) => (
+                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                {topic.replace(/_/g, ' ')}
+                              </span>
+                            ))}
+                            {meeting.topics.length > 3 && (
+                              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                +{meeting.topics.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {meeting.keywords && meeting.keywords.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Keywords:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {meeting.keywords.slice(0, 5).map((keyword, index) => (
+                              <span key={index} className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs border border-green-200">
+                                {keyword}
+                              </span>
+                            ))}
+                            {meeting.keywords.length > 5 && (
+                              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                +{meeting.keywords.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+
+                  {meeting.agenda_url && (
+                    <div className="mt-3">
+                      <a
+                        href={meeting.agenda_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View Agenda →
+                      </a>
+                    </div>
                   )}
                 </div>
-
-                {meeting.agenda_url && (
-                  <div className="mt-3">
-                    <a
-                      href={meeting.agenda_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View Agenda →
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
 
         {/* Meeting Details Column */}
-        <div className="lg:sticky lg:top-6">
+        <div className="flex-1 flex flex-col">
           {selectedMeeting ? (
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">{selectedMeeting.title}</h2>
-                <p className="text-gray-600 mt-1">
-                  {format(new Date(selectedMeeting.meeting_date), 'MMMM d, yyyy \'at\' h:mm a')}
-                </p>
+                <div className="mt-2">
+                  {selectedMeeting.topics && selectedMeeting.topics.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedMeeting.topics.map((topic, index) => (
+                        <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                          {topic.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Agenda Items */}
-              {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Agenda Items</h3>
-                  <div className="space-y-3">
-                    {selectedMeeting.agenda_items.map((item) => (
-                      <div key={item.id} className="border-l-4 border-primary-200 pl-4">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-medium text-gray-900">
-                            {item.item_number}. {item.title}
-                          </h4>
+              <div className="max-h-[600px] overflow-y-auto">
+                {/* Meeting Summary */}
+                {selectedMeeting.summary && (
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      🤖 AI-Generated Meeting Summary
+                    </h3>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        {selectedMeeting.summary}
+                      </div>
+                    </div>
+                    {selectedMeeting.summary.includes('Minutes imported from PDF') && (
+                      <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+                        ⚠️ This meeting has placeholder content. AI processing may be incomplete.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* AI-Extracted Keywords */}
+                {selectedMeeting.keywords && selectedMeeting.keywords.length > 0 && (
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      🔤 AI-Extracted Keywords
+                    </h3>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedMeeting.keywords.map((keyword, index) => (
+                                                    <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Meeting Statistics */}
+                {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
+                  <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Meeting Statistics</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-blue-600">{selectedMeeting.agenda_items.length}</div>
+                        <div className="text-sm text-blue-800">Agenda Items</div>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-green-600">{selectedMeeting.topics ? selectedMeeting.topics.length : 0}</div>
+                        <div className="text-sm text-green-800">Topics Covered</div>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-purple-600">{selectedMeeting.keywords ? selectedMeeting.keywords.length : 0}</div>
+                        <div className="text-sm text-purple-800">Keywords</div>
+                      </div>
+                      <div className="bg-orange-50 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {selectedMeeting.agenda_items ? selectedMeeting.agenda_items.filter(item => item.vote_result).length : 0}
+                        </div>
+                        <div className="text-sm text-orange-800">Votes Taken</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Agenda Items */}
+                {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">📋 Agenda Items</h3>
+                    <div className="space-y-2">
+                      {selectedMeeting.agenda_items.map((item) => (
+                        <div key={item.id} className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <p className="text-gray-900 leading-relaxed">
+                              <span className="font-medium">{item.item_number}.</span> {item.title}
+                              {item.description && item.description !== item.title && (
+                                <span className="text-gray-600"> — {item.description}</span>
+                              )}
+                            </p>
+                          </div>
                           {item.vote_result && (
-                            <span className={`px-2 py-1 text-xs rounded-full ${
+                            <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${
                               item.vote_result === 'passed' ? 'bg-green-100 text-green-800' :
                               item.vote_result === 'failed' ? 'bg-red-100 text-red-800' :
                               'bg-yellow-100 text-yellow-800'
@@ -509,30 +506,17 @@ export const MeetingsPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        {item.description && (
-                          <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Meeting Minutes */}
-              {selectedMeeting.summary && (
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Meeting Minutes</h3>
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
-                      {selectedMeeting.summary}
-                    </pre>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-lg p-8 text-center">
-              <p className="text-gray-500">Select a meeting to view details and minutes</p>
+            <div className="bg-gray-50 rounded-lg p-8 text-center flex-1 flex items-center justify-center">
+              <div>
+                <p className="text-gray-500">Select a meeting to view details and minutes</p>
+              </div>
             </div>
           )}
         </div>
