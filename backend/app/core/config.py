@@ -68,5 +68,19 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
+    @property
+    def is_openai_configured(self) -> bool:
+        """Check if OpenAI API key is properly configured"""
+        return (
+            self.openai_api_key is not None
+            and self.openai_api_key.strip() != ""
+            and not self.openai_api_key.startswith("sk-placeholder")
+        )
+
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Get settings instance for dependency injection"""
+    return settings

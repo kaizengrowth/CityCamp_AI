@@ -167,3 +167,9 @@ Pipfile.lock
 *.deb
 *.rpm
 AWSCLIV2.pkg
+
+# Data export files (large temporary files)
+meetings_export.json
+meetings_export.csv
+*_export.csv
+*_export.json
