@@ -5,6 +5,7 @@ from typing import List, Optional
 from app.core.database import get_db
 from app.models.meeting import AgendaItem, Meeting, MeetingCategory
 from app.schemas.meeting import (
+    AgendaItemResponse,
     CategoryResponse,
     MeetingDetailResponse,
     MeetingFilterParams,
@@ -18,24 +19,6 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 router = APIRouter()
-
-
-class AgendaItemResponse(BaseModel):
-    id: int
-    item_number: Optional[str]
-    title: str
-    description: Optional[str]
-    item_type: Optional[str]
-    category: Optional[str]
-    keywords: List[str]
-    summary: Optional[str]  # Agenda item summary
-
-    class Config:
-        from_attributes = True
-
-
-class MeetingWithAgenda(MeetingResponse):
-    agenda_items: List[AgendaItemResponse]
 
 
 @router.get("/", response_model=MeetingListResponse)
