@@ -14,8 +14,7 @@ export const HomePage: React.FC = () => {
             CityCamp AI
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">
-            Connecting Tulsa residents with their city government through AI-powered
-            notifications, community organizing, and civic engagement.
+            Connecting Tulsa residents with city government and neighborhood organizations.
           </p>
         </div>
 
@@ -146,11 +145,11 @@ export const HomePage: React.FC = () => {
       {/* Call to Action */}
       {!user && (
         <div className="text-center bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-12 text-white">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="text-3xl font-bold mb-4 text-gray-100">
             Ready to get involved?
           </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Join thousands of Tulsa residents staying informed and engaged with their city government.
+          <p className="text-xl mb-8 opacity-90 text-gray-200">
+            Join hundreds of Tulsa residents staying informed and engaged with their city government.
           </p>
           <Link
             to="/register"

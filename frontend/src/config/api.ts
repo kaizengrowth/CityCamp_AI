@@ -11,14 +11,14 @@ const getApiBaseUrl = (): string => {
   }
 
   // In development, use direct backend URL
-  return 'http://localhost:8001';
+  return 'http://localhost:8002';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
 
 export const API_ENDPOINTS = {
   // Meetings
-  meetings: '/api/v1/meetings/all',
+  meetings: '/api/v1/meetings/',
   meetingById: (id: number) => `/api/v1/meetings/${id}`,
   meetingAgendaItems: (id: number) => `/api/v1/meetings/${id}/agenda-items`,
 
