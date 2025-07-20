@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .endpoints import auth, chatbot, meetings, scraper, subscriptions
+from .endpoints import auth, chatbot, meetings, representatives, scraper, subscriptions
 
 api_router = APIRouter()
 
@@ -12,6 +12,9 @@ api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
 api_router.include_router(
     subscriptions.router, prefix="/subscriptions", tags=["subscriptions"]
 )
+api_router.include_router(
+    representatives.router, prefix="/representatives", tags=["representatives"]
+)
 
 # TODO: Add other routers as they are created
 # api_router.include_router(users.router, prefix="/users", tags=["users"])
@@ -19,4 +22,3 @@ api_router.include_router(
 #     notifications.router, prefix="/notifications", tags=["notifications"]
 # )
 # api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns"])
-# api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
