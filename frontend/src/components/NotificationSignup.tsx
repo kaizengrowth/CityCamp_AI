@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiRequest, API_BASE_URL } from '../config/api';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 import toast from 'react-hot-toast';
 
 interface FormData {
@@ -46,16 +46,13 @@ const TopicSelectionStep: React.FC<StepProps> = ({ formData, updateFormData, onN
 
   const fetchTopics = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/subscriptions/topics`);
-      if (response.ok) {
-        const data = await response.json();
-        setTopics(data);
-      } else {
-        toast.error('Failed to load topics');
-      }
+      console.log('Fetching notification topics...');
+      const data = await apiRequest<Topic[]>(API_ENDPOINTS.subscriptionTopics);
+      console.log('Topics loaded:', data.length, 'topics');
+      setTopics(data);
     } catch (error) {
       console.error('Error fetching topics:', error);
-      toast.error('Failed to load topics');
+      toast.error('Failed to load notification topics. Please try refreshing the page.');
     } finally {
       setLoading(false);
     }

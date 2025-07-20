@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
+import toast from 'react-hot-toast';
 
 export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -46,7 +47,10 @@ export const MeetingsPage: React.FC = () => {
 
   const fetchMeetingDetails = useCallback(async (meetingId: number) => {
     // Prevent multiple concurrent requests for the same meeting
-    if (fetchingMeetingRef.current === meetingId) return;
+    if (fetchingMeetingRef.current === meetingId) {
+      console.log('Already fetching meeting details for:', meetingId);
+      return;
+    }
 
     console.log('fetchMeetingDetails called with meetingId:', meetingId);
     fetchingMeetingRef.current = meetingId;
@@ -58,6 +62,8 @@ export const MeetingsPage: React.FC = () => {
         if (meeting) {
           console.log('Found demo meeting:', meeting.title);
           setSelectedMeeting(meeting);
+        } else {
+          console.error('Demo meeting not found:', meetingId);
         }
         return;
       }
@@ -73,10 +79,17 @@ export const MeetingsPage: React.FC = () => {
       setSelectedMeeting(meeting);
     } catch (err) {
       console.error('Error fetching meeting details:', err);
+      toast.error('Failed to load meeting details. Please try again.');
+
+      // If it's the first time failing, clear selection to allow retry
+      if (selectedMeeting?.id === meetingId) {
+        setSelectedMeeting(null);
+      }
     } finally {
+      // Always reset the fetching ref to allow future clicks
       fetchingMeetingRef.current = null;
     }
-  }, [demoMode]);
+  }, [demoMode, selectedMeeting?.id]);
 
   // Memoized filtered meetings to prevent recalculation on every render
   const filteredMeetings = useMemo(() => {
