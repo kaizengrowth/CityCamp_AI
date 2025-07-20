@@ -38,45 +38,61 @@ export const HomePage: React.FC = () => {
 
       {/* Features Section */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div className="card p-6 text-center">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <Link
+          to="/signup/notifications"
+          className="card p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group"
+        >
+          <div className="w-12 h-12 bg-primary-100 group-hover:bg-primary-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors">
             <span className="text-2xl">📅</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">Meeting Alerts</h3>
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Meeting Alerts</h3>
           <p className="text-gray-600">
             Get notified about Tulsa City Council meetings and agenda items that matter to you.
           </p>
-        </div>
+        </Link>
 
-        <div className="card p-6 text-center">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <div className="card p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => {
+          // Scroll to chatbot or trigger chatbot
+          const chatbotWidget = document.querySelector('.fixed.bottom-4.right-4');
+          if (chatbotWidget) {
+            const button = chatbotWidget.querySelector('button');
+            if (button) button.click();
+          }
+        }}>
+          <div className="w-12 h-12 bg-primary-100 group-hover:bg-primary-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors">
             <span className="text-2xl">🤖</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">AI Assistant</h3>
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">AI Assistant</h3>
           <p className="text-gray-600">
             Ask questions about city government, policies, and get instant answers.
           </p>
         </div>
 
-        <div className="card p-6 text-center">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <Link
+          to="/campaigns"
+          className="card p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group"
+        >
+          <div className="w-12 h-12 bg-primary-100 group-hover:bg-primary-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors">
             <span className="text-2xl">📢</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">Community Campaigns</h3>
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Community Campaigns</h3>
           <p className="text-gray-600">
             Organize and participate in campaigns for issues you care about.
           </p>
-        </div>
+        </Link>
 
-        <div className="card p-6 text-center">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+        <Link
+          to="/contact-representatives"
+          className="card p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group"
+        >
+          <div className="w-12 h-12 bg-primary-100 group-hover:bg-primary-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors">
             <span className="text-2xl">✉️</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">Contact Representatives</h3>
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary-600 transition-colors">Contact Representatives</h3>
           <p className="text-gray-600">
             AI-powered email generation to help you reach out to your representatives.
           </p>
-        </div>
+        </Link>
       </div>
 
       {/* Quick Actions */}
