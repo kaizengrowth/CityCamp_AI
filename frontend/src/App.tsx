@@ -13,50 +13,43 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { CampaignsPage } from './pages/CampaignsPage';
-import { ContactRepresentativesPage } from './pages/ContactRepresentativesPage';
-import { DistrictFinderPage } from './pages/DistrictFinderPage';
+import { ContactRepresentativesLayoutPage } from './pages/ContactRepresentativesLayoutPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { NotificationSignupPage } from './pages/NotificationSignupPage';
 
-import { NotFoundPage } from './pages/NotFoundPage';
-
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/meetings" element={<MeetingsPage />} />
-              <Route path="/campaigns" element={<CampaignsPage />} />
-              <Route path="/contact-representatives" element={<ContactRepresentativesPage />} />
-              <Route path="/find-district" element={<DistrictFinderPage />} />
-              <Route path="/signup/notifications" element={<NotificationSignupPage />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
+              <Route path="meetings" element={<MeetingsPage />} />
+              <Route path="campaigns" element={<CampaignsPage />} />
+              <Route path="contact-representatives/*" element={<ContactRepresentativesLayoutPage />} />
+              <Route path="signup/notifications" element={<NotificationSignupPage />} />
 
               {/* Protected routes */}
-              <Route path="/dashboard" element={
+              <Route path="dashboard" element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
               } />
-              <Route path="/profile" element={
+              <Route path="profile" element={
                 <ProtectedRoute>
                   <ProfilePage />
                 </ProtectedRoute>
               } />
-              <Route path="/notifications" element={
+              <Route path="notifications" element={
                 <ProtectedRoute>
                   <NotificationsPage />
                 </ProtectedRoute>
               } />
-
-              {/* 404 page */}
-              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
 
@@ -86,8 +79,8 @@ function App() {
             }}
           />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
