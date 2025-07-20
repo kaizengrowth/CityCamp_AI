@@ -1,9 +1,7 @@
-import base64
 import io
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import fitz  # PyMuPDF for better PDF text extraction
 
@@ -13,7 +11,7 @@ import openai
 # PDF processing
 import PyPDF2
 from app.core.config import settings
-from app.models.meeting import AgendaItem, Meeting, MeetingCategory
+from app.models.meeting import MeetingCategory
 from pydantic import BaseModel
 
 # Database imports
@@ -48,7 +46,10 @@ class AICategorization:
         # Core Municipal Services
         "municipal_services": CategoryDefinition(
             name="Municipal Services",
-            description="City services, utilities, waste management, and basic infrastructure",
+            description=(
+                "City services, utilities, waste management, "
+                "and basic infrastructure"
+            ),
             keywords=[
                 "utilities",
                 "water",
@@ -63,7 +64,9 @@ class AICategorization:
         ),
         "public_safety": CategoryDefinition(
             name="Public Safety",
-            description="Police, fire, emergency services, and community safety initiatives",
+            description=(
+                "Police, fire, emergency services, " "and community safety initiatives"
+            ),
             keywords=[
                 "police",
                 "fire",
@@ -79,7 +82,10 @@ class AICategorization:
         ),
         "transportation": CategoryDefinition(
             name="Transportation",
-            description="Roads, public transit, traffic, parking, and transportation infrastructure",
+            description=(
+                "Roads, public transit, traffic, parking, "
+                "and transportation infrastructure"
+            ),
             keywords=[
                 "roads",
                 "transit",
@@ -96,7 +102,10 @@ class AICategorization:
         # Social Justice & Equity
         "social_justice": CategoryDefinition(
             name="Social Justice",
-            description="Civil rights, discrimination, equality, and social justice initiatives",
+            description=(
+                "Civil rights, discrimination, equality, "
+                "and social justice initiatives"
+            ),
             keywords=[
                 "civil rights",
                 "discrimination",
@@ -111,7 +120,10 @@ class AICategorization:
         ),
         "immigration": CategoryDefinition(
             name="Immigration",
-            description="Immigration policy, refugee services, and immigrant community support",
+            description=(
+                "Immigration policy, refugee services, "
+                "and immigrant community support"
+            ),
             keywords=[
                 "immigration",
                 "refugee",
@@ -126,7 +138,9 @@ class AICategorization:
         ),
         "racial_equity": CategoryDefinition(
             name="Racial Equity",
-            description="Racial justice, equity initiatives, and addressing systemic racism",
+            description=(
+                "Racial justice, equity initiatives, " "and addressing systemic racism"
+            ),
             keywords=[
                 "racial",
                 "racism",
@@ -143,7 +157,10 @@ class AICategorization:
         # Healthcare & Social Services
         "healthcare": CategoryDefinition(
             name="Healthcare",
-            description="Public health, medical services, mental health, and healthcare access",
+            description=(
+                "Public health, medical services, mental health, "
+                "and healthcare access"
+            ),
             keywords=[
                 "health",
                 "medical",
@@ -158,7 +175,9 @@ class AICategorization:
         ),
         "social_services": CategoryDefinition(
             name="Social Services",
-            description="Human services, welfare, homelessness, and social support programs",
+            description=(
+                "Human services, welfare, homelessness, " "and social support programs"
+            ),
             keywords=[
                 "welfare",
                 "homeless",
@@ -172,7 +191,7 @@ class AICategorization:
         ),
         "senior_services": CategoryDefinition(
             name="Senior Services",
-            description="Elder care, senior programs, and age-related services",
+            description=("Elder care, senior programs, and age-related services"),
             keywords=[
                 "senior",
                 "elder",
@@ -187,7 +206,9 @@ class AICategorization:
         # Housing & Development
         "housing": CategoryDefinition(
             name="Housing",
-            description="Housing policy, affordable housing, and residential development",
+            description=(
+                "Housing policy, affordable housing, " "and residential development"
+            ),
             keywords=[
                 "housing",
                 "affordable housing",
@@ -202,7 +223,7 @@ class AICategorization:
         ),
         "land_use": CategoryDefinition(
             name="Land Use & Zoning",
-            description="Zoning laws, land development, and urban planning",
+            description=("Zoning laws, land development, and urban planning"),
             keywords=[
                 "zoning",
                 "land use",
@@ -217,7 +238,9 @@ class AICategorization:
         ),
         "historic_preservation": CategoryDefinition(
             name="Historic Preservation",
-            description="Historic districts, landmark preservation, and cultural heritage",
+            description=(
+                "Historic districts, landmark preservation, " "and cultural heritage"
+            ),
             keywords=[
                 "historic",
                 "preservation",
@@ -232,7 +255,9 @@ class AICategorization:
         # Environment & Sustainability
         "environment": CategoryDefinition(
             name="Environment",
-            description="Environmental protection, sustainability, and climate action",
+            description=(
+                "Environmental protection, sustainability, " "and climate action"
+            ),
             keywords=[
                 "environment",
                 "climate",
@@ -247,7 +272,9 @@ class AICategorization:
         ),
         "parks_recreation": CategoryDefinition(
             name="Parks & Recreation",
-            description="Public parks, recreational facilities, and outdoor spaces",
+            description=(
+                "Public parks, recreational facilities, " "and outdoor spaces"
+            ),
             keywords=[
                 "parks",
                 "recreation",
@@ -262,7 +289,7 @@ class AICategorization:
         ),
         "water_quality": CategoryDefinition(
             name="Water Quality",
-            description="Water safety, quality, and environmental water issues",
+            description=("Water safety, quality, and environmental water issues"),
             keywords=[
                 "water quality",
                 "drinking water",
@@ -277,7 +304,7 @@ class AICategorization:
         # Economic Development
         "economic_development": CategoryDefinition(
             name="Economic Development",
-            description="Business development, job creation, and economic policy",
+            description=("Business development, job creation, and economic policy"),
             keywords=[
                 "economic",
                 "business",
@@ -292,7 +319,9 @@ class AICategorization:
         ),
         "small_business": CategoryDefinition(
             name="Small Business",
-            description="Small business support, entrepreneurship, and local commerce",
+            description=(
+                "Small business support, entrepreneurship, " "and local commerce"
+            ),
             keywords=[
                 "small business",
                 "entrepreneur",
@@ -305,7 +334,7 @@ class AICategorization:
         ),
         "taxation": CategoryDefinition(
             name="Taxation & Budget",
-            description="Tax policy, municipal budget, and fiscal matters",
+            description=("Tax policy, municipal budget, and fiscal matters"),
             keywords=[
                 "tax",
                 "budget",
@@ -321,7 +350,7 @@ class AICategorization:
         # Education & Youth
         "education": CategoryDefinition(
             name="Education",
-            description="Schools, education policy, and student services",
+            description=("Schools, education policy, and student services"),
             keywords=[
                 "education",
                 "school",
@@ -335,7 +364,7 @@ class AICategorization:
         ),
         "youth_services": CategoryDefinition(
             name="Youth Services",
-            description="Youth programs, child care, and services for young people",
+            description=("Youth programs, child care, and services for young people"),
             keywords=[
                 "youth",
                 "children",
@@ -350,7 +379,7 @@ class AICategorization:
         # Technology & Innovation
         "technology": CategoryDefinition(
             name="Technology",
-            description="Smart city initiatives, broadband, and digital services",
+            description=("Smart city initiatives, broadband, and digital services"),
             keywords=[
                 "technology",
                 "digital",
@@ -364,7 +393,7 @@ class AICategorization:
         ),
         "transparency": CategoryDefinition(
             name="Government Transparency",
-            description="Open government, public records, and civic engagement",
+            description=("Open government, public records, and civic engagement"),
             keywords=[
                 "transparency",
                 "open government",
@@ -378,7 +407,7 @@ class AICategorization:
         # Arts & Culture
         "arts_culture": CategoryDefinition(
             name="Arts & Culture",
-            description="Cultural programs, arts funding, and community events",
+            description=("Cultural programs, arts funding, and community events"),
             keywords=[
                 "arts",
                 "culture",
@@ -394,7 +423,7 @@ class AICategorization:
         # Veterans & Military
         "veterans": CategoryDefinition(
             name="Veterans Affairs",
-            description="Veteran services, military support, and veteran benefits",
+            description=("Veteran services, military support, and veteran benefits"),
             keywords=[
                 "veterans",
                 "military",
@@ -408,7 +437,9 @@ class AICategorization:
         # Infrastructure
         "infrastructure": CategoryDefinition(
             name="Infrastructure",
-            description="Public infrastructure, maintenance, and capital improvements",
+            description=(
+                "Public infrastructure, maintenance, " "and capital improvements"
+            ),
             keywords=[
                 "infrastructure",
                 "roads",
@@ -423,14 +454,14 @@ class AICategorization:
         # Public Health & Safety
         "animal_control": CategoryDefinition(
             name="Animal Control",
-            description="Animal services, pet regulations, and animal welfare",
+            description=("Animal services, pet regulations, and animal welfare"),
             keywords=["animal", "pet", "dog", "cat", "animal control", "shelter"],
             color="#F39C12",
             icon="🐕",
         ),
         "food_safety": CategoryDefinition(
             name="Food Safety",
-            description="Restaurant inspections, food safety, and public health",
+            description=("Restaurant inspections, food safety, and public health"),
             keywords=["food safety", "restaurant", "inspection", "health department"],
             color="#E74C3C",
             icon="🍽️",
@@ -438,7 +469,9 @@ class AICategorization:
         # Emergency Management
         "emergency_management": CategoryDefinition(
             name="Emergency Management",
-            description="Disaster preparedness, emergency response, and crisis management",
+            description=(
+                "Disaster preparedness, emergency response, " "and crisis management"
+            ),
             keywords=[
                 "emergency",
                 "disaster",
@@ -453,14 +486,14 @@ class AICategorization:
         # General Government
         "elections": CategoryDefinition(
             name="Elections",
-            description="Election administration, voting, and electoral processes",
+            description=("Election administration, voting, and electoral processes"),
             keywords=["election", "voting", "ballot", "campaign", "electoral"],
             color="#2980B9",
             icon="🗳️",
         ),
         "legal_proceedings": CategoryDefinition(
             name="Legal Proceedings",
-            description="Legal matters, lawsuits, and legal compliance",
+            description=("Legal matters, lawsuits, and legal compliance"),
             keywords=[
                 "legal",
                 "lawsuit",
@@ -590,7 +623,10 @@ class AICategorization:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at analyzing civic meeting content and categorizing it for public engagement.",
+                        "content": (
+                            "You are an expert at analyzing civic meeting "
+                            "content and categorizing it for public engagement."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -659,7 +695,8 @@ class AICategorization:
                 text_content
             )
 
-            # Extract agenda items (this could be enhanced with more sophisticated parsing)
+            # Extract agenda items (this could be enhanced
+            # with more sophisticated parsing)
             agenda_items = self._extract_agenda_items(text_content)
 
             # Generate impact assessment
@@ -740,7 +777,6 @@ class AICategorization:
     def _extract_key_decisions(self, content: str) -> List[str]:
         """Extract key decisions from meeting content"""
         decisions = []
-        content_lower = content.lower()
 
         # Look for decision keywords
         decision_keywords = [
@@ -765,7 +801,6 @@ class AICategorization:
     def _extract_public_comments(self, content: str) -> List[str]:
         """Extract public comments from meeting content"""
         comments = []
-        content_lower = content.lower()
 
         # Look for public comment sections
         comment_keywords = [
