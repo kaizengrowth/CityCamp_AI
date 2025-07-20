@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
+import { apiRequest, API_BASE_URL } from '../config/api';
 import toast from 'react-hot-toast';
-
-interface MeetingTopic {
-  id: number;
-  name: string;
-  display_name: string;
-  description: string;
-  category: string;
-  icon: string;
-  color: string;
-  subscriber_count: number;
-}
 
 interface FormData {
   full_name: string;
@@ -359,8 +348,6 @@ const TopicSelectionStep: React.FC<StepProps> = ({ formData, updateFormData, onN
 };
 
 export const NotificationSignup: React.FC = () => {
-  const [availableTopics, setAvailableTopics] = useState<MeetingTopic[]>([]);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
@@ -377,32 +364,6 @@ export const NotificationSignup: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [subscriptionSuccess, setSubscriptionSuccess] = useState(false);
 
-  useEffect(() => {
-    fetchAvailableTopics();
-  }, []);
-
-  const fetchAvailableTopics = async () => {
-    try {
-      setLoading(true);
-      const topics = await apiRequest<MeetingTopic[]>('/api/v1/subscriptions/topics');
-      setAvailableTopics(topics);
-    } catch (error) {
-      console.error('Error fetching topics:', error);
-      toast.error('Failed to load available topics. Using defaults.');
-      // Use fallback topics
-      setAvailableTopics([
-        { id: 1, name: 'budget', display_name: 'City Budget', description: 'Budget discussions and appropriations', category: 'finance', icon: '💰', color: 'green', subscriber_count: 0 },
-        { id: 2, name: 'transportation', display_name: 'Transportation', description: 'Roads, traffic, and public transit', category: 'infrastructure', icon: '🚗', color: 'blue', subscriber_count: 0 },
-        { id: 3, name: 'public_safety', display_name: 'Public Safety', description: 'Police, fire, and emergency services', category: 'safety', icon: '🚓', color: 'red', subscriber_count: 0 },
-        { id: 4, name: 'zoning', display_name: 'Zoning & Development', description: 'Land use and development projects', category: 'planning', icon: '🏗️', color: 'orange', subscriber_count: 0 },
-        { id: 5, name: 'environment', display_name: 'Environment', description: 'Parks, utilities, and environmental issues', category: 'environment', icon: '🌳', color: 'green', subscriber_count: 0 },
-        { id: 6, name: 'housing', display_name: 'Housing', description: 'Affordable housing and neighborhood development', category: 'community', icon: '🏠', color: 'purple', subscriber_count: 0 },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
@@ -413,14 +374,7 @@ export const NotificationSignup: React.FC = () => {
     }
   };
 
-  const handleTopicToggle = (topicName: string) => {
-    setFormData(prev => ({
-      ...prev,
-      interested_topics: prev.interested_topics.includes(topicName)
-        ? prev.interested_topics.filter(t => t !== topicName)
-        : [...prev.interested_topics, topicName]
-    }));
-  };
+
 
   const handleMeetingTypeToggle = (meetingType: string) => {
     setFormData(prev => ({
@@ -495,12 +449,7 @@ export const NotificationSignup: React.FC = () => {
     }
   };
 
-  const groupedTopics = availableTopics.reduce((acc, topic) => {
-    const category = topic.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(topic);
-    return acc;
-  }, {} as Record<string, MeetingTopic[]>);
+
 
   if (subscriptionSuccess) {
     return (
