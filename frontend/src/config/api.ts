@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   // Subscriptions
   subscriptions: '/api/v1/subscriptions/',
   subscriptionById: (id: number) => `/api/v1/subscriptions/${id}`,
+  subscriptionTopics: '/api/v1/subscriptions/topics',
   testSms: '/api/v1/subscriptions/test-sms',
 
   // Representatives
