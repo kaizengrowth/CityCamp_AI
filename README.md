@@ -4,12 +4,10 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 
 ## 📊 Project Status & Info
 
-[![Build Status](https://github.com/kaizengrowth/CityCamp_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/kaizengrowth/CityCamp_AI/actions)
 [![Deployment Status](https://img.shields.io/badge/deployment-live-brightgreen)](https://d1s9nkkr0t3pmn.cloudfront.net)
 [![Security](https://img.shields.io/badge/security-0_vulnerabilities-green)](https://github.com/kaizengrowth/CityCamp_AI)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[![GitHub release](https://img.shields.io/github/v/release/kaizengrowth/CityCamp_AI?include_prereleases)](https://github.com/kaizengrowth/CityCamp_AI/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/kaizengrowth/CityCamp_AI)](https://github.com/kaizengrowth/CityCamp_AI/commits/main)
 [![GitHub issues](https://img.shields.io/github/issues/kaizengrowth/CityCamp_AI)](https://github.com/kaizengrowth/CityCamp_AI/issues)
 [![GitHub stars](https://img.shields.io/github/stars/kaizengrowth/CityCamp_AI)](https://github.com/kaizengrowth/CityCamp_AI/stargazers)
@@ -19,87 +17,7 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 [![Dependencies](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen)](#-system-status--health)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-## 📱 Application Screenshots
-
-> **🌐 Live Demo**: [https://d1s9nkkr0t3pmn.cloudfront.net](https://d1s9nkkr0t3pmn.cloudfront.net)
-
-### **🏠 Homepage & Dashboard**
-*Coming Soon: Screenshots showcasing the main landing page, user dashboard, and navigation interface*
-
-<!--
-![Homepage](docs/screenshots/homepage/landing-page-desktop.png)
-*Modern landing page with civic engagement call-to-action*
-
-![Dashboard](docs/screenshots/homepage/dashboard-overview-desktop.png)
-*Personalized user dashboard with meeting notifications*
--->
-
-### **📅 Meeting Analytics & Search**
-*Coming Soon: Screenshots demonstrating AI-powered meeting organization and search*
-
-<!--
-![Meeting List](docs/screenshots/meetings/meeting-list-desktop.png)
-*AI-categorized meeting list with 42+ topic filters*
-
-![Meeting Details](docs/screenshots/meetings/meeting-details-desktop.png)
-*Detailed meeting view with agenda extraction and impact analysis*
--->
-
-### **🤖 AI-Powered Civic Assistant**
-*Coming Soon: Screenshots showcasing the interactive chatbot and AI responses*
-
-<!--
-![Chatbot Interface](docs/screenshots/chatbot/chatbot-interface-desktop.png)
-*AI assistant responding to civic questions*
-
-![Query Examples](docs/screenshots/chatbot/query-examples-desktop.png)
-*Natural language queries about city government*
--->
-
-### **📧 Smart Notifications & Email Generation**
-*Coming Soon: Screenshots featuring notification preferences and AI-generated communications*
-
-<!--
-![Notification Signup](docs/screenshots/notifications/signup-form-desktop.png)
-*Topic-based notification preferences interface*
-
-![Email Generation](docs/screenshots/notifications/email-generation-desktop.png)
-*AI-powered email composer for contacting representatives*
--->
-
-### **📊 Admin Dashboard & Analytics**
-*Coming Soon: Screenshots highlighting data management and analytics features*
-
-<!--
-![Data Import](docs/screenshots/admin/data-import-desktop.png)
-*Meeting data import and AI processing interface*
-
-![Analytics Dashboard](docs/screenshots/admin/analytics-dashboard-desktop.png)
-*Usage analytics and user engagement metrics*
--->
-
-### **📸 How to Add Screenshots**
-
-**Automated Capture** (Recommended):
-```bash
-# Install Playwright
-npm install playwright
-
-# Capture all screenshots automatically
-node scripts/capture-screenshots.js
-
-# Capture from local development
-SCREENSHOT_URL=http://localhost:3007 node scripts/capture-screenshots.js
-```
-
-**Manual Process**:
-1. Visit the [live application](https://d1s9nkkr0t3pmn.cloudfront.net)
-2. Take high-quality screenshots (1920x1080 recommended)
-3. Save to `docs/screenshots/` following the [naming conventions](docs/screenshots/README.md)
-4. Uncomment the relevant image sections above
-5. Update this README with the new screenshots
-
-> 📸 **Note**: Screenshots will be added progressively. The automated script captures desktop, tablet, and mobile views. See [`docs/screenshots/README.md`](docs/screenshots/README.md) for detailed guidelines.
+> **🌐 Deployed Demo**: [https://d1s9nkkr0t3pmn.cloudfront.net](https://d1s9nkkr0t3pmn.cloudfront.net)
 
 ## 🌟 Features
 
