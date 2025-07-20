@@ -7,6 +7,7 @@ const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Meetings', href: '/meetings' },
   { name: 'Campaigns', href: '/campaigns' },
+  { name: 'Find District', href: '/find-district' },
   { name: 'Contact Reps', href: '/contact-representatives' },
   { name: 'Get Notified', href: '/signup/notifications' },
 ];
