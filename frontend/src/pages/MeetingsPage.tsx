@@ -28,8 +28,8 @@ export const MeetingsPage: React.FC = () => {
       setLoading(true);
       console.log('Fetching meetings from API...');
 
-      // Add a small delay to ensure backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Small delay for production startup coordination (reduced from 1000ms)
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(API_ENDPOINTS.meetings);
       console.log('API response received:', response.meetings.length, 'meetings');
