@@ -28,7 +28,7 @@ export const ContactRepresentativesPage: React.FC = () => {
   // Sample representatives data (would normally come from API)
   const sampleRepresentatives: Representative[] = [
     {
-      name: 'G.T. Bynum',
+      name: 'Monroe Nichols',
       position: 'Mayor',
       email: 'mayor@cityoftulsa.org',
       phone: '(918) 596-7777'
@@ -36,13 +36,13 @@ export const ContactRepresentativesPage: React.FC = () => {
     {
       name: 'Vanessa Hall-Harper',
       position: 'City Councilor - District 1',
-      email: 'vhall-harper@cityoftulsa.org',
+      email: 'dist1@tulsacouncil.org',
       district: 'District 1'
     },
     {
-      name: 'Jeannie Cue',
+      name: 'Anthony Archie',
       position: 'City Councilor - District 2',
-      email: 'jcue@cityoftulsa.org',
+      email: 'dist2@tulsacouncil.org',
       district: 'District 2'
     }
   ];
