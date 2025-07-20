@@ -314,6 +314,8 @@ resource "aws_lb_listener" "main" {
       }
     }
   }
+
+  tags = var.common_tags
 }
 
 # S3 Bucket for Frontend
@@ -367,18 +369,33 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "frontend" {
+  # S3 Origin for static frontend files
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_id                = "S3-${aws_s3_bucket.frontend.bucket}"
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
+  # ALB Origin for API requests
+  origin {
+    domain_name = aws_lb.main.dns_name
+    origin_id   = "ALB-${var.project_name}-backend"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
 
+  # Default behavior for frontend static files
   default_cache_behavior {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${aws_s3_bucket.frontend.bucket}"
 
@@ -393,6 +410,47 @@ resource "aws_cloudfront_distribution" "frontend" {
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 86400
+  }
+
+  # Cache behavior for API requests
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id = "ALB-${var.project_name}-backend"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept"]
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+  }
+
+  # Cache behavior for health check
+  ordered_cache_behavior {
+    path_pattern     = "/health"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id = "ALB-${var.project_name}-backend"
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
   }
 
   # Handle SPA routing
@@ -451,7 +509,7 @@ resource "aws_ecs_task_definition" "main" {
 
       portMappings = [
         {
-          containerPort = 8001
+          containerPort = 8000
           protocol      = "tcp"
         }
       ]
@@ -535,7 +593,7 @@ resource "aws_ecs_service" "main" {
   load_balancer {
     target_group_arn = aws_lb_target_group.main.arn
     container_name   = "${var.project_name}-backend"
-    container_port   = 8001
+    container_port   = 8000
   }
 
   depends_on = [aws_lb_listener.main]

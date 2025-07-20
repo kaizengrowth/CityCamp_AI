@@ -49,31 +49,6 @@ class AgendaItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MeetingDetailResponse(BaseModel):
-    """Detailed response model for individual meeting with agenda items"""
-
-    id: int
-    title: str
-    description: Optional[str]
-    meeting_type: str
-    meeting_date: datetime
-    location: Optional[str]
-    meeting_url: Optional[str]
-    agenda_url: Optional[str]
-    minutes_url: Optional[str]
-    status: str
-    external_id: Optional[str]
-    source: str
-    topics: List[str] = []
-    keywords: List[str] = []
-    summary: Optional[str]
-    created_at: datetime
-    updated_at: Optional[datetime]
-    agenda_items: List[AgendaItemResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class CategoryResponse(BaseModel):
     """Response model for meeting categories"""
 
@@ -87,14 +62,24 @@ class CategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MeetingDetailResponse(BaseModel):
+    """Detailed response model for individual meeting with agenda items"""
+
+    meeting: MeetingResponse
+    agenda_items: List[AgendaItemResponse] = []
+    categories: List[CategoryResponse] = []
+    pdf_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MeetingListResponse(BaseModel):
     """Response model for paginated meeting lists"""
 
     meetings: List[MeetingResponse]
     total: int
-    page: int
-    size: int
-    pages: int
+    skip: int
+    limit: int
 
     model_config = ConfigDict(from_attributes=True)
 
