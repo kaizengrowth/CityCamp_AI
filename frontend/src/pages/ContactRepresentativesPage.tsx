@@ -55,13 +55,35 @@ export const ContactRepresentativesPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // In a real implementation, this would call an API to determine representatives based on address
-      // For now, we'll use sample data
-      setRepresentatives(sampleRepresentatives);
-      toast.success('Representatives found for your area');
+      console.log('Looking up representatives for address:', address);
+
+      const response = await apiRequest<{
+        representatives: Representative[];
+        address: string;
+        district_info: {
+          found: boolean;
+          district?: string;
+          coordinates?: { lat: number; lng: number };
+          councilor?: any;
+          error?: string;
+          message?: string;
+        };
+      }>(`${API_ENDPOINTS.findRepresentatives}?address=${encodeURIComponent(address)}`);
+
+      console.log('Representatives lookup result:', response);
+      setRepresentatives(response.representatives);
+
+      if (response.district_info.found) {
+        toast.success(`Found representatives for ${response.district_info.district}!`);
+      } else {
+        toast.error(response.district_info.message || 'Using general representatives - consider verifying your address');
+      }
+
     } catch (error) {
       console.error('Error finding representatives:', error);
-      toast.error('Unable to find representatives for this address');
+      toast.error('Unable to find representatives for this address. Using general contacts.');
+      // Fallback to sample data
+      setRepresentatives(sampleRepresentatives);
     } finally {
       setLoading(false);
     }
@@ -212,6 +234,17 @@ export const ContactRepresentativesPage: React.FC = () => {
                 {loading ? 'Looking up...' : 'Find Representatives'}
               </button>
             </div>
+          </div>
+
+          {/* District Finder Link */}
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-blue-800 text-sm">
+              💡 <strong>Need more accurate results?</strong> Use our{' '}
+              <a href="/find-district" className="text-blue-600 hover:text-blue-800 underline font-medium">
+                District Finder tool
+              </a>{' '}
+              to get precise district mapping and representative contact information.
+            </p>
           </div>
         </div>
 

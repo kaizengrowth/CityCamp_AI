@@ -3,12 +3,18 @@ import os
 from typing import List, Optional
 
 import openai
-from fastapi import APIRouter, HTTPException
+from app.core.config import Settings
+from app.services.geocoding_service import GeocodingService
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def get_settings():
+    return Settings()
 
 
 class Representative(BaseModel):
@@ -99,28 +105,78 @@ TULSA_REPRESENTATIVES = [
 
 
 @router.get("/find")
-async def find_representatives(address: str):
+async def find_representatives(
+    address: str, settings: Settings = Depends(get_settings)
+):
     """
-    Find representatives for a given address.
-    In production, this would use geocoding and district mapping APIs.
-    For now, returns all Tulsa representatives.
+    Find representatives for a given address using geocoding and district mapping.
     """
     try:
-        # In a real implementation, you would:
-        # 1. Geocode the address to get coordinates
-        # 2. Determine which council district the address is in
-        # 3. Return the specific councilor + mayor
+        geocoding_service = GeocodingService(settings)
 
-        # For demo purposes, return a subset of representatives
+        # Use the geocoding service to find the district
+        district_result = await geocoding_service.find_district_by_address(address)
+
+        if not district_result["success"]:
+            return {
+                "representatives": TULSA_REPRESENTATIVES[:3],  # Fallback to demo data
+                "address": address,
+                "district_info": {
+                    "found": False,
+                    "error": district_result["error"],
+                    "message": "Using default representatives. For accurate results, please verify your address is within Tulsa city limits.",
+                },
+            }
+
+        # Get the specific councilor for this district plus mayor
+        district_name = district_result["district"]
+        councilor_info = district_result["councilor"]
+
+        # Find representatives for this specific district
+        district_representatives = []
+
+        # Always include Mayor
+        mayor = next(
+            (rep for rep in TULSA_REPRESENTATIVES if "Mayor" in rep["position"]), None
+        )
+        if mayor:
+            district_representatives.append(mayor)
+
+        # Add the specific district councilor
+        if councilor_info:
+            district_rep = {
+                "name": councilor_info["name"],
+                "position": f"City Councilor - {district_name}",
+                "email": councilor_info["email"],
+                "phone": councilor_info.get("phone", ""),
+                "district": district_name,
+            }
+            district_representatives.append(district_rep)
+
         return {
-            "representatives": TULSA_REPRESENTATIVES[:3],  # Mayor + first 2 councilors
+            "representatives": district_representatives,
             "address": address,
+            "district_info": {
+                "found": True,
+                "district": district_name,
+                "coordinates": district_result["coordinates"],
+                "councilor": councilor_info,
+            },
         }
+
     except Exception as e:
         logger.error(f"Error finding representatives: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Unable to find representatives for this address"
-        )
+
+        # Return fallback data on any error
+        return {
+            "representatives": TULSA_REPRESENTATIVES[:3],
+            "address": address,
+            "district_info": {
+                "found": False,
+                "error": f"Service error: {str(e)}",
+                "message": "Using default representatives due to service error.",
+            },
+        }
 
 
 @router.post("/compose-email")
