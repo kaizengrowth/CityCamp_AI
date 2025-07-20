@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
-
-
 
 export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -11,32 +9,29 @@ export const MeetingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-
-  // Debug state changes
-  useEffect(() => {
-    console.log('selectedMeeting state changed:', selectedMeeting ? selectedMeeting.title : 'null');
-  }, [selectedMeeting]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [demoMode, setDemoMode] = useState(false);
+
+  // Refs to prevent multiple concurrent API calls
+  const fetchingRef = useRef<boolean>(false);
+  const fetchingMeetingRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetchMeetings();
   }, []);
 
   const fetchMeetings = async () => {
+    if (fetchingRef.current) return;
+
     try {
       setLoading(true);
+      fetchingRef.current = true;
       console.log('Fetching meetings from API...');
-
-      // Small delay for production startup coordination (reduced from 1000ms)
-      await new Promise(resolve => setTimeout(resolve, 200));
 
       const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(API_ENDPOINTS.meetings);
       console.log('API response received:', response.meetings.length, 'meetings');
-      console.log('First meeting:', response.meetings[0]);
       setMeetings(response.meetings);
       setDemoMode(false);
-      console.log('Demo mode set to false');
     } catch (err) {
       console.log('API not available, using demo data');
       console.error('API error:', err);
@@ -45,23 +40,28 @@ export const MeetingsPage: React.FC = () => {
       setError(null);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   };
 
-  const fetchMeetingDetails = async (meetingId: number) => {
-    console.log('fetchMeetingDetails called with meetingId:', meetingId);
+  const fetchMeetingDetails = useCallback(async (meetingId: number) => {
+    // Prevent multiple concurrent requests for the same meeting
+    if (fetchingMeetingRef.current === meetingId) return;
 
-    if (demoMode) {
-      console.log('Using demo mode, finding meeting:', meetingId);
-      const meeting = SAMPLE_MEETINGS.find(m => m.id === meetingId);
-      if (meeting) {
-        console.log('Found demo meeting:', meeting.title);
-        setSelectedMeeting(meeting);
-      }
-      return;
-    }
+    console.log('fetchMeetingDetails called with meetingId:', meetingId);
+    fetchingMeetingRef.current = meetingId;
 
     try {
+      if (demoMode) {
+        console.log('Using demo mode, finding meeting:', meetingId);
+        const meeting = SAMPLE_MEETINGS.find(m => m.id === meetingId);
+        if (meeting) {
+          console.log('Found demo meeting:', meeting.title);
+          setSelectedMeeting(meeting);
+        }
+        return;
+      }
+
       console.log('Fetching meeting details from API...');
       const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(API_ENDPOINTS.meetingById(meetingId));
       console.log('Meeting response received:', response);
@@ -70,32 +70,64 @@ export const MeetingsPage: React.FC = () => {
       meeting.agenda_items = response.agenda_items || [];
 
       console.log('Meeting fetched successfully:', meeting.title);
-      console.log('Agenda items:', meeting.agenda_items.length);
-      console.log('Setting selected meeting:', meeting.title);
       setSelectedMeeting(meeting);
     } catch (err) {
       console.error('Error fetching meeting details:', err);
+    } finally {
+      fetchingMeetingRef.current = null;
     }
-  };
+  }, [demoMode]);
 
-  const filteredMeetings = meetings.filter(meeting => {
-    const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Memoized filtered meetings to prevent recalculation on every render
+  const filteredMeetings = useMemo(() => {
+    return meetings.filter(meeting => {
+      const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const now = new Date();
-    const meetingDate = new Date(meeting.meeting_date);
+      const now = new Date();
+      const meetingDate = new Date(meeting.meeting_date);
 
-    switch (filter) {
-      case 'upcoming':
-        return matchesSearch && meetingDate >= now;
-      case 'completed':
-        return matchesSearch && meetingDate < now;
-      default:
-        return matchesSearch;
-    }
-  });
+      switch (filter) {
+        case 'upcoming':
+          return matchesSearch && meetingDate >= now;
+        case 'completed':
+          return matchesSearch && meetingDate < now;
+        default:
+          return matchesSearch;
+      }
+    });
+  }, [meetings, searchTerm, filter]);
 
-  const getMeetingTypeLabel = (type: string) => {
+  // Memoized topic and keyword calculations
+  const { topTopics, topKeywords } = useMemo(() => {
+    const topicCounts: { [key: string]: number } = {};
+    const keywordCounts: { [key: string]: number } = {};
+
+    meetings.slice(0, 10).forEach(meeting => {
+      if (meeting.topics) {
+        meeting.topics.forEach(topic => {
+          topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+        });
+      }
+      if (meeting.keywords) {
+        meeting.keywords.forEach(keyword => {
+          keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+        });
+      }
+    });
+
+    const topTopics = Object.entries(topicCounts)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 6);
+
+    const topKeywords = Object.entries(keywordCounts)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 8);
+
+    return { topTopics, topKeywords };
+  }, [meetings]);
+
+  const getMeetingTypeLabel = useCallback((type: string) => {
     const types: Record<string, string> = {
       'regular_council': 'Regular Council',
       'public_works_committee': 'Public Works Committee',
@@ -106,9 +138,9 @@ export const MeetingsPage: React.FC = () => {
       'other': 'Other'
     };
     return types[type] || type;
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const statusConfig = {
       scheduled: {
         icon: '📅',
@@ -146,7 +178,19 @@ export const MeetingsPage: React.FC = () => {
         {config.icon}
       </span>
     );
-  };
+  }, []);
+
+  // Optimized click handler with debouncing
+  const handleMeetingClick = useCallback((meetingId: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Only fetch if not already selected
+    if (selectedMeeting?.id !== meetingId) {
+      console.log('Meeting clicked:', meetingId);
+      fetchMeetingDetails(meetingId);
+    }
+  }, [selectedMeeting?.id, fetchMeetingDetails]);
 
   if (loading) {
     return (
@@ -210,24 +254,11 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-blue-800 mb-2">🏷️ Topics</h3>
               <div className="flex flex-wrap gap-1">
-                {(() => {
-                  const topicCounts: { [key: string]: number } = {};
-                  meetings.slice(0, 10).forEach(meeting => {
-                    if (meeting.topics) {
-                      meeting.topics.forEach(topic => {
-                        topicCounts[topic] = (topicCounts[topic] || 0) + 1;
-                      });
-                    }
-                  });
-                  return Object.entries(topicCounts)
-                    .sort(([,a], [,b]) => (b as number) - (a as number))
-                    .slice(0, 6)
-                    .map(([topic, count]) => (
-                      <span key={topic} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                        {topic.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} ({count})
-                      </span>
-                    ));
-                })()}
+                {topTopics.map(([topic, count]) => (
+                  <span key={topic} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                    {topic.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} ({count})
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -235,24 +266,11 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-green-800 mb-2">🔤 Keywords</h3>
               <div className="flex flex-wrap gap-1">
-                {(() => {
-                  const keywordCounts: { [key: string]: number } = {};
-                  meetings.slice(0, 10).forEach(meeting => {
-                    if (meeting.keywords) {
-                      meeting.keywords.forEach(keyword => {
-                        keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
-                      });
-                    }
-                  });
-                  return Object.entries(keywordCounts)
-                    .sort(([,a], [,b]) => (b as number) - (a as number))
-                    .slice(0, 8)
-                    .map(([keyword, count]) => (
-                      <span key={keyword} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
-                        {keyword} ({count})
-                      </span>
-                    ));
-                })()}
+                {topKeywords.map(([keyword, count]) => (
+                  <span key={keyword} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
+                    {keyword} ({count})
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -309,12 +327,7 @@ export const MeetingsPage: React.FC = () => {
                   className={`bg-white p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
                     selectedMeeting?.id === meeting.id ? 'ring-2 ring-primary-500' : ''
                   }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Meeting clicked:', meeting.id, meeting.title);
-                    fetchMeetingDetails(meeting.id);
-                  }}
+                  onClick={(e) => handleMeetingClick(meeting.id, e)}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
