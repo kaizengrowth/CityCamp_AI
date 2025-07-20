@@ -15,6 +15,7 @@ import { MeetingsPage } from './pages/MeetingsPage';
 import { CampaignsPage } from './pages/CampaignsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { NotificationSignupPage } from './pages/NotificationSignupPage';
 
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -31,6 +32,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/meetings" element={<MeetingsPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
+              <Route path="/signup/notifications" element={<NotificationSignupPage />} />
 
               {/* Protected routes */}
               <Route path="/dashboard" element={

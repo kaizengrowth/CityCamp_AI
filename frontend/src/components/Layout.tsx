@@ -7,6 +7,7 @@ const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Meetings', href: '/meetings' },
   { name: 'Campaigns', href: '/campaigns' },
+  { name: 'Get Notified', href: '/signup/notifications' },
 ];
 
 const userNavigation = [
@@ -47,10 +48,15 @@ export const Layout: React.FC = () => {
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(item.href)
                       ? 'text-primary-600 bg-primary-50'
+                      : item.name === 'Get Notified'
+                      ? 'text-white bg-primary-600 hover:bg-primary-700'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
                   {item.name}
+                  {item.name === 'Get Notified' && (
+                    <span className="ml-1 text-xs">📬</span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -128,11 +134,16 @@ export const Layout: React.FC = () => {
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive(item.href)
                       ? 'text-primary-600 bg-primary-50'
+                      : item.name === 'Get Notified'
+                      ? 'text-white bg-primary-600'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.name}
+                  {item.name === 'Get Notified' && (
+                    <span className="ml-1 text-xs">📬</span>
+                  )}
                 </Link>
               ))}
 
