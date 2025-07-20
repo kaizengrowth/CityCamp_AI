@@ -126,7 +126,7 @@ export const DistrictMapper: React.FC = () => {
 
               {/* Representatives */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Your Representatives:</h4>
+                <div className="text-sm font-medium text-gray-900 mb-3">Your Representatives</div>
                 <div className="grid gap-3">
                   {result.representatives.map((rep, index) => (
                     <div key={index} className="bg-gray-50 p-4 rounded-lg border">

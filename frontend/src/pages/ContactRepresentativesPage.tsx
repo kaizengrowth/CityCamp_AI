@@ -210,7 +210,7 @@ export const ContactRepresentativesPage: React.FC = () => {
 
           {representatives.length > 0 && (
             <div className="mt-6">
-              <h3 className="font-medium text-gray-900 mb-3">Your Representatives:</h3>
+              <div className="text-sm font-medium text-gray-900 mb-3">Your Representatives</div>
               <div className="grid gap-3">
                 {representatives.map((rep, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg border">
@@ -227,12 +227,14 @@ export const ContactRepresentativesPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => setStep(2)}
-                className="mt-4 btn btn-primary"
-              >
-                Continue to Compose Email
-              </button>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setStep(2)}
+                  className="btn btn-primary px-6 py-2"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
         </div>

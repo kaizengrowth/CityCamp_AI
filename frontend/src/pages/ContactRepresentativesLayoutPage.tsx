@@ -74,7 +74,7 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
         </h2>
         <div className="grid md:grid-cols-2 gap-4 text-blue-800">
           <div>
-            <h3 className="font-medium mb-1">Start with District Finder</h3>
+            <h5 className="font-medium mb-1">Start with District Finder</h5>
             <p className="text-sm">
               {location.pathname.includes('find-district') ? (
                 <>Use the AI email composer to craft your message after finding your district.</>
@@ -84,7 +84,7 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
             </p>
           </div>
           <div>
-            <h3 className="font-medium mb-1">Then Compose Your Email</h3>
+            <h5 className="font-medium mb-1">Then Compose Your Email</h5>
             <p className="text-sm">
               {location.pathname.includes('find-district') ? (
                 <>Ready to contact your rep? <Link to="/contact-representatives" className="underline hover:text-blue-900">Use our AI email composer</Link> for professional outreach.</>
