@@ -270,7 +270,41 @@ main() {
     # Deploy frontend
     deploy_frontend
 
-    print_status "Deployment completed successfully!"
+    # Wait for service to be stable
+    print_status "Waiting for service to stabilize..."
+    aws ecs wait services-stable \
+        --cluster "${PROJECT_NAME}-cluster" \
+        --services "${PROJECT_NAME}-backend" \
+        --region "$AWS_REGION"
+
+    print_status "✅ Deployment completed successfully!"
+
+    # Initialize topics in production database
+    print_status "Initializing notification topics..."
+
+    # Get the ALB DNS name
+    ALB_DNS=$(aws elbv2 describe-load-balancers \
+        --names "${PROJECT_NAME}-alb" \
+        --query 'LoadBalancers[0].DNSName' \
+        --output text \
+        --region "$AWS_REGION")
+
+    if [ "$ALB_DNS" != "None" ] && [ -n "$ALB_DNS" ]; then
+        # Wait a bit for the service to be ready
+        sleep 30
+
+        # Try to initialize topics
+        if curl -f -X POST "http://$ALB_DNS/api/v1/subscriptions/admin/initialize-topics" > /dev/null 2>&1; then
+            print_status "✅ Notification topics initialized successfully"
+        else
+            print_warning "⚠️ Could not auto-initialize topics. Run this manually after deployment:"
+            echo "curl -X POST http://$ALB_DNS/api/v1/subscriptions/admin/initialize-topics"
+        fi
+    else
+        print_warning "⚠️ Could not get ALB DNS. Initialize topics manually with:"
+        echo "curl -X POST https://your-domain.com/api/v1/subscriptions/admin/initialize-topics"
+    fi
+
     print_status "Your application should be available at the CloudFront URL shown above."
 }
 
