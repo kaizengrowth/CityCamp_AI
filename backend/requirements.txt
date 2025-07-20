@@ -60,3 +60,9 @@ anyio>=4.4.0
 # AWS
 boto3>=1.34.0
 botocore>=1.34.0
+
+# Geocoding and GIS
+numpy==1.24.4
+geopy==2.4.1
+shapely==2.0.2
+httpx==0.24.1

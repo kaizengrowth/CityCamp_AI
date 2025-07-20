@@ -14,6 +14,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MeetingsPage } from './pages/MeetingsPage';
 import { CampaignsPage } from './pages/CampaignsPage';
 import { ContactRepresentativesPage } from './pages/ContactRepresentativesPage';
+import { DistrictFinderPage } from './pages/DistrictFinderPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { NotificationSignupPage } from './pages/NotificationSignupPage';
@@ -34,6 +35,7 @@ function App() {
               <Route path="/meetings" element={<MeetingsPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/contact-representatives" element={<ContactRepresentativesPage />} />
+              <Route path="/find-district" element={<DistrictFinderPage />} />
               <Route path="/signup/notifications" element={<NotificationSignupPage />} />
 
               {/* Protected routes */}
