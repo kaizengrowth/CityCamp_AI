@@ -30,9 +30,15 @@ export const API_ENDPOINTS = {
   // Chatbot
   chatbot: '/api/v1/chatbot/chat',
 
-  // Health
-  health: '/health',
-} as const;
+  // Subscriptions
+  subscriptions: '/api/v1/subscriptions/',
+  subscriptionById: (id: number) => `/api/v1/subscriptions/${id}`,
+  testSms: '/api/v1/subscriptions/test-sms',
+
+  // Representatives
+  composeEmail: '/api/v1/representatives/compose-email',
+  findRepresentatives: '/api/v1/representatives/find',
+};
 
 /**
  * Make an API request with proper error handling
