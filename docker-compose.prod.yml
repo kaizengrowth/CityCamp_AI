@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    container_name: citycamp_backend_prod
+    container_name: backend
     environment:
       - ENVIRONMENT=production
       - DEBUG=False
@@ -27,7 +27,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-    container_name: citycamp_frontend_prod
+    container_name: frontend
     ports:
       - "80:80"
     depends_on:
