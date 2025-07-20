@@ -72,14 +72,12 @@ export const MeetingsPage: React.FC = () => {
         url: window.location.href
       });
 
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-
       // Only show demo data as fallback, don't auto-retry in production
       if (!isRetry && process.env.NODE_ENV === 'production') {
         console.log('Production: showing demo data as fallback');
         setMeetings(SAMPLE_MEETINGS);
         setDemoMode(true);
-        setError(`API temporarily unavailable: ${errorMessage}. Showing sample data.`);
+        setError(`API temporarily unavailable: ${err instanceof Error ? err.message : 'Unknown error occurred'}. Showing sample data.`);
 
         // Show subtle notification
         toast.error('Could not load latest data. Showing sample content.', {
@@ -88,7 +86,7 @@ export const MeetingsPage: React.FC = () => {
         });
       } else {
         // Development mode or retry - show error
-        setError(`Failed to load meetings: ${errorMessage}`);
+        setError(`Failed to load meetings: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
         setMeetings(SAMPLE_MEETINGS);
         setDemoMode(true);
 
@@ -151,7 +149,6 @@ export const MeetingsPage: React.FC = () => {
         environment: process.env.NODE_ENV
       });
 
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       toast.error(`Failed to load meeting details. Please try again.`);
 
       // Clear selection to allow retry
