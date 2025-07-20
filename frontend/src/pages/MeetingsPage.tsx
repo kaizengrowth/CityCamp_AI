@@ -12,36 +12,94 @@ export const MeetingsPage: React.FC = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [demoMode, setDemoMode] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Refs to prevent multiple concurrent API calls
   const fetchingRef = useRef<boolean>(false);
   const fetchingMeetingRef = useRef<number | null>(null);
 
   useEffect(() => {
-    fetchMeetings();
-  }, []);
+    // Only fetch on initial mount
+    if (!initialLoadComplete) {
+      fetchMeetings();
+    }
+  }, [initialLoadComplete]);
 
-  const fetchMeetings = async () => {
+  const fetchMeetings = async (isRetry = false) => {
     if (fetchingRef.current) return;
 
     try {
       setLoading(true);
+      setError(null);
       fetchingRef.current = true;
+
+      if (isRetry) {
+        toast.loading('Retrying...', { id: 'fetch-meetings' });
+      }
+
       console.log('Fetching meetings from API...');
 
-      const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(API_ENDPOINTS.meetings);
+      // Increase timeout for production
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(
+        API_ENDPOINTS.meetings,
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
       console.log('API response received:', response.meetings.length, 'meetings');
-      setMeetings(response.meetings);
-      setDemoMode(false);
+
+      // Only update if we got valid data
+      if (response.meetings && Array.isArray(response.meetings)) {
+        setMeetings(response.meetings);
+        setDemoMode(false);
+        setError(null);
+
+        if (isRetry) {
+          toast.success('Successfully loaded meetings!', { id: 'fetch-meetings' });
+        }
+      } else {
+        throw new Error('Invalid response format');
+      }
+
     } catch (err) {
-      console.log('API not available, using demo data');
-      console.error('API error:', err);
-      setMeetings(SAMPLE_MEETINGS);
-      setDemoMode(true);
-      setError(null);
+      console.error('API error:', {
+        error: err,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        environment: process.env.NODE_ENV,
+        url: window.location.href
+      });
+
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+
+      // Only show demo data as fallback, don't auto-retry in production
+      if (!isRetry && process.env.NODE_ENV === 'production') {
+        console.log('Production: showing demo data as fallback');
+        setMeetings(SAMPLE_MEETINGS);
+        setDemoMode(true);
+        setError(`API temporarily unavailable: ${errorMessage}. Showing sample data.`);
+
+        // Show subtle notification
+        toast.error('Could not load latest data. Showing sample content.', {
+          duration: 3000,
+          id: 'fetch-meetings'
+        });
+      } else {
+        // Development mode or retry - show error
+        setError(`Failed to load meetings: ${errorMessage}`);
+        setMeetings(SAMPLE_MEETINGS);
+        setDemoMode(true);
+
+        if (isRetry) {
+          toast.error('Still unable to connect. Showing demo data.', { id: 'fetch-meetings' });
+        }
+      }
     } finally {
       setLoading(false);
       fetchingRef.current = false;
+      setInitialLoadComplete(true);
     }
   };
 
@@ -64,12 +122,17 @@ export const MeetingsPage: React.FC = () => {
           setSelectedMeeting(meeting);
         } else {
           console.error('Demo meeting not found:', meetingId);
+          toast.error('Demo meeting not found');
         }
         return;
       }
 
       console.log('Fetching meeting details from API...');
-      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(API_ENDPOINTS.meetingById(meetingId));
+      const loadingToast = toast.loading('Loading meeting details...', { duration: 0 });
+
+      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(
+        API_ENDPOINTS.meetingById(meetingId)
+      );
       console.log('Meeting response received:', response);
 
       const meeting = response.meeting;
@@ -77,19 +140,41 @@ export const MeetingsPage: React.FC = () => {
 
       console.log('Meeting fetched successfully:', meeting.title);
       setSelectedMeeting(meeting);
-    } catch (err) {
-      console.error('Error fetching meeting details:', err);
-      toast.error('Failed to load meeting details. Please try again.');
+      toast.success('Meeting details loaded', { id: loadingToast });
 
-      // If it's the first time failing, clear selection to allow retry
-      if (selectedMeeting?.id === meetingId) {
-        setSelectedMeeting(null);
-      }
+    } catch (err) {
+      console.error('Error fetching meeting details:', {
+        error: err,
+        meetingId,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        demoMode,
+        environment: process.env.NODE_ENV
+      });
+
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Failed to load meeting details. Please try again.`);
+
+      // Clear selection to allow retry
+      setSelectedMeeting(null);
     } finally {
       // Always reset the fetching ref to allow future clicks
       fetchingMeetingRef.current = null;
     }
-  }, [demoMode, selectedMeeting?.id]);
+  }, [demoMode]);
+
+  // Manual retry function
+  const handleRetry = useCallback(() => {
+    setInitialLoadComplete(false); // Reset to allow refetch
+    fetchMeetings(true);
+  }, []);
+
+  // Force refresh function for production
+  const handleForceRefresh = useCallback(() => {
+    setDemoMode(false);
+    setMeetings([]);
+    setInitialLoadComplete(false);
+    fetchMeetings(true);
+  }, []);
 
   // Memoized filtered meetings to prevent recalculation on every render
   const filteredMeetings = useMemo(() => {
@@ -209,23 +294,38 @@ export const MeetingsPage: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="ml-4 text-gray-600">
+          Loading meetings...
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !demoMode) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4">
         <div className="flex">
-          <div className="ml-3">
+          <div className="ml-3 flex-1">
             <h3 className="text-sm font-medium text-red-800">Error loading meetings</h3>
             <p className="mt-2 text-sm text-red-700">{error}</p>
-            <button
-              onClick={fetchMeetings}
-              className="mt-3 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
-            >
-              Try Again
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={handleRetry}
+                className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200 transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => {
+                  setMeetings(SAMPLE_MEETINGS);
+                  setDemoMode(true);
+                  setError(null);
+                }}
+                className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
+              >
+                Show Demo Data
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -242,17 +342,36 @@ export const MeetingsPage: React.FC = () => {
               Demo Mode
             </span>
           )}
+          {(error || demoMode) && (
+            <button
+              onClick={handleForceRefresh}
+              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
+            >
+              🔄 Load Latest Data
+            </button>
+          )}
         </div>
       </div>
 
       {demoMode && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Demo Mode Active</h3>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-blue-800">
+                {error ? 'Demo Mode - API Issue' : 'Demo Mode Active'}
+              </h3>
               <p className="mt-2 text-sm text-blue-700">
-                Showing sample meeting data. This demonstrates how your generated meeting minutes will appear when the backend API is connected.
+                {error ?
+                  'API connection issue detected. Showing sample data to demonstrate functionality. Click "Load Latest Data" to retry.' :
+                  'Showing sample meeting data. This demonstrates how your generated meeting minutes will appear when the backend API is connected.'
+                }
               </p>
+              <button
+                onClick={handleForceRefresh}
+                className="mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+              >
+                Try to load real data
+              </button>
             </div>
           </div>
         </div>
@@ -261,7 +380,7 @@ export const MeetingsPage: React.FC = () => {
       {/* Most Frequent Topics & Keywords */}
       {!demoMode && meetings.length > 0 && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Meetings</h2>
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Meetings Analysis</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Most Frequent Topics */}
             <div>
@@ -332,6 +451,14 @@ export const MeetingsPage: React.FC = () => {
             {filteredMeetings.length === 0 ? (
               <div className="bg-gray-50 rounded-lg p-8 text-center">
                 <p className="text-gray-500">No meetings found matching your criteria.</p>
+                {demoMode && (
+                  <button
+                    onClick={handleForceRefresh}
+                    className="mt-3 text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    Try loading real data
+                  </button>
+                )}
               </div>
             ) : (
               filteredMeetings.map((meeting) => (
@@ -362,7 +489,7 @@ export const MeetingsPage: React.FC = () => {
                       <span className="font-medium">Location:</span>
                       <span className="ml-2">{meeting.location}</span>
                     </p>
-                                          {meeting.summary && (
+                      {meeting.summary && (
                         <div className="flex items-center mb-2">
                           <span className="font-medium">Status:</span>
                           <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${meeting.summary.includes('Minutes imported from PDF') ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
@@ -472,37 +599,10 @@ export const MeetingsPage: React.FC = () => {
                     </h3>
                     <div className="flex flex-wrap gap-1">
                       {selectedMeeting.keywords.map((keyword, index) => (
-                                                    <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
+                        <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
                           {keyword}
                         </span>
                       ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Meeting Statistics */}
-                {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
-                  <div className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Meeting Statistics</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-50 rounded-lg p-4">
-                        <div className="text-2xl font-bold text-blue-600">{selectedMeeting.agenda_items.length}</div>
-                        <div className="text-sm text-blue-800">Agenda Items</div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-4">
-                        <div className="text-2xl font-bold text-green-600">{selectedMeeting.topics ? selectedMeeting.topics.length : 0}</div>
-                        <div className="text-sm text-green-800">Topics Covered</div>
-                      </div>
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <div className="text-2xl font-bold text-purple-600">{selectedMeeting.keywords ? selectedMeeting.keywords.length : 0}</div>
-                        <div className="text-sm text-purple-800">Keywords</div>
-                      </div>
-                      <div className="bg-orange-50 rounded-lg p-4">
-                        <div className="text-2xl font-bold text-orange-600">
-                          {selectedMeeting.agenda_items ? selectedMeeting.agenda_items.filter(item => item.vote_result).length : 0}
-                        </div>
-                        <div className="text-sm text-orange-800">Votes Taken</div>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -542,6 +642,9 @@ export const MeetingsPage: React.FC = () => {
             <div className="bg-gray-50 rounded-lg p-8 text-center flex-1 flex items-center justify-center">
               <div>
                 <p className="text-gray-500">Select a meeting to view details and minutes</p>
+                {demoMode && (
+                  <p className="text-sm text-gray-400 mt-2">Demo data available for testing</p>
+                )}
               </div>
             </div>
           )}

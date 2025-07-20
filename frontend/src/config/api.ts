@@ -5,13 +5,13 @@
 
 // Get the base URL for API calls
 const getApiBaseUrl = (): string => {
-  // In production, use relative URLs (same domain as frontend)
+  // In production, use relative URLs (CloudFront routes /api/* to ALB)
   if (process.env.NODE_ENV === 'production') {
     return '';
   }
 
   // In development, use direct backend URL
-  return 'http://localhost:8002';
+  return 'http://localhost:8000';  // Changed from 8002 to 8000
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -64,24 +64,35 @@ export const apiRequest = async <T>(
     const response = await fetch(url, defaultOptions);
     console.log('Response status:', response.status);
     console.log('Response ok:', response.ok);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Response error text:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+      // Enhanced error handling for production debugging
+      let errorMessage = `HTTP error! status: ${response.status}`;
+
+      try {
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        errorMessage += `, text: ${errorText}`;
+      } catch (e) {
+        console.error('Could not read error response text');
+      }
+
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    console.log('Response data received:', data);
+    console.log('Response data received successfully');
     return data;
   } catch (error) {
     console.error('API request failed:', error);
+    console.error('URL attempted:', url);
     console.error('Error type:', typeof error);
+
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
+
     throw error;
   }
 };
