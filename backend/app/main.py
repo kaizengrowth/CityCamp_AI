@@ -118,7 +118,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",  # nosec B104 - Intentional for development/Docker
-        port=8002,
+        port=8000,
         reload=settings.debug,
         log_level="info" if settings.debug else "warning",
     )
