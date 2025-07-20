@@ -4,16 +4,6 @@ import { DistrictMapper } from '../components/DistrictMapper';
 export const DistrictFinderPage: React.FC = () => {
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-          Find Your City Council District
-        </h1>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Enter your address to identify your Tulsa City Council district and representative.
-          Get accurate contact information and connect with your local elected officials.
-        </p>
-      </div>
-
       <DistrictMapper />
 
       <div className="bg-blue-50 rounded-xl p-6">

@@ -24,6 +24,7 @@ export const ContactRepresentativesPage: React.FC = () => {
   const [emailComposition, setEmailComposition] = useState<EmailComposition | null>(null);
   const [loading, setLoading] = useState(false);
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Sample representatives data (would normally come from API)
   const sampleRepresentatives: Representative[] = [
@@ -32,12 +33,6 @@ export const ContactRepresentativesPage: React.FC = () => {
       position: 'Mayor',
       email: 'mayor@cityoftulsa.org',
       phone: '(918) 596-7777'
-    },
-    {
-      name: 'Vanessa Hall-Harper',
-      position: 'City Councilor - District 1',
-      email: 'dist1@tulsacouncil.org',
-      district: 'District 1'
     },
     {
       name: 'Anthony Archie',
@@ -116,74 +111,19 @@ export const ContactRepresentativesPage: React.FC = () => {
       });
 
       setEmailComposition(response);
-      toast.success('Email composition generated!');
+      setStep(3);
+      toast.success('Email composed successfully!');
     } catch (error) {
-      console.error('Error generating email:', error);
-
-      // Fallback to local generation if API is not available
-      const fallbackEmail: EmailComposition = {
-        subject: generateSubject(issue, tone),
-        body: generateEmailBody(issue, tone, representatives[0]),
-        tone,
-        representatives
-      };
-
-      setEmailComposition(fallbackEmail);
-      toast.success('Email composition generated (offline mode)');
+      console.error('Error composing email:', error);
+      toast.error('Unable to compose email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateSubject = (issue: string, tone: 'formal' | 'friendly' | 'urgent'): string => {
-    const keywords = issue.toLowerCase();
-    let subject = '';
-
-    if (tone === 'urgent') {
-      subject = 'URGENT: ';
-    }
-
-    if (keywords.includes('pothole') || keywords.includes('road')) {
-      subject += 'Road Maintenance Concern';
-    } else if (keywords.includes('park') || keywords.includes('recreation')) {
-      subject += 'Parks and Recreation Matter';
-    } else if (keywords.includes('traffic') || keywords.includes('light')) {
-      subject += 'Traffic Safety Issue';
-    } else if (keywords.includes('budget') || keywords.includes('tax')) {
-      subject += 'Budget and Taxation Concern';
-    } else {
-      subject += 'Community Concern from Constituent';
-    }
-
-    return subject;
-  };
-
-  const generateEmailBody = (issue: string, tone: 'formal' | 'friendly' | 'urgent', rep: Representative): string => {
-    const greeting = tone === 'formal' ?
-      `Dear ${rep.position} ${rep.name.split(' ').slice(-1)[0]},` :
-      `Hello ${rep.name.split(' ')[0]},`;
-
-    const intro = tone === 'formal' ?
-      'I am writing to bring to your attention an important matter affecting our community.' :
-      tone === 'urgent' ?
-      'I am reaching out regarding an urgent matter that requires immediate attention.' :
-      'I hope this message finds you well. I wanted to share a concern that affects our neighborhood.';
-
-    const body = `${greeting}\n\n${intro}\n\n${issue}\n\nI would appreciate your consideration of this matter and any action you might be able to take to address this concern. As a constituent, I value your leadership and commitment to improving our community.\n\nThank you for your time and service to Tulsa.`;
-
-    const closing = tone === 'formal' ?
-      'Respectfully,' :
-      'Best regards,';
-
-    return `${body}\n\n${closing}\n[Your Name]\n[Your Address]\n[Your Phone Number]\n[Your Email]`;
-  };
-
-  const copyEmailToClipboard = () => {
-    if (!emailComposition) return;
-
-    const emailText = `Subject: ${emailComposition.subject}\n\n${emailComposition.body}`;
-    navigator.clipboard.writeText(emailText);
-    toast.success('Email copied to clipboard!');
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
   };
 
   const openEmailClient = (rep: Representative) => {
@@ -191,160 +131,190 @@ export const ContactRepresentativesPage: React.FC = () => {
 
     const subject = encodeURIComponent(emailComposition.subject);
     const body = encodeURIComponent(emailComposition.body);
-    const mailtoLink = `mailto:${rep.email}?subject=${subject}&body=${body}`;
+    const mailtoUrl = `mailto:${rep.email}?subject=${subject}&body=${body}`;
 
-    window.open(mailtoLink, '_blank');
+    window.open(mailtoUrl, '_blank');
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">Contact Your Representatives</h1>
-        <p className="text-xl text-gray-600">
-          AI-powered email composition to help you effectively communicate with your elected officials
-        </p>
+    <div className="space-y-8">
+      {/* Progress Steps */}
+      <div className="flex items-center justify-center space-x-4">
+        {[1, 2, 3].map((stepNumber) => (
+          <div key={stepNumber} className="flex items-center">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                step >= stepNumber
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {stepNumber}
+            </div>
+            {stepNumber < 3 && (
+              <div
+                className={`w-12 h-1 ${
+                  step > stepNumber ? 'bg-primary-600' : 'bg-gray-200'
+                }`}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Step 1: Address Lookup */}
-      <div className="bg-white rounded-xl p-8 shadow-sm">
-        <h2 className="text-2xl font-semibold mb-6 flex items-center">
-          <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
-          Find Your Representatives
-        </h2>
+      {/* Step 1: Find Representatives */}
+      {step >= 1 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+              1
+            </span>
+            Find Your Representatives
+          </h2>
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-              Your Tulsa Address
-            </label>
-            <div className="flex space-x-3">
-              <input
-                type="text"
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g., 123 Main Street, Tulsa, OK 74103"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                Your Tulsa Address
+              </label>
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g., 123 Main Street, Tulsa, OK 74103"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleAddressLookup}
+                  disabled={loading}
+                  className="btn btn-primary px-6 py-2 disabled:opacity-50"
+                >
+                  {loading ? 'Looking up...' : 'Find Representatives'}
+                </button>
+              </div>
+            </div>
+
+            {/* District Finder Link */}
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-blue-800 text-sm">
+                💡 <strong>Need more accurate results?</strong> Use our{' '}
+                <a href="/contact-representatives/find-district" className="text-blue-600 hover:text-blue-800 underline font-medium">
+                  District Finder tool
+                </a>{' '}
+                to get precise district mapping and representative contact information.
+              </p>
+            </div>
+          </div>
+
+          {representatives.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-medium text-gray-900 mb-3">Your Representatives:</h3>
+              <div className="grid gap-3">
+                {representatives.map((rep, index) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg border">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{rep.name}</h4>
+                        <p className="text-sm text-gray-600">{rep.position}</p>
+                      </div>
+                      <div className="text-right text-sm text-gray-600">
+                        <p>{rep.email}</p>
+                        {rep.phone && <p>{rep.phone}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
               <button
-                onClick={handleAddressLookup}
-                disabled={loading}
-                className="btn btn-primary px-6 py-2 disabled:opacity-50"
+                onClick={() => setStep(2)}
+                className="mt-4 btn btn-primary"
               >
-                {loading ? 'Looking up...' : 'Find Representatives'}
+                Continue to Compose Email
               </button>
             </div>
-          </div>
+          )}
+        </div>
+      )}
 
-          {/* District Finder Link */}
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800 text-sm">
-              💡 <strong>Need more accurate results?</strong> Use our{' '}
-              <a href="/find-district" className="text-blue-600 hover:text-blue-800 underline font-medium">
-                District Finder tool
-              </a>{' '}
-              to get precise district mapping and representative contact information.
-            </p>
+      {/* Step 2: Describe Your Concern */}
+      {step >= 2 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+              2
+            </span>
+            Describe Your Concern
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-2">
+                What issue would you like to address?
+              </label>
+              <textarea
+                id="issue"
+                value={issue}
+                onChange={(e) => setIssue(e.target.value)}
+                rows={5}
+                placeholder="Describe the issue in detail. Include specific locations, dates, and how it affects you or your community..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Email Tone</label>
+              <div className="flex space-x-4">
+                {[
+                  { value: 'friendly', label: 'Friendly', desc: 'Conversational and approachable' },
+                  { value: 'formal', label: 'Formal', desc: 'Professional and respectful' },
+                  { value: 'urgent', label: 'Urgent', desc: 'Serious and requiring immediate attention' }
+                ].map((option) => (
+                  <label key={option.value} className="flex-1 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tone"
+                      value={option.value}
+                      checked={tone === option.value}
+                      onChange={(e) => setTone(e.target.value as 'formal' | 'friendly' | 'urgent')}
+                      className="sr-only"
+                    />
+                    <div className={`p-4 rounded-lg border-2 transition-colors ${
+                      tone === option.value
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <h4 className="font-medium text-gray-900">{option.label}</h4>
+                      <p className="text-sm text-gray-600">{option.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleGenerateEmail}
+              disabled={loading || !issue.trim() || representatives.length === 0}
+              className="btn btn-primary btn-lg w-full disabled:opacity-50"
+            >
+              {loading ? 'Generating Email...' : '✨ Generate AI-Powered Email'}
+            </button>
           </div>
         </div>
-
-        {/* Representatives Display */}
-        {representatives.length > 0 && (
-          <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-            <h3 className="text-lg font-medium text-green-800 mb-3">Your Representatives:</h3>
-            <div className="grid gap-3">
-              {representatives.map((rep, index) => (
-                <div key={index} className="bg-white p-3 rounded-lg border border-green-200">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium text-gray-900">{rep.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {rep.position} {rep.district && `(${rep.district})`}
-                      </p>
-                    </div>
-                    <div className="text-right text-sm text-gray-600">
-                      <p>{rep.email}</p>
-                      {rep.phone && <p>{rep.phone}</p>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Step 2: Compose Email */}
-      <div className="bg-white rounded-xl p-8 shadow-sm">
-        <h2 className="text-2xl font-semibold mb-6 flex items-center">
-          <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
-          Describe Your Concern
-        </h2>
-
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-2">
-              What issue would you like to address?
-            </label>
-            <textarea
-              id="issue"
-              value={issue}
-              onChange={(e) => setIssue(e.target.value)}
-              rows={5}
-              placeholder="Describe the issue in detail. Include specific locations, dates, and how it affects you or your community..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Email Tone</label>
-            <div className="flex space-x-4">
-              {[
-                { value: 'friendly', label: 'Friendly', desc: 'Conversational and approachable' },
-                { value: 'formal', label: 'Formal', desc: 'Professional and respectful' },
-                { value: 'urgent', label: 'Urgent', desc: 'Serious and requiring immediate attention' }
-              ].map((option) => (
-                <label key={option.value} className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="tone"
-                    value={option.value}
-                    checked={tone === option.value}
-                    onChange={(e) => setTone(e.target.value as 'formal' | 'friendly' | 'urgent')}
-                    className="sr-only"
-                  />
-                  <div className={`p-4 rounded-lg border-2 transition-colors ${
-                    tone === option.value
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}>
-                    <h4 className="font-medium text-gray-900">{option.label}</h4>
-                    <p className="text-sm text-gray-600">{option.desc}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={handleGenerateEmail}
-            disabled={loading || !issue.trim() || representatives.length === 0}
-            className="btn btn-primary btn-lg w-full disabled:opacity-50"
-          >
-            {loading ? 'Generating Email...' : '✨ Generate AI-Powered Email'}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Step 3: Email Preview */}
-      {emailComposition && (
-        <div className="bg-white rounded-xl p-8 shadow-sm">
-          <h2 className="text-2xl font-semibold mb-6 flex items-center">
-            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+      {emailComposition && step >= 3 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+              3
+            </span>
             Your Generated Email
           </h2>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
               <div className="mb-4">
                 <h4 className="font-medium text-gray-900 mb-2">Subject:</h4>
@@ -362,7 +332,7 @@ export const ContactRepresentativesPage: React.FC = () => {
             <div className="flex flex-col space-y-3">
               <div className="flex space-x-3">
                 <button
-                  onClick={copyEmailToClipboard}
+                  onClick={() => copyToClipboard(`Subject: ${emailComposition.subject}\n\n${emailComposition.body}`)}
                   className="btn btn-outline flex-1"
                 >
                   📋 Copy to Clipboard
@@ -402,7 +372,7 @@ export const ContactRepresentativesPage: React.FC = () => {
       )}
 
       {/* Tips Section */}
-      <div className="bg-blue-50 rounded-xl p-8 border border-blue-200">
+      <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
         <h3 className="text-xl font-semibold text-blue-900 mb-4">💡 Tips for Effective Communication</h3>
         <ul className="space-y-2 text-blue-800">
           <li className="flex items-start space-x-2">
