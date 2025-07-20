@@ -7,6 +7,7 @@ from .campaign import (
 )
 from .meeting import AgendaItem, Meeting, MeetingCategory
 from .notification import Notification, NotificationPreference, NotificationTemplate
+from .subscription import MeetingTopic, NotificationLog, TopicSubscription
 from .user import User, UserInterests
 
 __all__ = [
@@ -18,6 +19,9 @@ __all__ = [
     "Notification",
     "NotificationTemplate",
     "NotificationPreference",
+    "TopicSubscription",
+    "MeetingTopic",
+    "NotificationLog",
     "Campaign",
     "CampaignMembership",
     "CampaignUpdate",
