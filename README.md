@@ -356,7 +356,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - 🛠️ **Emergency**: Run `./scripts/fix_production_api.sh` for production issues
 
 ### **Contact**
-- 📧 **Email**: [Contact information if available]
+- 📧 **Email**: kaitlin.cort@owasp.org
 - 🐙 **GitHub**: [@kaizengrowth](https://github.com/kaizengrowth)
 
 ---
