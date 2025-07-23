@@ -50,7 +50,7 @@ export const Layout: React.FC = () => {
                     isActive(item.href)
                       ? 'text-primary-600 bg-primary-50'
                       : item.name === 'Get Notified'
-                      ? 'text-white bg-primary-600 hover:bg-primary-700'
+                      ? 'text-white bg-primary-600 hover:bg-gray-50'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
@@ -100,13 +100,21 @@ export const Layout: React.FC = () => {
                 <div className="hidden md:flex space-x-4">
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isActive('/login')
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isActive('/register')
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-white bg-primary-600 hover:bg-gray-50'
+                    }`}
                   >
                     Register
                   </Link>
