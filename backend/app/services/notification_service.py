@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Set
@@ -8,7 +9,7 @@ from app.core.database import get_db
 from app.models.meeting import Meeting
 from app.models.subscription import MeetingTopic, TopicSubscription
 from app.services.twilio_service import TwilioService
-from sqlalchemy import and_, or_
+from sqlalchemy import Text, and_, cast, or_
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -187,8 +188,8 @@ class NotificationService:
         # Filter by meeting type
         if meeting.meeting_type:
             interest_filters.append(
-                TopicSubscription.meeting_types.op("?")(
-                    {"meeting_type": meeting.meeting_type}
+                cast(TopicSubscription.meeting_types, Text).op("::jsonb @>")(
+                    json.dumps([meeting.meeting_type])
                 )
             )
 
@@ -196,7 +197,9 @@ class NotificationService:
         if meeting.topics:
             for topic in meeting.topics:
                 interest_filters.append(
-                    TopicSubscription.interested_topics.op("?")({"topic": topic})
+                    cast(TopicSubscription.interested_topics, Text).op("::jsonb @>")(
+                        json.dumps([topic])
+                    )
                 )
 
         if interest_filters:
