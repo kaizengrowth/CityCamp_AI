@@ -568,6 +568,37 @@ export const MeetingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Meeting Statistics */}
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Meeting Statistics</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {selectedMeeting.agenda_items?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Agenda Items</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {selectedMeeting.topics?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Topics Covered</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {selectedMeeting.keywords?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Keywords</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {selectedMeeting.agenda_items?.filter(item => item.vote_result && item.vote_result !== 'none').length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Votes Taken</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="max-h-[600px] overflow-y-auto">
                 {/* Meeting Summary */}
                 {selectedMeeting.summary && (
