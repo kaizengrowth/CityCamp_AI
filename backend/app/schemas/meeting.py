@@ -58,6 +58,7 @@ class CategoryResponse(BaseModel):
     keywords: List[str] = []
     color: Optional[str]
     icon: Optional[str]
+    usage_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
