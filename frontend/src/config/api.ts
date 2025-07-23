@@ -11,7 +11,7 @@ const getApiBaseUrl = (): string => {
   }
 
   // In development, use direct backend URL
-  return 'http://localhost:8000';  // Changed from 8002 to 8000
+  return 'http://localhost:8002';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

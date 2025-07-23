@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
@@ -16,6 +17,7 @@ from app.services.ai_categorization_service import AICategorization
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy import Text, cast
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -46,7 +48,9 @@ async def list_meetings(
 
     # Apply filters
     if category:
-        query = query.filter(Meeting.topics.contains([category]))
+        query = query.filter(
+            cast(Meeting.topics, Text).op("::jsonb @>")(json.dumps([category]))
+        )
 
     if search:
         search_term = f"%{search}%"
@@ -147,9 +151,13 @@ async def get_categories(db: Session = Depends(get_db)):
     # Add usage counts
     category_responses = []
     for category in categories:
-        # Count meetings that have this category
+        # Count meetings that have this category (using JSON operator for PostgreSQL)
         usage_count = (
-            db.query(Meeting).filter(Meeting.topics.contains([category.name])).count()
+            db.query(Meeting)
+            .filter(
+                cast(Meeting.topics, Text).op("::jsonb @>")(json.dumps([category.name]))
+            )
+            .count()
         )
 
         category_responses.append(
@@ -188,7 +196,9 @@ async def get_meetings_by_category(
     # Get meetings with this category
     query = (
         db.query(Meeting)
-        .filter(Meeting.topics.contains([category_name]))
+        .filter(
+            cast(Meeting.topics, Text).op("::jsonb @>")(json.dumps([category_name]))
+        )
         .order_by(Meeting.meeting_date.desc())
     )
 
@@ -245,7 +255,11 @@ async def get_meeting_stats(db: Session = Depends(get_db)):
 
     for category in categories:
         count = (
-            db.query(Meeting).filter(Meeting.topics.contains([category.name])).count()
+            db.query(Meeting)
+            .filter(
+                cast(Meeting.topics, Text).op("::jsonb @>")(json.dumps([category.name]))
+            )
+            .count()
         )
 
         if count > 0:
