@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class UserBase(BaseModel):
@@ -17,7 +17,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
@@ -71,7 +72,8 @@ class UserInterestCreate(BaseModel):
     keywords: List[str] = []
     priority: int = 1
 
-    @validator("priority")
+    @field_validator("priority")
+    @classmethod
     def validate_priority(cls, v):
         if v < 1 or v > 5:
             raise ValueError("Priority must be between 1 and 5")
@@ -95,7 +97,8 @@ class UserInterestUpdate(BaseModel):
     keywords: Optional[List[str]] = None
     priority: Optional[int] = None
 
-    @validator("priority")
+    @field_validator("priority")
+    @classmethod
     def validate_priority(cls, v):
         if v is not None and (v < 1 or v > 5):
             raise ValueError("Priority must be between 1 and 5")

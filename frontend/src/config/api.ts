@@ -39,6 +39,11 @@ export const API_ENDPOINTS = {
   // Representatives
   composeEmail: '/api/v1/representatives/compose-email',
   findRepresentatives: '/api/v1/representatives/find',
+
+  // Organizations
+  organizations: '/api/v1/organizations/',
+  organizationById: (id: number) => `/api/v1/organizations/${id}`,
+  organizationBySlug: (slug: string) => `/api/v1/organizations/slug/${slug}`,
 };
 
 /**

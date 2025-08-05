@@ -59,7 +59,7 @@ export const ContactRepresentativesPage: React.FC = () => {
           found: boolean;
           district?: string;
           coordinates?: { lat: number; lng: number };
-          councilor?: any;
+          councilor?: Representative;
           error?: string;
           message?: string;
         };
