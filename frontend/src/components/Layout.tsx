@@ -36,7 +36,7 @@ export const Layout: React.FC = () => {
                 <div className="w-12 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xs">Tulsa</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">CityCamp AI</span>
+                <span className="text-xl font-bold text-gray-900">Civic Spark AI</span>
               </Link>
             </div>
 
@@ -215,7 +215,7 @@ export const Layout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center">
             <span className="text-sm text-gray-600">
-              © 2025 <span className="text-primary-600 font-semibold">CityCamp AI</span>. Connecting Tulsa residents to city government and neighborhood organizations.
+              © 2025 <span className="text-primary-600 font-semibold">Civic Spark AI</span>. Connecting Tulsa residents to city government and neighborhood organizations.
             </span>
           </div>
         </div>
