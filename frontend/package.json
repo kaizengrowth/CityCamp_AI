@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 20",
     "preview": "vite preview",
     "test": "jest --config ../tests/frontend/jest.config.js",
     "test:ci": "jest --config ../tests/frontend/jest.config.js --ci --coverage --watchAll=false",

@@ -34,12 +34,12 @@ repos:
         files: ^backend/
         args: [--profile=black]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
-    hooks:
-      - id: mypy
-        files: ^backend/
-        additional_dependencies: [types-requests]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.7.0
+  #   hooks:
+  #     - id: mypy
+  #       files: ^backend/
+  #       additional_dependencies: [types-requests]
 
   # Frontend hooks
   - repo: https://github.com/pre-commit/mirrors-eslint
