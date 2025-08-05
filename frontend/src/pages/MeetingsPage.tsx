@@ -57,12 +57,12 @@ export const MeetingsPage: React.FC = () => {
     // For local development, check if we should load sample data immediately
     const environment = getEnvironmentConfig();
     const forceBackup = environment.shouldUseBackupData && !isRetry;
-    
+
     if (forceBackup) {
       console.log('Development mode: Loading sample meeting data immediately');
       setLoading(true);
       fetchingRef.current = true;
-      
+
       // Simulate loading delay
       setTimeout(() => {
         setMeetings(SAMPLE_MEETINGS);
@@ -102,10 +102,10 @@ export const MeetingsPage: React.FC = () => {
       // Only update if we got valid data
       if (response.meetings && Array.isArray(response.meetings)) {
         // Sort meetings chronologically from most recent to farthest back
-        const sortedMeetings = response.meetings.sort((a, b) => 
+        const sortedMeetings = response.meetings.sort((a, b) =>
           new Date(b.meeting_date).getTime() - new Date(a.meeting_date).getTime()
         );
-        
+
         setMeetings(sortedMeetings);
         setDemoMode(false);
         setError(null);
@@ -218,14 +218,14 @@ export const MeetingsPage: React.FC = () => {
   const filteredMeetings = useMemo(() => {
     const filtered = meetings.filter(meeting => {
       // Only show meetings that have meaningful content
-      const hasContent = meeting.summary && 
-                        meeting.summary.trim() !== '' && 
+      const hasContent = meeting.summary &&
+                        meeting.summary.trim() !== '' &&
                         !meeting.summary.includes('Minutes imported from PDF') &&
-                        (meeting.keywords?.length > 0 || 
-                         meeting.topics?.length > 0 || 
+                        (meeting.keywords?.length > 0 ||
+                         meeting.topics?.length > 0 ||
                          meeting.detailed_summary ||
                          (meeting.voting_records?.length ?? 0) > 0);
-      
+
       if (!hasContent) {
         return false; // Skip meetings with no meaningful data
       }
@@ -317,12 +317,12 @@ export const MeetingsPage: React.FC = () => {
     return filtered.sort((a, b) => {
       const dateA = new Date(a.meeting_date).getTime();
       const dateB = new Date(b.meeting_date).getTime();
-      
+
       if (filter === 'upcoming') {
         // For upcoming meetings, show soonest first (earliest to latest)
         return dateA - dateB;
       } else {
-        // For completed and all meetings, show most recent first (latest to earliest) 
+        // For completed and all meetings, show most recent first (latest to earliest)
         return dateB - dateA;
       }
     });
@@ -338,11 +338,11 @@ export const MeetingsPage: React.FC = () => {
     const recentCompletedMeetings = meetings
       .filter(meeting => {
         const isCompleted = new Date(meeting.meeting_date) < now;
-        const hasContent = meeting.summary && 
-                          meeting.summary.trim() !== '' && 
+        const hasContent = meeting.summary &&
+                          meeting.summary.trim() !== '' &&
                           !meeting.summary.includes('Minutes imported from PDF') &&
-                          (meeting.keywords?.length > 0 || 
-                           meeting.topics?.length > 0 || 
+                          (meeting.keywords?.length > 0 ||
+                           meeting.topics?.length > 0 ||
                            meeting.detailed_summary ||
                            (meeting.voting_records?.length ?? 0) > 0);
         return isCompleted && hasContent;
@@ -352,7 +352,7 @@ export const MeetingsPage: React.FC = () => {
     recentCompletedMeetings.forEach(meeting => {
       // Handle topics (could be array or string depending on data format)
       if (meeting.topics) {
-        const topics = Array.isArray(meeting.topics) ? meeting.topics : 
+        const topics = Array.isArray(meeting.topics) ? meeting.topics :
                       typeof meeting.topics === 'string' ? [meeting.topics] : [];
         topics.forEach(topic => {
           if (topic && typeof topic === 'string') {
@@ -360,10 +360,10 @@ export const MeetingsPage: React.FC = () => {
           }
         });
       }
-      
+
       // Handle keywords (could be array or string depending on data format)
       if (meeting.keywords) {
-        const keywords = Array.isArray(meeting.keywords) ? meeting.keywords : 
+        const keywords = Array.isArray(meeting.keywords) ? meeting.keywords :
                         typeof meeting.keywords === 'string' ? [meeting.keywords] : [];
         keywords.forEach(keyword => {
           if (keyword && typeof keyword === 'string') {
@@ -494,7 +494,7 @@ export const MeetingsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-gray-900">City Council Meetings</h1>
+        <h1 className="text-3xl font-bold text-brand-dark-blue">City Council Meetings</h1>
         <div className="text-sm text-gray-600">
           Displaying {filteredMeetings.length} meetings with content (most recent first)
         </div>
@@ -520,8 +520,8 @@ export const MeetingsPage: React.FC = () => {
           <div className="flex">
             <div className="ml-3 flex-1">
               <h3 className="text-sm font-medium text-blue-800">
-                {getEnvironmentConfig().isDevelopment ? 
-                  'Development Mode - Sample Data Loaded' : 
+                {getEnvironmentConfig().isDevelopment ?
+                  'Development Mode - Sample Data Loaded' :
                   (error ? 'Demo Mode - API Issue' : 'Demo Mode Active')
                 }
               </h3>
@@ -722,7 +722,7 @@ export const MeetingsPage: React.FC = () => {
                   onClick={(e) => handleMeetingClick(meeting.id, e)}
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
+                    <h3 className="text-lg font-semibold text-brand-dark-blue">{meeting.title}</h3>
                     {getStatusBadge(meeting.status)}
                   </div>
 
@@ -805,7 +805,7 @@ export const MeetingsPage: React.FC = () => {
           {selectedMeeting ? (
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">{selectedMeeting.title}</h2>
+                <h2 className="text-xl font-semibold text-brand-dark-blue">{selectedMeeting.title}</h2>
                 <div className="mt-2">
                   {selectedMeeting.topics && selectedMeeting.topics.length > 0 && (
                     <div className="flex flex-wrap gap-1">
@@ -857,7 +857,7 @@ export const MeetingsPage: React.FC = () => {
 
                 {/* Meeting Statistics */}
                 <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Meeting Statistics</h3>
+                  <h3 className="text-lg font-medium text-brand-dark-blue mb-4">Meeting Statistics</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">
@@ -889,7 +889,7 @@ export const MeetingsPage: React.FC = () => {
                 {/* Agenda Items */}
                 {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
                   <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">📋 Agenda Items</h3>
+                    <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📋 Agenda Items</h3>
                     <div className="space-y-2">
                       {selectedMeeting.agenda_items.map((item) => (
                         <div key={item.id} className="flex items-start gap-3">
