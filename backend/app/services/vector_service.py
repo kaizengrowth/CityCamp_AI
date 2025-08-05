@@ -3,13 +3,39 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-import chromadb
-import faiss
+try:
+    import chromadb
+    from chromadb.config import Settings as ChromaSettings
+
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    chromadb = None
+    ChromaSettings = None
+    CHROMADB_AVAILABLE = False
+    print("Warning: chromadb not available, vector store functionality will be limited")
+
+try:
+    import faiss
+
+    FAISS_AVAILABLE = True
+except ImportError:
+    faiss = None
+    FAISS_AVAILABLE = False
+    print("Warning: faiss not available, vector search will be limited")
+
 import numpy as np
-import openai
 from app.core.config import Settings
-from chromadb.config import Settings as ChromaSettings
-from openai import OpenAI
+
+try:
+    import openai
+    from openai import OpenAI
+
+    OPENAI_AVAILABLE = True
+except ImportError:
+    openai = None
+    OpenAI = None
+    OPENAI_AVAILABLE = False
+    print("Warning: openai not available, embedding generation will be limited")
 
 logger = logging.getLogger(__name__)
 

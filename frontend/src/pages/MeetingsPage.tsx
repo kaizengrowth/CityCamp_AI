@@ -4,6 +4,7 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
 import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
+import { PDFViewer } from '../components/PDFViewer';
 
 // Extended Meeting interface with additional properties
 interface Meeting extends BaseMeeting {
@@ -886,32 +887,15 @@ export const MeetingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Agenda Items */}
-                {selectedMeeting.agenda_items && selectedMeeting.agenda_items.length > 0 && (
+                {/* Meeting Document PDF Viewer */}
+                {selectedMeeting.minutes_url && (
                   <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📋 Agenda Items</h3>
-                    <div className="space-y-2">
-                      {selectedMeeting.agenda_items.map((item) => (
-                        <div key={item.id} className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <p className="text-gray-900 leading-relaxed">
-                              <span className="font-medium">{item.item_number}.</span> {item.title}
-                              {item.description && item.description !== item.title && (
-                                <span className="text-gray-600"> — {item.description}</span>
-                              )}
-                            </p>
-                          </div>
-                          {item.vote_result && (
-                            <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${
-                              item.vote_result === 'passed' ? 'bg-green-100 text-green-800' :
-                              item.vote_result === 'failed' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {item.vote_result}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📄 Meeting Document</h3>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <PDFViewer
+                        pdfUrl={`/api/v1/meetings/${selectedMeeting.id}/pdf`}
+                        meetingTitle={selectedMeeting.title}
+                      />
                     </div>
                   </div>
                 )}
