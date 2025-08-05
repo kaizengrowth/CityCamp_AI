@@ -12,6 +12,18 @@ import psycopg2
 from pathlib import Path
 from typing import List, Dict, Any
 
+
+def get_database_url():
+    """Get database URL from environment variable"""
+    db_url = os.getenv('AWS_DB_URL')
+    if not db_url:
+        print("❌ Error: AWS_DB_URL environment variable not set")
+        print("Please set the AWS_DB_URL environment variable with your database connection string")
+        print("Example: export AWS_DB_URL='postgresql://user:password@host:port/database'")
+        sys.exit(1)
+    return db_url
+
+
 def reprocess_production_meetings_direct(
     aws_db_url: str,
     openai_api_key: str = None,
@@ -213,26 +225,21 @@ def reprocess_production_meetings_direct(
 def main():
     parser = argparse.ArgumentParser(description="Reprocess all production meetings with enhanced AI")
     parser.add_argument("--aws-db-url", type=str, 
-                       default="postgresql://citycamp_user:CityCampSecure2024%21@citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com:5432/citycamp_db",
-                       help="AWS RDS database URL")
+                       help="AWS RDS database URL (defaults to AWS_DB_URL environment variable)")
     parser.add_argument("--openai-key", type=str, help="OpenAI API key for enhanced AI processing")
     parser.add_argument("--limit", type=int, help="Limit number of meetings to process")
     parser.add_argument("--apply", action="store_true", help="Apply changes (default is dry run)")
-    parser.add_argument("--no-ai", action="store_true", help="Skip AI processing (just analyze)")
     
     args = parser.parse_args()
     
-    # Validate AWS DB URL if provided
-    if args.aws_db_url and not args.aws_db_url.startswith('postgresql://'):
-        print("❌ Error: AWS DB URL should start with 'postgresql://'")
-        sys.exit(1)
+    # Use provided URL or get from environment
+    aws_db_url = args.aws_db_url or get_database_url()
     
     reprocess_production_meetings_direct(
-        aws_db_url=args.aws_db_url,
+        aws_db_url=aws_db_url,
         openai_api_key=args.openai_key,
         limit=args.limit,
-        dry_run=not args.apply,
-        process_ai=not args.no_ai
+        dry_run=not args.apply
     )
 
 

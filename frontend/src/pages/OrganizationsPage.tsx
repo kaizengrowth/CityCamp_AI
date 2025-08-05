@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { apiRequest } from '../config/api';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useMemo } from 'react';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { getEnvironmentConfig } from '../utils/environment';
 
 interface Organization {
   id: number;
@@ -208,20 +209,20 @@ export const OrganizationsPage: React.FC = () => {
   }, []);
 
   const fetchOrganizations = async () => {
-    // For local development, check if we should load backup data immediately
-    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const forceBackup = isDevelopment && !window.location.search.includes('use-api');
+    const environment = getEnvironmentConfig();
+    const forceBackup = environment.shouldUseBackupData;
     
     if (forceBackup) {
-      console.log('Development mode: Loading backup data immediately');
+      console.log('Development mode: Loading backup organization data immediately');
       setLoading(true);
+
       // Simulate loading delay
       setTimeout(() => {
         setOrganizations(BACKUP_ORGANIZATIONS);
         setUsingBackupData(true);
         setError(null);
         setLoading(false);
-        console.log('Backup data loaded successfully');
+        console.log('Backup organization data loaded successfully');
       }, 500);
       return;
     }
@@ -233,25 +234,39 @@ export const OrganizationsPage: React.FC = () => {
 
       console.log('Fetching organizations from API...');
 
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('API request timeout')), 5000); // 5 second timeout
-      });
+      // Set timeout for API request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const apiPromise = apiRequest<OrganizationListResponse>(
-        `/api/v1/organizations/?limit=100&skip=0&active_only=true`
-      );
+      try {
+        const apiPromise = apiRequest<OrganizationListResponse>(
+          `${API_ENDPOINTS.organizations}?limit=100&skip=0&active_only=true`
+        );
 
-      const response = await Promise.race([apiPromise, timeoutPromise]) as OrganizationListResponse;
+        const response = await apiPromise as OrganizationListResponse;
 
-      console.log('Organizations response received:', response?.organizations?.length || 0, 'organizations');
+        console.log('Organizations response received:', response?.organizations?.length || 0, 'organizations');
 
-      if (response?.organizations && Array.isArray(response.organizations) && response.organizations.length > 0) {
-        setOrganizations(response.organizations);
-        setError(null);
-        console.log('Successfully loaded organizations from API');
-      } else {
-        throw new Error('No organizations data received from API');
+        if (response?.organizations && Array.isArray(response.organizations) && response.organizations.length > 0) {
+          setOrganizations(response.organizations);
+          setError(null);
+          console.log('Successfully loaded organizations from API');
+        } else {
+          throw new Error('No organizations data received from API');
+        }
+      } catch (err) {
+        console.error('API error - falling back to backup data:', {
+          error: err,
+          errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        });
+
+        // Use backup data when API fails
+        console.log('Using backup organization data for local development');
+        setOrganizations(BACKUP_ORGANIZATIONS);
+        setUsingBackupData(true);
+        setError(null); // Clear error since we have backup data
+      } finally {
+        clearTimeout(timeoutId);
       }
 
     } catch (err) {
@@ -289,11 +304,11 @@ export const OrganizationsPage: React.FC = () => {
     });
   }, [organizations, searchTerm, typeFilter, focusAreaFilter, verifiedOnly]);
 
-  const handleOrganizationClick = useCallback((organization: Organization) => {
+  const handleOrganizationClick = (organization: Organization) => {
     setSelectedOrganization(organization);
-  }, []);
+  };
 
-  const handleConnect = useCallback(async (organizationId: number, organizationName: string) => {
+  const handleConnect = (organizationId: number, organizationName: string) => {
     if (!user) {
       toast.error('Please log in to connect with organizations');
       return;
@@ -303,32 +318,36 @@ export const OrganizationsPage: React.FC = () => {
 
     setConnectingOrganizations(prev => new Set(prev).add(organizationId));
 
-    try {
-      const isConnected = connectedOrganizations.has(organizationId);
-      
-      if (isConnected) {
-        // Disconnect logic - for now just update local state
-        setConnectedOrganizations(prev => {
+    const updateConnection = async (isConnect: boolean) => {
+      try {
+        const isConnected = connectedOrganizations.has(organizationId);
+        
+        if (isConnected === isConnect) {
+          // Disconnect logic - for now just update local state
+          setConnectedOrganizations(prev => {
+            const newSet = new Set(prev);
+            if (isConnect) newSet.delete(organizationId);
+            return newSet;
+          });
+          toast.success(`Disconnected from ${organizationName}`);
+        } else {
+          // Connect logic - for now just update local state
+          setConnectedOrganizations(prev => new Set(prev).add(organizationId));
+          toast.success(`Connected to ${organizationName}! You'll receive updates about their activities.`);
+        }
+      } catch (error) {
+        toast.error('Failed to update connection. Please try again.');
+      } finally {
+        setConnectingOrganizations(prev => {
           const newSet = new Set(prev);
           newSet.delete(organizationId);
           return newSet;
         });
-        toast.success(`Disconnected from ${organizationName}`);
-      } else {
-        // Connect logic - for now just update local state
-        setConnectedOrganizations(prev => new Set(prev).add(organizationId));
-        toast.success(`Connected to ${organizationName}! You'll receive updates about their activities.`);
       }
-    } catch (error) {
-      toast.error('Failed to update connection. Please try again.');
-    } finally {
-      setConnectingOrganizations(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(organizationId);
-        return newSet;
-      });
-    }
-  }, [user, connectedOrganizations, connectingOrganizations]);
+    };
+
+    updateConnection(true).catch(console.error);
+  };
 
   const getTypeLabel = (type?: string) => {
     const typeObj = organizationTypes.find(t => t.value === type);

@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 """
-Check Production Meetings Status
-Check the current status of meetings in production database
+Check Production Meetings Database
+Verify the current state of meetings in the production database
 """
 
 import os
 import sys
 import psycopg2
-from pathlib import Path
+from datetime import datetime
+
+
+def get_database_url():
+    """Get database URL from environment variable"""
+    db_url = os.getenv('AWS_DB_URL')
+    if not db_url:
+        print("❌ Error: AWS_DB_URL environment variable not set")
+        print("Please set the AWS_DB_URL environment variable with your database connection string")
+        print("Example: export AWS_DB_URL='postgresql://user:password@host:port/database'")
+        sys.exit(1)
+    return db_url
 
 def check_production_meetings(aws_db_url: str):
     """Check current state of meetings in production"""
@@ -105,7 +116,7 @@ def check_production_meetings(aws_db_url: str):
         print(f"❌ Error: {e}")
 
 def main():
-    aws_db_url = "postgresql://citycamp_user:CityCampSecure2024%21@citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com:5432/citycamp_db"
+    aws_db_url = get_database_url()
     check_production_meetings(aws_db_url)
 
 if __name__ == "__main__":

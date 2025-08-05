@@ -1,30 +1,56 @@
 #!/usr/bin/env python3
 """
-Simple RDS Connection Test and Basic Import
+Simple RDS Connection Test
+Test database connectivity using environment variables for security
 """
 
-import psycopg2
+import os
 import sys
+import psycopg2
 from datetime import datetime
 
-# Connection parameters
-RDS_HOST = "citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com"
-RDS_PORT = 5432
-RDS_DB = "citycamp_db"
-RDS_USER = "citycamp_user"
-RDS_PASSWORD = "CityCampSecure2024!"
+
+def get_rds_connection_params():
+    """Get RDS connection parameters from environment variables"""
+    db_url = os.getenv('AWS_DB_URL')
+    if not db_url:
+        print("❌ Error: AWS_DB_URL environment variable not set")
+        print("Please set the AWS_DB_URL environment variable with your database connection string")
+        print("Example: export AWS_DB_URL='postgresql://user:password@host:port/database'")
+        sys.exit(1)
+    
+    # Parse the database URL
+    # Format: postgresql://user:password@host:port/database
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(db_url)
+        
+        return {
+            'host': parsed.hostname,
+            'port': parsed.port or 5432,
+            'database': parsed.path[1:],  # Remove leading '/'
+            'user': parsed.username,
+            'password': parsed.password
+        }
+    except Exception as e:
+        print(f"❌ Error parsing database URL: {e}")
+        print("Please ensure AWS_DB_URL is in format: postgresql://user:password@host:port/database")
+        sys.exit(1)
 
 def test_connection():
     """Test basic connection to RDS"""
     try:
         print("Testing RDS connection...")
+        
+        # Get connection parameters from environment
+        params = get_rds_connection_params()
+        
         conn = psycopg2.connect(
-            host=RDS_HOST,
-            port=RDS_PORT,
-            database=RDS_DB,
-            user=RDS_USER,
-            password=RDS_PASSWORD,
-            connect_timeout=10
+            host=params['host'],
+            port=params['port'],
+            database=params['database'],
+            user=params['user'],
+            password=params['password']
         )
 
         cursor = conn.cursor()
@@ -54,12 +80,16 @@ def create_sample_meeting():
     """Create a sample meeting in RDS"""
     try:
         print("\nCreating sample meeting...")
+        
+        # Get connection parameters from environment
+        params = get_rds_connection_params()
+        
         conn = psycopg2.connect(
-            host=RDS_HOST,
-            port=RDS_PORT,
-            database=RDS_DB,
-            user=RDS_USER,
-            password=RDS_PASSWORD
+            host=params['host'],
+            port=params['port'],
+            database=params['database'],
+            user=params['user'],
+            password=params['password']
         )
 
         cursor = conn.cursor()
@@ -106,12 +136,16 @@ def list_meetings():
     """List existing meetings in RDS"""
     try:
         print("\nListing existing meetings...")
+        
+        # Get connection parameters from environment
+        params = get_rds_connection_params()
+        
         conn = psycopg2.connect(
-            host=RDS_HOST,
-            port=RDS_PORT,
-            database=RDS_DB,
-            user=RDS_USER,
-            password=RDS_PASSWORD
+            host=params['host'],
+            port=params['port'],
+            database=params['database'],
+            user=params['user'],
+            password=params['password']
         )
 
         cursor = conn.cursor()

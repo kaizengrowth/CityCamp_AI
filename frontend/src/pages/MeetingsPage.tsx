@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
+import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
 
 // Extended Meeting interface with additional properties
 interface Meeting extends BaseMeeting {
@@ -54,8 +55,8 @@ export const MeetingsPage: React.FC = () => {
     if (fetchingRef.current) return;
 
     // For local development, check if we should load sample data immediately
-    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const forceBackup = isDevelopment && !window.location.search.includes('use-api') && !isRetry;
+    const environment = getEnvironmentConfig();
+    const forceBackup = environment.shouldUseBackupData && !isRetry;
     
     if (forceBackup) {
       console.log('Development mode: Loading sample meeting data immediately');
@@ -500,7 +501,7 @@ export const MeetingsPage: React.FC = () => {
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-              {window.location.hostname === 'localhost' ? '⚠️ Sample Data (Dev Mode)' : 'Demo Mode'}
+              {getDevModeDisplayText('Demo Mode')}
             </span>
           )}
           {(error || demoMode) && (
@@ -519,25 +520,19 @@ export const MeetingsPage: React.FC = () => {
           <div className="flex">
             <div className="ml-3 flex-1">
               <h3 className="text-sm font-medium text-blue-800">
-                {window.location.hostname === 'localhost' ? 
+                {getEnvironmentConfig().isDevelopment ? 
                   'Development Mode - Sample Data Loaded' : 
                   (error ? 'Demo Mode - API Issue' : 'Demo Mode Active')
                 }
               </h3>
               <p className="mt-2 text-sm text-blue-700">
-                {window.location.hostname === 'localhost' ?
-                  'Sample meeting data loaded for local development. Add "?use-api" to the URL to test API integration.' :
-                  (error ?
-                    'API connection issue detected. Showing sample data to demonstrate functionality. Click "Load Latest Data" to retry.' :
-                    'Showing sample meeting data. This demonstrates how your generated meeting minutes will appear when the backend API is connected.'
-                  )
-                }
+                {getDevModeInfoMessage(!!error)}
               </p>
               <button
                 onClick={handleForceRefresh}
                 className="mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
               >
-                {window.location.hostname === 'localhost' ? 'Try API instead' : 'Try to load real data'}
+                {getApiRetryButtonText()}
               </button>
             </div>
           </div>
