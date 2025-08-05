@@ -145,7 +145,7 @@ export const ContactRepresentativesPage: React.FC = () => {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                 step >= stepNumber
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-brand-red text-white'
                   : 'bg-gray-200 text-gray-600'
               }`}
             >
@@ -154,7 +154,7 @@ export const ContactRepresentativesPage: React.FC = () => {
             {stepNumber < 3 && (
               <div
                 className={`w-12 h-1 ${
-                  step > stepNumber ? 'bg-primary-600' : 'bg-gray-200'
+                  step > stepNumber ? 'bg-brand-red' : 'bg-gray-200'
                 }`}
               />
             )}
@@ -166,7 +166,7 @@ export const ContactRepresentativesPage: React.FC = () => {
       {step >= 1 && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+            <span className="w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
               1
             </span>
             Find Your Representatives
@@ -184,12 +184,12 @@ export const ContactRepresentativesPage: React.FC = () => {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="e.g., 123 Main Street, Tulsa, OK 74103"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-dark-blue focus:border-transparent"
                 />
                 <button
                   onClick={handleAddressLookup}
                   disabled={loading}
-                  className="btn btn-primary px-6 py-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-brand-dark-blue text-white font-medium rounded-lg hover:bg-brand-red hover:text-white transition-colors disabled:opacity-50 text-sm"
                 >
                   {loading ? 'Looking up...' : 'Find Representatives'}
                 </button>
@@ -197,10 +197,10 @@ export const ContactRepresentativesPage: React.FC = () => {
             </div>
 
             {/* District Finder Link */}
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-blue-800 text-sm">
+            <div className="p-3 bg-[#fdf8f3] rounded-lg border border-gray-200">
+              <p className="text-brand-dark-blue text-sm">
                 💡 <strong>Need more accurate results?</strong> Use our{' '}
-                <a href="/contact-representatives/find-district" className="text-blue-600 hover:text-blue-800 underline font-medium">
+                <a href="/contact-representatives/find-district" className="text-brand-dark-blue hover:text-brand-red underline font-medium">
                   District Finder tool
                 </a>{' '}
                 to get precise district mapping and representative contact information.
@@ -210,13 +210,13 @@ export const ContactRepresentativesPage: React.FC = () => {
 
           {representatives.length > 0 && (
             <div className="mt-6">
-              <div className="text-sm font-medium text-gray-900 mb-3">Your Representatives</div>
+              <div className="text-sm font-medium text-brand-dark-blue mb-3">Your Representatives</div>
               <div className="grid gap-3">
                 {representatives.map((rep, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg border">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium text-gray-900">{rep.name}</h4>
+                        <h4 className="font-medium text-brand-dark-blue">{rep.name}</h4>
                         <p className="text-sm text-gray-600">{rep.position}</p>
                       </div>
                       <div className="text-right text-sm text-gray-600">
@@ -230,7 +230,7 @@ export const ContactRepresentativesPage: React.FC = () => {
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={() => setStep(2)}
-                  className="btn btn-primary px-6 py-2"
+                  className="px-6 py-2 bg-brand-dark-blue text-white font-semibold rounded-lg hover:bg-brand-red hover:text-white transition-colors"
                 >
                   Continue
                 </button>
@@ -244,7 +244,7 @@ export const ContactRepresentativesPage: React.FC = () => {
       {step >= 2 && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+            <span className="w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
               2
             </span>
             Describe Your Concern
@@ -261,7 +261,7 @@ export const ContactRepresentativesPage: React.FC = () => {
                 onChange={(e) => setIssue(e.target.value)}
                 rows={5}
                 placeholder="Describe the issue in detail. Include specific locations, dates, and how it affects you or your community..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-dark-blue focus:border-transparent resize-none"
               />
             </div>
 
@@ -284,10 +284,10 @@ export const ContactRepresentativesPage: React.FC = () => {
                     />
                     <div className={`p-4 rounded-lg border-2 transition-colors ${
                       tone === option.value
-                        ? 'border-primary-500 bg-primary-50'
+                        ? 'border-brand-dark-blue bg-[#fdf8f3]'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}>
-                      <h4 className="font-medium text-gray-900">{option.label}</h4>
+                      <h4 className="font-medium text-brand-dark-blue">{option.label}</h4>
                       <p className="text-sm text-gray-600">{option.desc}</p>
                     </div>
                   </label>
@@ -298,7 +298,7 @@ export const ContactRepresentativesPage: React.FC = () => {
             <button
               onClick={handleGenerateEmail}
               disabled={loading || !issue.trim() || representatives.length === 0}
-              className="btn btn-primary btn-lg w-full disabled:opacity-50"
+              className="px-8 py-3 w-full bg-brand-dark-blue text-white font-semibold rounded-lg hover:bg-brand-red hover:text-white transition-colors disabled:opacity-50"
             >
               {loading ? 'Generating Email...' : '✨ Generate AI-Powered Email'}
             </button>
@@ -310,7 +310,7 @@ export const ContactRepresentativesPage: React.FC = () => {
       {emailComposition && step >= 3 && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+            <span className="w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
               3
             </span>
             Your Generated Email
@@ -319,12 +319,12 @@ export const ContactRepresentativesPage: React.FC = () => {
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
               <div className="mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">Subject:</h4>
+                <h4 className="font-medium text-brand-dark-blue mb-2">Subject:</h4>
                 <p className="text-gray-700 font-medium">{emailComposition.subject}</p>
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Message:</h4>
+                <h4 className="font-medium text-brand-dark-blue mb-2">Message:</h4>
                 <pre className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
                   {emailComposition.body}
                 </pre>
@@ -335,33 +335,33 @@ export const ContactRepresentativesPage: React.FC = () => {
               <div className="flex space-x-3">
                 <button
                   onClick={() => copyToClipboard(`Subject: ${emailComposition.subject}\n\n${emailComposition.body}`)}
-                  className="btn btn-outline flex-1"
+                  className="px-6 py-2 border-2 border-brand-dark-blue text-brand-dark-blue font-semibold rounded-lg hover:bg-button-hover-bg hover:text-brand-red hover:border-brand-red transition-colors flex-1"
                 >
                   📋 Copy to Clipboard
                 </button>
                 <button
                   onClick={handleGenerateEmail}
                   disabled={loading}
-                  className="btn btn-outline"
+                  className="px-6 py-2 border-2 border-brand-dark-blue text-brand-dark-blue font-semibold rounded-lg hover:bg-button-hover-bg hover:text-brand-red hover:border-brand-red transition-colors disabled:opacity-50"
                 >
                   🔄 Regenerate
                 </button>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-medium text-gray-900">Send to:</h4>
+                <h4 className="font-medium text-brand-dark-blue">Send to:</h4>
                 {representatives.map((rep, index) => (
                   <button
                     key={index}
                     onClick={() => openEmailClient(rep)}
-                    className="w-full p-3 text-left bg-primary-50 hover:bg-primary-100 rounded-lg border border-primary-200 transition-colors"
+                    className="w-full p-3 text-left bg-[#fdf8f3] hover:bg-button-hover-bg rounded-lg border border-gray-200 hover:border-brand-dark-blue transition-colors"
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <h5 className="font-medium text-primary-900">{rep.name}</h5>
-                        <p className="text-sm text-primary-700">{rep.position}</p>
+                        <h5 className="font-medium text-brand-dark-blue">{rep.name}</h5>
+                        <p className="text-sm text-gray-700">{rep.position}</p>
                       </div>
-                      <div className="text-primary-600">
+                      <div className="text-brand-dark-blue">
                         ✉️ Send Email
                       </div>
                     </div>
@@ -375,7 +375,7 @@ export const ContactRepresentativesPage: React.FC = () => {
 
       {/* Tips Section */}
       <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-        <h3 className="text-xl font-semibold text-blue-900 mb-4">💡 Tips for Effective Communication</h3>
+        <h3 className="text-xl font-semibold text-blue-900 mb-4"> Tips for Effective Communication</h3>
         <ul className="space-y-2 text-blue-800">
           <li className="flex items-start space-x-2">
             <span className="text-blue-600 font-bold">•</span>

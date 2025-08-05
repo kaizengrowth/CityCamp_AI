@@ -85,12 +85,28 @@ const MarkdownComponents = {
 const renderMarkdownMessage = (text: string): React.ReactNode => {
   if (!text) return null;
 
+  // Remove emoji/icons at the start of lines using Unicode emoji properties
+  let cleanedText = text
+    .split('\n')
+    .map(line => line.replace(/^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}]+/gu, ''))
+    .join('\n');
+
+  // Convert inline dash or bullet lists to Markdown lists
+  cleanedText = cleanedText.replace(/((?:- |• )[\s\S]+?)(?=(?:\n\n|$))/g, (match) => {
+    // Split by dash or bullet, filter out empty, and join as Markdown list
+    const items = match.split(/(?:- |• )/).map(s => s.trim()).filter(Boolean);
+    if (items.length > 1) {
+      return '\n\n' + items.map(s => `- ${s}`).join('\n') + '\n';
+    }
+    return match;
+  });
+
   return (
     <ReactMarkdown
       components={MarkdownComponents}
-      className="prose prose-sm max-w-none"
+      className="prose prose-sm max-w-none text-brand-dark-blue"
     >
-      {text}
+      {cleanedText}
     </ReactMarkdown>
   );
 };
@@ -225,23 +241,15 @@ export const ChatbotWidget: React.FC = () => {
       {isOpen && (
         <div className="mb-4 w-80 h-[32rem] bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
           {/* Header */}
-          <div className="bg-primary-600 text-white p-4 rounded-t-lg">
+          <div className="bg-brand-dark-blue text-white p-4 rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">AI</span>
-                </div>
+
                 <div>
-                  <h3 className="font-semibold">CivicSpark AI Assistant</h3>
-                  <p className="text-xs text-primary-100">Ask me about Tulsa local government</p>
+                  <h4 className="font-semibold text-white">CivicSpark Assistant</h4>
+                  <p className="font-semibold text-xs text-brand-yellow">Ask me about Tulsa local government</p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-white hover:text-primary-100 transition-colors"
-              >
-                ✕
-              </button>
             </div>
           </div>
 
@@ -256,7 +264,7 @@ export const ChatbotWidget: React.FC = () => {
                   <div
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       message.isUser
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-brand-medium-blue text-white'
                         : 'bg-white text-gray-800 border border-gray-200'
                     }`}
                   >
@@ -297,12 +305,12 @@ export const ChatbotWidget: React.FC = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about Tulsa local government..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent text-sm"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isTyping}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className="flex items-center justify-center px-3 py-1 bg-brand-dark-blue text-white rounded-lg text-xs font-semibold transition-colors hover:bg-brand-red hover:text-white disabled:opacity-50 disabled:cursor-not-allowed min-w-[40px]"
               >
                 Send
               </button>
@@ -314,7 +322,7 @@ export const ChatbotWidget: React.FC = () => {
       {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-primary-600 hover:bg-primary-700 text-white p-4 rounded-full shadow-lg transition-colors"
+        className="bg-brand-red border-4 border-brand-yellow text-white p-4 rounded-full shadow-lg transition-colors hover:bg-brand-red focus:outline-none"
       >
         {isOpen ? (
           <span className="text-xl">✕</span>

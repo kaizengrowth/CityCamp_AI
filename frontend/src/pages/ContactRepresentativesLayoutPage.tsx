@@ -23,7 +23,7 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
     <div className="space-y-6 max-w-lg mx-auto">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+        <h1 className="text-3xl md:text-4xl font-bold text-brand-dark-blue">
           Contact Your Representatives
         </h1>
         <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -42,10 +42,10 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
                 key={tab.name}
                 to={tab.href}
                 className={`
-                  group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+                  group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm focus:outline-none
                   ${isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-brand-red text-brand-red focus:text-brand-red'
+                    : 'border-transparent text-gray-500 hover:text-brand-dark-blue hover:border-gray-300 focus:text-brand-dark-blue'
                   }
                 `}
               >
@@ -69,17 +69,17 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
 
       {/* Cross-linking Section */}
       <div className="bg-[#fdf8f3] rounded-xl p-6 mt-8">
-        <h2 className="text-lg font-semibold text-blue-900 mb-3">
+        <h2 className="text-lg font-semibold text-brand-dark-blue mb-3">
           💡 Get Better Results
         </h2>
-        <div className="grid md:grid-cols-2 gap-4 text-blue-800">
+        <div className="grid md:grid-cols-2 gap-4 text-brand-dark-blue">
           <div>
             <h5 className="font-medium mb-1 text-sm">Start with District Finder</h5>
             <p className="text-sm">
               {location.pathname.includes('find-district') ? (
                 <>Use the AI email composer to craft your message after finding your district.</>
               ) : (
-                <>Know exactly who to contact by <Link to="/contact-representatives/find-district" className="underline hover:text-blue-900">finding your district first</Link>.</>
+                <>Know exactly who to contact by <Link to="/contact-representatives/find-district" className="underline hover:text-brand-red text-brand-dark-blue">finding your district first</Link>.</>
               )}
             </p>
           </div>
@@ -87,7 +87,7 @@ export const ContactRepresentativesLayoutPage: React.FC = () => {
             <h5 className="font-medium mb-1 text-sm">Then Compose Your Email</h5>
             <p className="text-sm">
               {location.pathname.includes('find-district') ? (
-                <>Ready to contact your rep? <Link to="/contact-representatives" className="underline hover:text-blue-900">Use our AI email composer</Link> for professional outreach.</>
+                <>Ready to contact your rep? <Link to="/contact-representatives" className="underline hover:text-brand-red text-brand-dark-blue">Use our AI email composer</Link> for professional outreach.</>
               ) : (
                 <>Let AI help you write a professional, effective email to your representatives.</>
               )}
