@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import fitz  # PyMuPDF for better PDF text extraction
 
 # AI/ML imports
-import openai
+from openai import OpenAI
 
 # PDF processing
 import PyPDF2
@@ -522,11 +522,14 @@ class AICategorization:
 
     def __init__(self):
         """Initialize the AI categorization service"""
-        openai.api_key = settings.openai_api_key
-        if not openai.api_key:
+        api_key = settings.openai_api_key
+        if not api_key:
             logger.warning(
                 "OpenAI API key not configured. AI features will be limited."
             )
+            self.openai_client = None
+        else:
+            self.openai_client = OpenAI(api_key=api_key)
 
     @classmethod
     def get_category_definitions(cls) -> Dict[str, CategoryDefinition]:
@@ -597,7 +600,7 @@ class AICategorization:
         self, content: str
     ) -> Tuple[List[str], List[str], str, str, List[VotingRecord], Dict[str, int]]:
         """Use OpenAI to categorize content and extract enhanced information"""
-        if not openai.api_key:
+        if not self.openai_client:
             logger.warning(
                 "OpenAI API key not configured. Using fallback categorization."
             )
@@ -660,7 +663,7 @@ class AICategorization:
             Keep summaries concise and factual. Avoid repetitive content.
             """
 
-            response = openai.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model="gpt-4",  # Upgrade to GPT-4 for better accuracy
                 messages=[
                     {
