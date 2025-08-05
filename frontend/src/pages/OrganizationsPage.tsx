@@ -391,7 +391,7 @@ export const OrganizationsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Community Organizations</h1>
+        <h1 className="text-3xl font-bold text-brand-dark-blue">Community Organizations</h1>
         <div className="text-sm text-gray-600">
           Discover {filteredOrganizations.length} active community organizations in Tulsa
           {usingBackupData && (
@@ -491,7 +491,7 @@ export const OrganizationsPage: React.FC = () => {
                   onClick={() => handleOrganizationClick(org)}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                    <h3 className="text-lg font-semibold text-brand-dark-blue leading-tight">
                       {org.name}
                     </h3>
                     <button
@@ -568,9 +568,9 @@ export const OrganizationsPage: React.FC = () => {
           {selectedOrganization ? (
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-start mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 flex-1">
-                  {selectedOrganization.name}
-                </h2>
+                            <h2 className="text-xl font-semibold text-brand-dark-blue flex-1">
+              {selectedOrganization.name}
+            </h2>
                 <button
                   onClick={() => handleConnect(selectedOrganization.id, selectedOrganization.name)}
                   disabled={connectingOrganizations.has(selectedOrganization.id)}
@@ -598,13 +598,13 @@ export const OrganizationsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Organization Type</h3>
+                  <h3 className="text-sm font-semibold text-brand-dark-blue mb-2">Organization Type</h3>
                   <p className="text-sm text-gray-600">{getTypeLabel(selectedOrganization.organization_type)}</p>
                 </div>
 
                 {selectedOrganization.focus_areas && selectedOrganization.focus_areas.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Focus Areas</h3>
+                    <h3 className="text-sm font-semibold text-brand-dark-blue mb-2">Focus Areas</h3>
                     <div className="flex flex-wrap gap-1">
                       {selectedOrganization.focus_areas.map((area, index) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
@@ -617,7 +617,7 @@ export const OrganizationsPage: React.FC = () => {
 
                 {selectedOrganization.service_areas && selectedOrganization.service_areas.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Service Areas</h3>
+                    <h3 className="text-sm font-semibold text-brand-dark-blue mb-2">Service Areas</h3>
                     <ul className="text-gray-600 text-sm space-y-1">
                       {selectedOrganization.service_areas.map((area, index) => (
                         <li key={index}>• {area}</li>
@@ -627,7 +627,7 @@ export const OrganizationsPage: React.FC = () => {
                 )}
 
                 <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Contact Information</h3>
+                  <h3 className="text-sm font-semibold text-brand-dark-blue mb-2">Contact Information</h3>
                   <div className="space-y-2 text-sm">
                     {selectedOrganization.website_url && (
                       <div>
@@ -670,7 +670,7 @@ export const OrganizationsPage: React.FC = () => {
 
                 {(selectedOrganization.founded_year || selectedOrganization.member_count) && (
                   <div className="border-t pt-4">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Organization Details</h3>
+                    <h3 className="text-sm font-semibold text-brand-dark-blue mb-2">Organization Details</h3>
                     <div className="space-y-1 text-sm">
                       {selectedOrganization.founded_year && (
                         <div>

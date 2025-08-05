@@ -51,7 +51,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-brand-dark-blue">Dashboard</h1>
         <div className="text-sm text-gray-600">
           Welcome back, {user?.full_name}!
         </div>
@@ -80,7 +80,7 @@ export const DashboardPage: React.FC = () => {
                   {campaignSummary.active_campaigns.slice(0, 3).map((campaign) => (
                     <div key={campaign.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{campaign.title}</p>
+                        <p className="text-sm font-medium text-brand-dark-blue">{campaign.title}</p>
                         <p className="text-xs text-gray-500">{campaign.category}</p>
                       </div>
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">

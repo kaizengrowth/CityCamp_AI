@@ -274,7 +274,7 @@ export const CampaignsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Community Campaigns</h1>
+        <h1 className="text-3xl font-bold text-brand-dark-blue">Community Campaigns</h1>
         <div className="text-sm text-gray-600">
           Join active advocacy campaigns and make your voice heard in Tulsa
           {usingBackupData && (
@@ -303,7 +303,7 @@ export const CampaignsPage: React.FC = () => {
               </span>
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
+            <h3 className="text-xl font-semibold text-brand-dark-blue mb-3">
               {campaign.title}
             </h3>
 
@@ -345,7 +345,7 @@ export const CampaignsPage: React.FC = () => {
       {campaigns.length === 0 && !loading && (
         <div className="text-center py-12">
           <div className="text-4xl mb-4">📢</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns available</h3>
+          <h3 className="text-lg font-medium text-brand-dark-blue mb-2">No campaigns available</h3>
           <p className="text-gray-600">Check back later for new advocacy campaigns.</p>
         </div>
       )}
