@@ -1,0 +1,18 @@
+# Global code owners - all files require review from repository owner
+* @kaizengrowth
+
+# Frontend specific
+frontend/** @kaizengrowth
+
+# Backend specific
+backend/** @kaizengrowth
+
+# Infrastructure and deployment
+aws/** @kaizengrowth
+scripts/** @kaizengrowth
+docker-compose*.yml @kaizengrowth
+Dockerfile* @kaizengrowth
+
+# Documentation
+docs/** @kaizengrowth
+README.md @kaizengrowth
