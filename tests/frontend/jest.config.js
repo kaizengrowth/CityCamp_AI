@@ -7,7 +7,8 @@ module.exports = {
     '^@/assets/images/(.*)\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '^@/(.*)$': '<rootDir>/../../frontend/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js'
+    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js',
+    '^react-pdf$': '<rootDir>/__mocks__/react-pdf.js'
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
@@ -18,7 +19,7 @@ module.exports = {
     ],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-markdown|remark-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|zwitch)/)'
+    'node_modules/(?!(react-markdown|remark-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|zwitch|date-fns)/)'
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
@@ -36,9 +37,5 @@ module.exports = {
     customExportConditions: [''],
   },
   // Ensure Jest can find node_modules from the frontend directory
-  moduleDirectories: ['node_modules', path.resolve(__dirname, '../../frontend/node_modules')],
-  // Transform node_modules if needed
-  transformIgnorePatterns: [
-    'node_modules/(?!(date-fns)/)'
-  ]
+  moduleDirectories: ['node_modules', path.resolve(__dirname, '../../frontend/node_modules')]
 };
