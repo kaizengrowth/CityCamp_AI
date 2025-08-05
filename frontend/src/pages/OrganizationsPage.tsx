@@ -3,6 +3,7 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getEnvironmentConfig } from '../utils/environment';
+import { LoginModal } from '../components/auth/LoginModal';
 
 interface Organization {
   id: number;
@@ -175,6 +176,7 @@ export const OrganizationsPage: React.FC = () => {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [connectedOrganizations, setConnectedOrganizations] = useState<Set<number>>(new Set());
   const [connectingOrganizations, setConnectingOrganizations] = useState<Set<number>>(new Set());
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Available filter options
   const organizationTypes = [
@@ -211,7 +213,7 @@ export const OrganizationsPage: React.FC = () => {
   const fetchOrganizations = async () => {
     const environment = getEnvironmentConfig();
     const forceBackup = environment.shouldUseBackupData;
-    
+
     if (forceBackup) {
       console.log('Development mode: Loading backup organization data immediately');
       setLoading(true);
@@ -294,8 +296,8 @@ export const OrganizationsPage: React.FC = () => {
                            (org.short_description && org.short_description.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesType = typeFilter === 'all' || org.organization_type === typeFilter;
-      
-      const matchesFocusArea = focusAreaFilter === 'all' || 
+
+      const matchesFocusArea = focusAreaFilter === 'all' ||
                               (org.focus_areas && org.focus_areas.includes(focusAreaFilter));
 
       const matchesVerified = !verifiedOnly || org.is_verified;
@@ -310,7 +312,7 @@ export const OrganizationsPage: React.FC = () => {
 
   const handleConnect = (organizationId: number, organizationName: string) => {
     if (!user) {
-      toast.error('Please log in to connect with organizations');
+      setIsLoginModalOpen(true);
       return;
     }
 
@@ -321,7 +323,7 @@ export const OrganizationsPage: React.FC = () => {
     const updateConnection = async (isConnect: boolean) => {
       try {
         const isConnected = connectedOrganizations.has(organizationId);
-        
+
         if (isConnected === isConnect) {
           // Disconnect logic - for now just update local state
           setConnectedOrganizations(prev => {
@@ -482,8 +484,8 @@ export const OrganizationsPage: React.FC = () => {
                 <div
                   key={org.id}
                   className={`p-4 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
-                    selectedOrganization?.id === org.id 
-                      ? 'bg-white border border-primary-800 shadow-lg' 
+                    selectedOrganization?.id === org.id
+                      ? 'bg-white border border-primary-800 shadow-lg'
                       : 'bg-[#fdf8f3] hover:bg-white'
                   }`}
                   onClick={() => handleOrganizationClick(org)}
@@ -498,10 +500,10 @@ export const OrganizationsPage: React.FC = () => {
                         handleConnect(org.id, org.name);
                       }}
                       disabled={connectingOrganizations.has(org.id)}
-                      className={`flex-shrink-0 ml-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`flex-shrink-0 ml-2 inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold transition-colors border-2 ${
                         connectedOrganizations.has(org.id)
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                          ? 'bg-green-100 text-green-800 border-green-300'
+                          : 'border-brand-dark-blue text-brand-dark-blue hover:bg-button-hover-bg hover:text-brand-red hover:border-brand-red'
                       } ${connectingOrganizations.has(org.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {connectingOrganizations.has(org.id) ? (
@@ -565,17 +567,17 @@ export const OrganizationsPage: React.FC = () => {
         <div className="w-80 flex-shrink-0">
           {selectedOrganization ? (
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
+              <div className="flex items-start mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 flex-1">
                   {selectedOrganization.name}
                 </h2>
                 <button
                   onClick={() => handleConnect(selectedOrganization.id, selectedOrganization.name)}
                   disabled={connectingOrganizations.has(selectedOrganization.id)}
-                  className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold transition-colors ml-4 flex-shrink-0 ${
                     connectedOrganizations.has(selectedOrganization.id)
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                      : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-brand-dark-blue text-white hover:bg-brand-red hover:text-white'
                   } ${connectingOrganizations.has(selectedOrganization.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {connectingOrganizations.has(selectedOrganization.id) ? (
@@ -630,9 +632,9 @@ export const OrganizationsPage: React.FC = () => {
                     {selectedOrganization.website_url && (
                       <div>
                         <span className="font-medium">Website:</span>
-                        <a 
-                          href={selectedOrganization.website_url} 
-                          target="_blank" 
+                        <a
+                          href={selectedOrganization.website_url}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="ml-1 text-primary-600 hover:text-primary-800"
                         >
@@ -643,7 +645,7 @@ export const OrganizationsPage: React.FC = () => {
                     {selectedOrganization.contact_email && (
                       <div>
                         <span className="font-medium">Email:</span>
-                        <a 
+                        <a
                           href={`mailto:${selectedOrganization.contact_email}`}
                           className="ml-1 text-primary-600 hover:text-primary-800"
                         >
@@ -694,6 +696,17 @@ export const OrganizationsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+              <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onSuccess={() => {
+            setIsLoginModalOpen(false);
+            fetchOrganizations(); // Re-fetch organizations after successful login
+          }}
+          title="Sign In to Connect"
+          message="Please sign in to connect with organizations and stay updated on their activities."
+        />
     </div>
   );
-}; 
+};
