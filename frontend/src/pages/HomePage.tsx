@@ -14,7 +14,7 @@ export const HomePage: React.FC = () => {
             {/* Left side - Text content */}
             <div className="space-y-8">
               <div className="space-y-6">
-                <h1 className="text-5xl md:text-6xl font-bold" style={{color: '#162a49'}}>
+                <h1 className="text-5xl md:text-6xl font-bold text-brand-dark-blue">
                   Civic Spark AI
                 </h1>
                 <p className="text-xl text-gray-600 max-w-lg">
@@ -32,7 +32,7 @@ export const HomePage: React.FC = () => {
                   </Link>
                   <Link
                     to="/login"
-                    className="px-8 py-3 border-2 border-gray-900 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-8 py-3 border-2 border-brand-dark-blue text-brand-dark-blue font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Sign In
                   </Link>
@@ -74,7 +74,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Explore Section */}
-      <div className="py-16" style={{backgroundColor: '#162a49'}}>
+      <div className="py-16 bg-brand-dark-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center text-white mb-12">Explore Civic Spark AI</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -88,7 +88,7 @@ export const HomePage: React.FC = () => {
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Meeting Alerts</h3>
+                            <h3 className="text-xl font-bold text-brand-dark-blue mb-3">Meeting Alerts</h3>
               <p className="text-gray-600 leading-relaxed">
                 Get notified about Tulsa City Council meetings and agenda items that matter to you
               </p>
@@ -110,7 +110,7 @@ export const HomePage: React.FC = () => {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">AI Assistant</h3>
+              <h3 className="text-xl font-bold text-brand-dark-blue mb-3">AI Assistant</h3>
               <p className="text-gray-600 leading-relaxed">
                 Ask questions about city government, policies, and get instant answers
               </p>
@@ -126,7 +126,7 @@ export const HomePage: React.FC = () => {
                   <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-1.1.9-2 2-2s2 .9 2 2V18h2v-4h3v4h2V9.5c0-1.1-.9-2-2-2h-1.5v-2c0-1.38-1.12-2.5-2.5-2.5S9.5 4.12 9.5 5.5v2H8c-1.1 0-2 .9-2 2V18H4z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">City Council Meetings</h3>
+              <h3 className="text-xl font-bold text-brand-dark-blue mb-3">City Council Meetings</h3>
               <p className="text-gray-600 leading-relaxed">
                 Browse upcoming meetings and agendas
               </p>
@@ -142,7 +142,7 @@ export const HomePage: React.FC = () => {
                   <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Contact Representatives</h3>
+              <h3 className="text-xl font-bold text-brand-dark-blue mb-3">Contact Representatives</h3>
               <p className="text-gray-600 leading-relaxed">
                 Organize and participate in campaigns for issues you care about
               </p>

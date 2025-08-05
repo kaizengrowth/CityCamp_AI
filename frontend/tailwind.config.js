@@ -67,6 +67,10 @@ export default {
           800: '#991b1b',
           900: '#7f1d1d',
         },
+        brand: {
+          'dark-blue': '#162a49',    // Main brand color for text, titles, badges
+          'medium-blue': '#5086d3',  // Button color for CTAs
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
