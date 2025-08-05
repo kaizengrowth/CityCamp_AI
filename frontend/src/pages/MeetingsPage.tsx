@@ -1,8 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
-import { Meeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
+import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
+
+// Extended Meeting interface with additional properties
+interface Meeting extends BaseMeeting {
+  detailed_summary?: string;
+  voting_records?: Array<{
+    item_title: string;
+    vote_result: string;
+    votes: Array<{
+      member: string;
+      vote: string;
+    }>;
+  }>;
+  document_type?: 'agenda' | 'minutes';
+  vote_statistics?: {
+    total_votes: number;
+    items_passed: number;
+    items_failed: number;
+    unanimous_votes: number;
+  };
+}
 
 export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -148,7 +168,7 @@ export const MeetingsPage: React.FC = () => {
       console.log('Fetching meeting details from API...');
       const loadingToast = toast.loading('Loading meeting details...', { duration: 0 });
 
-      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(
+      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: string[], pdf_url: string | null}>(
         API_ENDPOINTS.meetingById(meetingId)
       );
       console.log('Meeting response received:', response);
@@ -202,8 +222,8 @@ export const MeetingsPage: React.FC = () => {
                         !meeting.summary.includes('Minutes imported from PDF') &&
                         (meeting.keywords?.length > 0 || 
                          meeting.topics?.length > 0 || 
-                         (meeting as any).detailed_summary ||
-                         (meeting as any).voting_records?.length > 0);
+                         meeting.detailed_summary ||
+                         (meeting.voting_records?.length ?? 0) > 0);
       
       if (!hasContent) {
         return false; // Skip meetings with no meaningful data
@@ -214,8 +234,8 @@ export const MeetingsPage: React.FC = () => {
 
       // Document type filter
       const matchesDocumentType = documentTypeFilter === 'all' ||
-                                 (meeting as any).document_type === documentTypeFilter ||
-                                 (!((meeting as any).document_type) && documentTypeFilter === 'agenda'); // Default to agenda
+                                 meeting.document_type === documentTypeFilter ||
+                                 (!meeting.document_type && documentTypeFilter === 'agenda'); // Default to agenda
 
       // Meeting type filter
       const matchesMeetingType = meetingTypeFilter === 'all' ||
@@ -322,8 +342,8 @@ export const MeetingsPage: React.FC = () => {
                           !meeting.summary.includes('Minutes imported from PDF') &&
                           (meeting.keywords?.length > 0 || 
                            meeting.topics?.length > 0 || 
-                           (meeting as any).detailed_summary ||
-                           (meeting as any).voting_records?.length > 0);
+                           meeting.detailed_summary ||
+                           (meeting.voting_records?.length ?? 0) > 0);
         return isCompleted && hasContent;
       })
       .slice(0, 5);
@@ -573,7 +593,7 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                onChange={(e) => setFilter(e.target.value as 'all' | 'upcoming' | 'completed')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Meetings</option>
@@ -584,7 +604,7 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <select
                 value={documentTypeFilter}
-                onChange={(e) => setDocumentTypeFilter(e.target.value as any)}
+                onChange={(e) => setDocumentTypeFilter(e.target.value as 'all' | 'agenda' | 'minutes')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Documents</option>
