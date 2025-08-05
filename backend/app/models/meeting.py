@@ -35,10 +35,18 @@ class Meeting(Base):
     external_id = Column(String, nullable=True)  # ID from external system
     source = Column(String, nullable=False)  # e.g., "tulsa_city_council_api"
 
+    # Document categorization
+    document_type = Column(String, nullable=True)  # "agenda" or "minutes"
+
     # Extracted information
     topics = Column(JSON, default=list)  # List of topics discussed
     keywords = Column(JSON, default=list)  # AI-extracted keywords
     summary = Column(Text, nullable=True)  # AI-generated summary
+    detailed_summary = Column(Text, nullable=True)  # Enhanced structured summary
+
+    # Voting information
+    voting_records = Column(JSON, default=list)  # List of all votes taken
+    vote_statistics = Column(JSON, default=dict)  # Overall voting statistics
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
