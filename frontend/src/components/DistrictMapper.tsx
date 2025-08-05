@@ -66,8 +66,8 @@ export const DistrictMapper: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 flex items-center">
-          <span className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+        <h2 className="text-2xl font-semibold mb-4 flex items-center text-brand-dark-blue">
+          <span className="w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
             🗺️
           </span>
           Find Your City Council District
@@ -89,13 +89,13 @@ export const DistrictMapper: React.FC = () => {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g., 123 Main Street, Tulsa, OK 74103"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-dark-blue focus:border-transparent"
                 onKeyPress={(e) => e.key === 'Enter' && handleAddressLookup()}
               />
               <button
                 onClick={handleAddressLookup}
                 disabled={loading}
-                className="btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 disabled:opacity-50 rounded-lg font-medium"
+                className="px-4 py-2 bg-brand-dark-blue text-white font-medium rounded-lg hover:bg-brand-red hover:text-white transition-colors disabled:opacity-50 text-sm"
               >
                 {loading ? 'Finding...' : 'Find District'}
               </button>
@@ -106,7 +106,7 @@ export const DistrictMapper: React.FC = () => {
 
       {result && (
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-xl font-semibold mb-4">District Lookup Results</h3>
+          <h3 className="text-xl font-semibold mb-4 text-brand-dark-blue">District Lookup Results</h3>
 
           {result.district_info.found ? (
             <div className="space-y-4">
@@ -126,13 +126,13 @@ export const DistrictMapper: React.FC = () => {
 
               {/* Representatives */}
               <div>
-                <div className="text-sm font-medium text-gray-900 mb-3">Your Representatives</div>
+                <div className="text-sm font-medium text-brand-dark-blue mb-3">Your Representatives</div>
                 <div className="grid gap-3">
                   {result.representatives.map((rep, index) => (
                     <div key={index} className="bg-gray-50 p-4 rounded-lg border">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h5 className="font-medium text-gray-900">{rep.name}</h5>
+                          <h5 className="font-medium text-brand-dark-blue">{rep.name}</h5>
                           <p className="text-sm text-gray-600 mb-2">
                             {rep.position}
                           </p>

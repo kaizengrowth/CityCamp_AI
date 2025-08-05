@@ -43,18 +43,18 @@ export const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-16 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">Tulsa</span>
+            <div className="w-16 h-12 bg-brand-yellow rounded-lg flex items-center justify-center">
+              <span className="text-brand-dark-blue font-bold text-white text-sm">TULSA</span>
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-brand-dark-blue">
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
             <Link
               to="/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
+              className="font-medium text-primary-600 hover:text-brand-red"
             >
               create a new account
             </Link>
@@ -106,13 +106,13 @@ export const LoginPage: React.FC = () => {
                 type="checkbox"
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
+                              <label htmlFor="remember-me" className="ml-2 block text-sm text-brand-dark-blue">
+                  Remember me
+                </label>
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
+              <a href="#" className="font-medium text-primary-600 hover:text-brand-red">
                 Forgot your password?
               </a>
             </div>
@@ -122,7 +122,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary w-full btn-lg disabled:opacity-50"
+              className="w-full px-8 py-3 bg-brand-dark-blue text-white font-semibold rounded-lg hover:bg-brand-red hover:text-white transition-colors disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">

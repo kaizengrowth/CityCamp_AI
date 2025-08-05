@@ -99,7 +99,7 @@ export const Layout: React.FC = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
                   <Link
                     to="/signup/notifications"
-                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:bg-brand-red hover:text-white whitespace-nowrap"
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:bg-brand-yellow hover:text-black whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">Get Notified</span>
                     <span className="sm:hidden">Notify</span>
