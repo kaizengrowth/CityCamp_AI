@@ -70,9 +70,9 @@ export default {
         brand: {
           'dark-blue': '#162a49',    // Main brand color for text, titles, badges
           'medium-blue': '#5086d3',  // Button color for CTAs
+          'red': '#B10E1C',
+          'yellow': '#E8A613',
         },
-        'brand-red': '#B10E1C',
-        'brand-yellow': '#E8A613',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
