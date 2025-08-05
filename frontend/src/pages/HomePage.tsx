@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+// import heroImage from '@/assets/images/hero-image.jpg'; // Uncomment when you add the image
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -40,33 +41,29 @@ export const HomePage: React.FC = () => {
               )}
             </div>
 
-            {/* Right side - Decorative icons */}
+            {/* Right side - Hero Image */}
             <div className="hidden lg:block relative">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  </div>
-                  <div className="w-16 h-16 bg-yellow-100 rounded-xl flex items-center justify-center ml-8">
-                    <svg className="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                  </div>
-                </div>
-                <div className="space-y-6 mt-8">
-                  <div className="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                    </svg>
-                  </div>
-                  <div className="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-10 h-10 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l.09.06c.51.35 1.07.54 1.64.54.75 0 1.45-.35 1.89-.95l.03-.05.05-.08c.14-.21.26-.44.35-.68.06-.16.1-.33.12-.5.02-.14.02-.28 0-.42-.05-.38-.21-.73-.45-1.02L12 2zm-1.5 2.5c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zm3 0c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5z"/>
-                    </svg>
+              <div className="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-brand-medium-blue to-brand-dark-blue">
+                {/* Placeholder until hero image is added */}
+                <div className="flex items-center justify-center h-full text-white">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    </div>
+                    <p className="text-sm opacity-80">Hero Image Placeholder</p>
                   </div>
                 </div>
+
+                {/* Uncomment below when you add the hero image:
+                <img
+                  src={heroImage}
+                  alt="Civic Spark AI - Connecting Tulsa residents with city government"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-brand-dark-blue/20 to-transparent"></div>
+                */}
               </div>
             </div>
           </div>
