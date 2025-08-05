@@ -305,9 +305,7 @@ async def initialize_default_topics(db: Session = Depends(get_db)):
     notification_service = NotificationService(settings)
 
     # This will create default topics if they don't exist
-    from app.services.notification_service import initialize_default_topics
-
-    result = await initialize_default_topics(db)
+    result = await notification_service.initialize_default_topics(db)
     return {
         "message": "Default topics initialized",
         "created": result.get("created", 0),
