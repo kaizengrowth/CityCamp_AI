@@ -90,7 +90,7 @@ export const ChatbotWidget: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm your **CityCamp AI assistant** for Tulsa civic engagement.\n\nI can help you with:\n• 🏛️ City council meetings and agendas\n• 📋 Local campaigns and initiatives\n• 🔔 Setting up notifications\n• 🗳️ Civic participation opportunities\n\nWhat would you like to know about **Tulsa** local government?",
+      text: "Hello! I'm your **Civic Spark AI assistant** for Tulsa civic engagement.\n\nI can help you with:\n• 🏛️ City council meetings and agendas\n• 📋 Local campaigns and initiatives\n• 🔔 Setting up notifications\n• 🗳️ Civic participation opportunities\n\nWhat would you like to know about **Tulsa** local government?",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -189,7 +189,7 @@ export const ChatbotWidget: React.FC = () => {
     }
 
     if (input.includes('campaign') || input.includes('petition')) {
-      return "**CityCamp AI** helps you stay informed about local Tulsa campaigns and petitions.\n\nCheck out the [Campaigns page](/campaigns) to:\n• See active initiatives in Tulsa\n• Learn about local ballot measures\n• Find ways to get involved in your community\n\nIs there a specific **Tulsa** campaign or issue you're interested in?";
+      return "**Civic Spark AI** helps you stay informed about local Tulsa campaigns and petitions.\n\nCheck out the [Campaigns page](/campaigns) to:\n• See active initiatives in Tulsa\n• Learn about local ballot measures\n• Find ways to get involved in your community\n\nIs there a specific **Tulsa** campaign or issue you're interested in?";
     }
 
     if (input.includes('notification') || input.includes('alert')) {
@@ -200,7 +200,7 @@ export const ChatbotWidget: React.FC = () => {
       return "Hello! I'm here to help you stay engaged with **Tulsa local government**.\n\nYou can ask me about:\n• City council meetings and agendas\n• Local campaigns and initiatives\n• Civic participation opportunities\n• Government services and information\n\nWhat would you like to know about **Tulsa**?";
     }
 
-    return "I'm here to help you stay informed about **Tulsa local government** activities.\n\nYou can ask me about:\n• City council meetings and agendas\n• Local campaigns and initiatives\n• Civic participation opportunities\n• Using the CityCamp AI platform\n\nFor official information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)\n\nWhat would you like to know about **Tulsa**?";
+    return "I'm here to help you stay informed about **Tulsa local government** activities.\n\nYou can ask me about:\n• City council meetings and agendas\n• Local campaigns and initiatives\n• Civic participation opportunities\n• Using the Civic Spark AI platform\n\nFor official information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)\n\nWhat would you like to know about **Tulsa**?";
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -222,7 +222,7 @@ export const ChatbotWidget: React.FC = () => {
                   <span className="text-white text-sm font-bold">AI</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold">CityCamp AI Assistant</h3>
+                  <h3 className="font-semibold">Civic Spark AI Assistant</h3>
                   <p className="text-xs text-primary-100">Ask me about Tulsa local government</p>
                 </div>
               </div>
