@@ -7,8 +7,7 @@ module.exports = {
     '^@/assets/images/(.*)\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '^@/(.*)$': '<rootDir>/../../frontend/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js',
-    "\\.(jpg|jpeg|png|gif|svg)$": "<rootDir>/__mocks__/fileMock.js"
+    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js'
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
