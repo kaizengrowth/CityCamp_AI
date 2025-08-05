@@ -7,6 +7,7 @@ Reprocess all meeting PDFs in production with enhanced GPT-4 AI to get better re
 import os
 import sys
 import argparse
+import json
 import psycopg2
 from pathlib import Path
 from typing import List, Dict, Any
@@ -107,6 +108,7 @@ def reprocess_production_meetings_direct(
                     sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
                     from app.services.ai_categorization_service import AICategorization
                     
+                    # Initialize AI service (it will pick up the API key from environment)
                     ai_service = AICategorization()
                     
                     # Read PDF content
@@ -156,10 +158,10 @@ def reprocess_production_meetings_direct(
                         cur.execute(update_query, (
                             processed_content.summary,
                             processed_content.detailed_summary,
-                            processed_content.keywords,
-                            processed_content.categories,
-                            voting_records_json,
-                            processed_content.vote_statistics,
+                            json.dumps(processed_content.keywords),
+                            json.dumps(processed_content.categories),
+                            json.dumps(voting_records_json),
+                            json.dumps(processed_content.vote_statistics),
                             mid
                         ))
                         
