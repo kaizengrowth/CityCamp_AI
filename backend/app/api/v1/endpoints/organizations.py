@@ -34,7 +34,7 @@ def list_organizations(
     
     # Apply filters
     if active_only:
-        query = query.filter(Organization.is_active == True)
+        query = query.filter(Organization.is_active)
     
     if verified_only:
         query = query.filter(Organization.is_verified == True)
