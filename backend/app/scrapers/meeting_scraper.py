@@ -2,6 +2,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
+import pytz
+from app.core.config import get_settings
 from app.models.meeting import AgendaItem, Meeting
 from app.scrapers.tgov_scraper import TGOVScraper
 from app.services.notification_service import NotificationService
@@ -19,7 +21,8 @@ class MeetingScraper:
     def __init__(self, db: Session):
         self.db = db
         self.tgov_scraper = TGOVScraper(db)
-        self.notification_service = NotificationService(db)
+        settings = get_settings()
+        self.notification_service = NotificationService(settings)
 
     async def run_full_scrape(self, days_ahead: int = 30) -> Dict[str, int]:
         """
@@ -49,7 +52,9 @@ class MeetingScraper:
                     stats["agenda_items_created"] += len(agenda_items)
 
                     # Scrape minutes if meeting has already occurred
-                    if meeting.meeting_date < datetime.now():
+                    # Use timezone-aware datetime for comparison
+                    current_time = datetime.now(pytz.UTC)
+                    if meeting.meeting_date < current_time:
                         minutes = await self.tgov_scraper.scrape_meeting_minutes(
                             meeting
                         )

@@ -2,6 +2,8 @@
 
 Welcome to the CityCamp AI documentation! This directory contains all project documentation organized by topic.
 
+**🆕 New**: The **Tulsa Archive Scraper** system can now scrape **ALL historical documents** (2020-2025) from the official City of Tulsa Council Archive, supporting **16 different meeting types** including Regular Council, committees, and task forces. See [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md) for complete details.
+
 ## 📚 Documentation Index
 
 ### 🚀 Getting Started
@@ -20,6 +22,9 @@ Welcome to the CityCamp AI documentation! This directory contains all project do
 ### 🧪 Testing & Development
 - **[SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)** - Scraper testing documentation
 - **[../tests/README.md](../tests/README.md)** - Test organization and running guide
+
+### 🕸️ Data Collection & Scraping
+- **[TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)** - Comprehensive historical document scraping system
 
 ## 📁 Project Structure
 
@@ -49,6 +54,10 @@ CityCamp_AI/
 ### For Testing
 1. **Test organization**: [../tests/README.md](../tests/README.md)
 2. **Scraper testing**: [SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)
+
+### For Data Collection
+1. **Historical scraping**: [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)
+2. **Meeting discovery**: [SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)
 
 ## 🔗 External Links
 

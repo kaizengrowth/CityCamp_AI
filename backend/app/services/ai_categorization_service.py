@@ -599,23 +599,44 @@ class AICategorization:
             )
 
             prompt = f"""
-            Analyze the following meeting minutes/agenda content and:
-            1. Identify which categories apply (return category names exactly as listed)
-            2. Extract 5-10 relevant keywords
-            3. Provide a 2-3 sentence summary
+            You are analyzing Tulsa City Council meeting minutes. Extract COMPREHENSIVE information including:
 
-            Available categories:
+            1. CATEGORIES: Which topics apply (use exact category names from list)
+            2. KEYWORDS: Extract 10-15 meaningful terms including:
+               - All council member names mentioned
+               - Locations, street names, districts
+               - Key topics and issues discussed
+               - Action words (approved, denied, passed, failed)
+            3. SUMMARY: 2-3 sentence overview of key proceedings
+            4. AGENDA ITEMS: Count every distinct agenda item, motion, ordinance, or resolution discussed
+            5. VOTING RECORDS: Find all votes, approvals, motions - include outcomes and any vote counts mentioned
+
+            Available categories (use exact names):
             {categories_list}
 
-            Content to analyze:
-            {content[:4000]}  # Limit content to avoid token limits
+            Meeting content to analyze:
+            {content[:6000]}
 
-            Please respond in JSON format:
+            IMPORTANT INSTRUCTIONS:
+            - COUNT every agenda item mentioned (numbered items, motions, ordinances, resolutions, approvals)
+            - EXTRACT all council member names as keywords
+            - FIND all voting activity (voice votes, roll calls, unanimous approvals, motions passed/failed)
+            - IDENTIFY specific outcomes (passed, failed, approved, denied, tabled)
+
+            Respond in this exact JSON format:
             {{
-                "categories": ["category1", "category2"],
-                "keywords": ["keyword1", "keyword2", "keyword3"],
-                "summary": "Brief summary of the content"
+                "categories": ["exact_category_name1", "exact_category_name2"],
+                "keywords": ["councilor_name1", "councilor_name2", "location", "topic", "action_word", "street_name", "district"],
+                "summary": "Brief summary highlighting key decisions and proceedings",
+                "stats": {{
+                    "agenda_items": 0,
+                    "votes_found": 0,
+                    "motions_made": 0,
+                    "approvals": 0
+                }}
             }}
+
+            Count carefully - your numbers must reflect actual content in the meeting minutes.
             """
 
             response = openai.chat.completions.create(
@@ -624,17 +645,32 @@ class AICategorization:
                     {
                         "role": "system",
                         "content": (
-                            "You are an expert at analyzing civic meeting "
-                            "content and categorizing it for public engagement."
+                            "You are an expert at analyzing Tulsa City Council meeting minutes. "
+                            "Extract comprehensive information and respond only in valid JSON format. "
+                            "Count carefully and ensure all numbers match the actual content."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=800,
+                max_tokens=1200,  # Increased for more detailed response
                 temperature=0.1,
             )
 
             result = json.loads(response.choices[0].message.content)
+
+            # Log enhanced extraction results
+            stats = result.get("stats", {})
+            agenda_count = stats.get("agenda_items", 0)
+            votes_count = stats.get("votes_found", 0)
+            motions_count = stats.get("motions_made", 0)
+            approvals_count = stats.get("approvals", 0)
+
+            logger.info(
+                f"Enhanced AI extraction: {len(result.get('categories', []))} categories, "
+                f"{len(result.get('keywords', []))} keywords, "
+                f"{agenda_count} agenda items, {votes_count} votes, {motions_count} motions"
+            )
+
             return (
                 result.get("categories", []),
                 result.get("keywords", []),
@@ -725,29 +761,101 @@ class AICategorization:
             raise
 
     def _extract_agenda_items(self, content: str) -> List[Dict]:
-        """Extract agenda items from meeting content"""
-        # This is a simplified implementation
-        # In production, you might want more sophisticated parsing
+        """Extract agenda items from meeting content using enhanced pattern matching"""
+        import re
+
         agenda_items = []
         lines = content.split("\n")
 
+        # Enhanced patterns for better extraction
+        patterns = [
+            r"^\d+\.\s*(.+)",  # "1. Item description"
+            r"^Item\s+\d+[:\-\.\s]+(.+)",  # "Item 1: Description"
+            r"^Resolution\s+[\d\-]+[:\-\.\s]*(.+)",  # "Resolution 2023-01: Title"
+            r"^Ordinance\s+[\d\-]+[:\-\.\s]*(.+)",  # "Ordinance 2023-01: Title"
+            r"^Motion[:\-\.\s]+(.+)",  # "Motion: Description"
+            r"^MOTION[:\-\.\s]+(.+)",  # "MOTION: Description"
+            r"^\d+\)\s*(.+)",  # "1) Item description"
+            r"^[A-Z]\.\s+(.+)",  # "A. Item description"
+            r"^Agenda\s+Item\s+\d+[:\-\.\s]*(.+)",  # "Agenda Item 1: Description"
+            r"^PUBLIC\s+HEARING[:\-\.\s]*(.+)",  # "PUBLIC HEARING: Description"
+            r"^CONSIDER[:\-\.\s]*(.+)",  # "CONSIDER: Description"
+            r"^APPROVE[:\-\.\s]*(.+)",  # "APPROVE: Description"
+        ]
+
         for i, line in enumerate(lines):
             line = line.strip()
-            # Look for patterns like "1.", "A.", "Item 1", etc.
-            if any(
-                pattern in line.lower()
-                for pattern in ["item", "agenda", "motion", "resolution"]
+            for pattern in patterns:
+                match = re.match(pattern, line, re.IGNORECASE)
+                if match:
+                    title = match.group(1).strip()
+                    # Filter out very short matches and common false positives
+                    skip_phrases = [
+                        "call to order",
+                        "roll call",
+                        "pledge",
+                        "invocation",
+                        "adjournment",
+                    ]
+                    if len(title) > 15 and not any(
+                        skip in title.lower() for skip in skip_phrases
+                    ):
+                        # Look ahead for description in next few lines
+                        description_lines = [title]
+                        for j in range(i + 1, min(i + 4, len(lines))):
+                            next_line = lines[j].strip()
+                            if (
+                                next_line
+                                and len(next_line) > 10
+                                and not any(
+                                    re.match(p, next_line, re.IGNORECASE)
+                                    for p in patterns
+                                )
+                            ):
+                                description_lines.append(next_line)
+                                if len(description_lines) >= 3:
+                                    break
+                            elif any(
+                                re.match(p, next_line, re.IGNORECASE) for p in patterns
+                            ):
+                                break
+
+                        agenda_items.append(
+                            {
+                                "title": title[:150],
+                                "description": " ".join(description_lines)[:500],
+                                "line_number": i,
+                            }
+                        )
+                    break
+
+        # Also look for any lines with voting/decision keywords for better statistics
+        voting_keywords = [
+            "approved",
+            "passed",
+            "failed",
+            "denied",
+            "voted",
+            "motion carried",
+            "motion failed",
+        ]
+        for i, line in enumerate(lines):
+            line_lower = line.lower().strip()
+            if (
+                any(keyword in line_lower for keyword in voting_keywords)
+                and len(line) > 20
             ):
-                if len(line) > 10:  # Avoid very short lines
+                # This might be a voting outcome, add as agenda item if not already captured
+                if not any(item["line_number"] == i for item in agenda_items):
                     agenda_items.append(
                         {
-                            "title": line[:100],  # Limit title length
+                            "title": f"Decision: {line[:100]}",
                             "description": line,
                             "line_number": i,
                         }
                     )
 
-        return agenda_items[:20]  # Limit to 20 items
+        return agenda_items[:30]  # Increased limit
 
     def _generate_impact_assessment(self, content: str, categories: List[str]) -> str:
         """Generate impact assessment based on content and categories"""
