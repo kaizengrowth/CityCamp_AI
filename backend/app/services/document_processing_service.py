@@ -7,12 +7,28 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import fitz  # PyMuPDF
-import magic
+
+try:
+    import magic
+
+    MAGIC_AVAILABLE = True
+except ImportError:
+    magic = None
+    MAGIC_AVAILABLE = False
+    print("Warning: python-magic not available, file type detection will be limited")
 import pdfplumber
 
 # Document processing imports
 import PyPDF2
-import tiktoken
+
+try:
+    import tiktoken
+
+    TIKTOKEN_AVAILABLE = True
+except ImportError:
+    tiktoken = None
+    TIKTOKEN_AVAILABLE = False
+    print("Warning: tiktoken not available, token counting will be limited")
 from app.core.config import Settings
 from app.models.document import Document, DocumentChunk
 from app.services.vector_service import VectorService
@@ -35,25 +51,29 @@ class DocumentProcessor:
             if settings.is_openai_configured
             else None
         )
-        self.encoding = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
+        self.encoding = (
+            tiktoken.get_encoding("cl100k_base") if TIKTOKEN_AVAILABLE else None
+        )  # GPT-4 encoding
 
     def detect_file_type(self, file_path: str) -> str:
         """Detect file MIME type"""
-        try:
-            return magic.from_file(file_path, mime=True)
-        except Exception as e:
-            logger.warning(f"Could not detect file type for {file_path}: {e}")
-            # Fallback to extension-based detection
-            ext = Path(file_path).suffix.lower()
-            mime_map = {
-                ".pdf": "application/pdf",
-                ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                ".doc": "application/msword",
-                ".txt": "text/plain",
-                ".html": "text/html",
-                ".htm": "text/html",
-            }
-            return mime_map.get(ext, "application/octet-stream")
+        if MAGIC_AVAILABLE:
+            try:
+                return magic.from_file(file_path, mime=True)
+            except Exception as e:
+                logger.warning(f"Could not detect file type for {file_path}: {e}")
+
+        # Fallback to extension-based detection
+        ext = Path(file_path).suffix.lower()
+        mime_map = {
+            ".pdf": "application/pdf",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".doc": "application/msword",
+            ".txt": "text/plain",
+            ".html": "text/html",
+            ".htm": "text/html",
+        }
+        return mime_map.get(ext, "application/octet-stream")
 
     def extract_text_from_pdf(self, file_path: str) -> Tuple[str, Dict[str, Any]]:
         """Extract text from PDF using multiple methods for best results"""
@@ -210,12 +230,14 @@ class DocumentProcessor:
 
     def count_tokens(self, text: str) -> int:
         """Count tokens in text using tiktoken"""
-        try:
-            return len(self.encoding.encode(text))
-        except Exception as e:
-            logger.warning(f"Error counting tokens: {e}")
-            # Fallback: rough estimate (1 token ≈ 4 characters)
-            return len(text) // 4
+        if self.encoding:
+            try:
+                return len(self.encoding.encode(text))
+            except Exception as e:
+                logger.warning(f"Error counting tokens: {e}")
+
+        # Fallback: rough estimate (1 token ≈ 4 characters)
+        return len(text) // 4
 
     def chunk_text(
         self, text: str, max_tokens: int = 1000, overlap_tokens: int = 100
