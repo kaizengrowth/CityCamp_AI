@@ -7,6 +7,7 @@ Reprocess all meeting PDFs in production with enhanced GPT-4 AI to get better re
 import os
 import sys
 import argparse
+import json
 import psycopg2
 from pathlib import Path
 from typing import List, Dict, Any
@@ -157,10 +158,10 @@ def reprocess_production_meetings_direct(
                         cur.execute(update_query, (
                             processed_content.summary,
                             processed_content.detailed_summary,
-                            processed_content.keywords,
-                            processed_content.categories,
-                            voting_records_json,
-                            processed_content.vote_statistics,
+                            json.dumps(processed_content.keywords),
+                            json.dumps(processed_content.categories),
+                            json.dumps(voting_records_json),
+                            json.dumps(processed_content.vote_statistics),
                             mid
                         ))
                         
