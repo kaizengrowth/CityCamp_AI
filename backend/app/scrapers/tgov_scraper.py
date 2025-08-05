@@ -1,8 +1,12 @@
 import logging
 import re
+import shutil
+import urllib.parse
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
 
+import pdfplumber
 import requests
 from app.models.meeting import Meeting
 from bs4 import BeautifulSoup
@@ -23,6 +27,10 @@ class TGOVScraper:
         self.meetings_url = "https://tulsa-ok.granicus.com/ViewPublisher.php?view_id=4"
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "CityCamp AI Bot 1.0"})
+
+        # Setup PDF storage directory
+        self.pdf_storage_folder = Path("backend/storage/pdfs")
+        self.pdf_storage_folder.mkdir(parents=True, exist_ok=True)
 
     async def scrape_upcoming_meetings(self, days_ahead: int = 30) -> List[Meeting]:
         """
@@ -80,8 +88,17 @@ class TGOVScraper:
             agenda_link = cells[2].find("a") if len(cells) > 2 else None
             if agenda_link:
                 agenda_url = agenda_link.get("href")
-                if agenda_url and not agenda_url.startswith("http"):
-                    agenda_url = f"{self.base_url}{agenda_url}"
+                if agenda_url:
+                    # Fix URL construction to handle protocol-relative URLs
+                    if agenda_url.startswith("//"):
+                        # Protocol-relative URL - add https:
+                        agenda_url = f"https:{agenda_url}"
+                    elif agenda_url.startswith("/"):
+                        # Root-relative URL - add domain
+                        agenda_url = f"{self.base_url}{agenda_url}"
+                    elif not agenda_url.startswith("http"):
+                        # Relative URL - add domain with slash
+                        agenda_url = f"{self.base_url}/{agenda_url}"
 
             return {
                 "title": meeting_name,
@@ -150,14 +167,32 @@ class TGOVScraper:
             agenda_link = cells[3].find("a") if len(cells) > 3 else None
             if agenda_link and "Agenda" in agenda_link.text:
                 agenda_url = agenda_link.get("href")
-                if agenda_url and not agenda_url.startswith("http"):
-                    agenda_url = f"{self.base_url}{agenda_url}"
+                if agenda_url:
+                    # Fix URL construction to handle protocol-relative URLs
+                    if agenda_url.startswith("//"):
+                        # Protocol-relative URL - add https:
+                        agenda_url = f"https:{agenda_url}"
+                    elif agenda_url.startswith("/"):
+                        # Root-relative URL - add domain
+                        agenda_url = f"{self.base_url}{agenda_url}"
+                    elif not agenda_url.startswith("http"):
+                        # Relative URL - add domain with slash
+                        agenda_url = f"{self.base_url}/{agenda_url}"
 
             video_link = cells[4].find("a") if len(cells) > 4 else None
             if video_link and "Video" in video_link.text:
                 video_url = video_link.get("href")
-                if video_url and not video_url.startswith("http"):
-                    video_url = f"{self.base_url}{video_url}"
+                if video_url:
+                    # Fix URL construction to handle protocol-relative URLs
+                    if video_url.startswith("//"):
+                        # Protocol-relative URL - add https:
+                        video_url = f"https:{video_url}"
+                    elif video_url.startswith("/"):
+                        # Root-relative URL - add domain
+                        video_url = f"{self.base_url}{video_url}"
+                    elif not video_url.startswith("http"):
+                        # Relative URL - add domain with slash
+                        video_url = f"{self.base_url}/{video_url}"
 
             return {
                 "title": meeting_name,
@@ -230,8 +265,17 @@ class TGOVScraper:
 
             agenda_link = element.find("a", href=re.compile(r"agenda|pdf"))
             agenda_url = agenda_link.get("href") if agenda_link else None
-            if agenda_url and not agenda_url.startswith("http"):
-                agenda_url = f"{self.base_url}{agenda_url}"
+            if agenda_url:
+                # Fix URL construction to handle protocol-relative URLs
+                if agenda_url.startswith("//"):
+                    # Protocol-relative URL - add https:
+                    agenda_url = f"https:{agenda_url}"
+                elif agenda_url.startswith("/"):
+                    # Root-relative URL - add domain
+                    agenda_url = f"{self.base_url}{agenda_url}"
+                elif not agenda_url.startswith("http"):
+                    # Relative URL - add domain with slash
+                    agenda_url = f"{self.base_url}/{agenda_url}"
 
             # Extract meeting type
             meeting_type = "city_council"
@@ -310,20 +354,124 @@ class TGOVScraper:
             )
             self.db.add(meeting)
 
+        # Download PDFs if available
+        try:
+            pdfs_downloaded = []
+            minutes_pdfs = []
+
+            # Try to download agenda PDF if available
+            if meeting.agenda_url:
+                logger.info(
+                    f"Attempting to download agenda PDF from: {meeting.agenda_url}"
+                )
+
+                # First check if it's a direct PDF URL
+                agenda_pdf_path = self.download_pdf(
+                    meeting.agenda_url, meeting_data["external_id"]
+                )
+                if agenda_pdf_path:
+                    meeting.minutes_url = agenda_pdf_path  # Store agenda PDF path
+                    pdfs_downloaded.append("agenda")
+                    logger.info(f"✅ Downloaded agenda PDF: {agenda_pdf_path}")
+
+                    # Now extract and download meeting minutes from agenda PDF
+                    agenda_full_path = Path("backend") / agenda_pdf_path
+                    if agenda_full_path.exists():
+                        logger.info(
+                            f"🔍 Searching for meeting minutes links in agenda PDF..."
+                        )
+                        downloaded_minutes = self.download_meeting_minutes_from_agenda(
+                            agenda_full_path, meeting_data["external_id"]
+                        )
+
+                        if downloaded_minutes:
+                            minutes_pdfs.extend(downloaded_minutes)
+                            pdfs_downloaded.append(f"{len(downloaded_minutes)} minutes")
+
+                            # Store minutes info in description for now
+                            minutes_info = (
+                                f"Minutes PDFs: {', '.join(downloaded_minutes)}"
+                            )
+                            if meeting.description:
+                                meeting.description += f" | {minutes_info}"
+                            else:
+                                meeting.description = minutes_info
+                        else:
+                            logger.info("No meeting minutes found in agenda PDF")
+                    else:
+                        logger.warning(
+                            f"Agenda PDF not found at expected path: {agenda_full_path}"
+                        )
+
+                else:
+                    logger.warning(
+                        f"Failed to download agenda PDF from: {meeting.agenda_url}"
+                    )
+
+                    # Try alternative approach - extract PDFs from meeting page if we have a detail URL
+                    if meeting_data.get("detail_url"):
+                        logger.info("Trying to find PDFs from meeting detail page...")
+                        pdf_urls = self.extract_pdf_urls_from_meeting_page(
+                            meeting_data["detail_url"]
+                        )
+
+                        # Try downloading any PDFs found on the detail page
+                        for pdf_type, pdf_url in pdf_urls.items():
+                            pdf_path = self.download_pdf(
+                                pdf_url, f"{meeting_data['external_id']}-{pdf_type}"
+                            )
+                            if pdf_path:
+                                if pdf_type == "agenda":
+                                    meeting.minutes_url = pdf_path
+                                pdfs_downloaded.append(pdf_type)
+
+            if pdfs_downloaded:
+                logger.info(
+                    f"✅ Downloaded PDFs for {meeting_data['external_id']}: {', '.join(pdfs_downloaded)}"
+                )
+
+                # Log summary of what was downloaded
+                total_files = len(
+                    [p for p in pdfs_downloaded if p not in ["agenda"]]
+                ) + (1 if "agenda" in pdfs_downloaded else 0)
+                if "agenda" in pdfs_downloaded:
+                    total_files += len(minutes_pdfs)
+
+                logger.info(
+                    f"📁 Total files downloaded: {total_files} (agenda + {len(minutes_pdfs)} minutes)"
+                )
+            else:
+                logger.debug(
+                    f"No PDFs available for download: {meeting_data['external_id']}"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Error downloading PDFs for meeting {meeting_data['external_id']}: {str(e)}"
+            )
+            import traceback
+
+            traceback.print_exc()
+
         self.db.commit()
         self.db.refresh(meeting)
         return meeting
 
     async def scrape_meeting_minutes(self, meeting: Meeting) -> Optional[str]:
         """
-        Scrape meeting minutes/transcript
-        Based on your existing minutes scraping logic
+        Scrape meeting minutes/transcript content
         """
         try:
             if not meeting.agenda_url:
                 return None
 
-            # Get the meeting page
+            # Validate URL before attempting to scrape
+            if "tulsa-ok.granicus.com/tulsa-ok.granicus.com/" in meeting.agenda_url:
+                logger.warning(
+                    f"Corrupted minutes URL detected for meeting {meeting.id}: {meeting.agenda_url}"
+                )
+                return None
+
             response = self.session.get(meeting.agenda_url)
             response.raise_for_status()
 
@@ -367,6 +515,270 @@ class TGOVScraper:
             logger.error(f"Error scraping minutes for meeting {meeting.id}: {str(e)}")
             return None
 
+    def download_pdf(self, pdf_url: str, meeting_id: str) -> Optional[str]:
+        """
+        Download PDF from URL and store locally
+        Returns the stored file path or None if failed
+        """
+        try:
+            if not pdf_url or not pdf_url.lower().endswith(".pdf"):
+                logger.debug(f"Skipping non-PDF URL: {pdf_url}")
+                return None
+
+            logger.info(f"Downloading PDF for meeting {meeting_id}: {pdf_url}")
+
+            # Download PDF
+            response = self.session.get(pdf_url, stream=True, timeout=30)
+            response.raise_for_status()
+
+            # Check if it's actually a PDF
+            content_type = response.headers.get("content-type", "").lower()
+            if "pdf" not in content_type and not pdf_url.lower().endswith(".pdf"):
+                logger.warning(f"URL doesn't appear to be a PDF: {pdf_url}")
+                return None
+
+            # Generate filename using meeting ID
+            filename = f"{meeting_id}.pdf"
+            file_path = self.pdf_storage_folder / filename
+
+            # Save PDF to storage
+            with open(file_path, "wb") as f:
+                shutil.copyfileobj(response.raw, f)
+
+            # Verify file was created and has content
+            if file_path.exists() and file_path.stat().st_size > 0:
+                stored_path = f"storage/pdfs/{filename}"
+                logger.info(
+                    f"✅ PDF downloaded: {stored_path} ({file_path.stat().st_size} bytes)"
+                )
+                return stored_path
+            else:
+                logger.error(
+                    f"PDF download failed - file not created or empty: {file_path}"
+                )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error downloading PDF {pdf_url}: {str(e)}")
+            return None
+
+    def extract_pdf_urls_from_meeting_page(
+        self, meeting_page_url: str
+    ) -> Dict[str, str]:
+        """
+        Extract PDF URLs from a meeting's detail page
+        Returns dict with 'agenda' and 'minutes' PDF URLs
+        """
+        try:
+            response = self.session.get(meeting_page_url)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.content, "html.parser")
+            pdf_urls = {}
+
+            # Look for PDF links
+            pdf_links = soup.find_all("a", href=re.compile(r"\.pdf$", re.I))
+
+            for link in pdf_links:
+                href = link.get("href")
+                text = link.get_text().lower()
+
+                # Fix URL construction to handle protocol-relative URLs
+                if href:
+                    if href.startswith("//"):
+                        # Protocol-relative URL - add https:
+                        href = f"https:{href}"
+                    elif href.startswith("/"):
+                        # Root-relative URL - add domain
+                        href = f"{self.base_url}{href}"
+                    elif not href.startswith("http"):
+                        # Relative URL - add domain with slash
+                        href = f"{self.base_url}/{href}"
+
+                # Categorize PDF by link text
+                if "agenda" in text:
+                    pdf_urls["agenda"] = href
+                elif "minute" in text or "transcript" in text:
+                    pdf_urls["minutes"] = href
+                elif not pdf_urls.get("agenda"):  # Default to agenda if unclear
+                    pdf_urls["agenda"] = href
+
+            return pdf_urls
+
+        except Exception as e:
+            logger.error(f"Error extracting PDF URLs from {meeting_page_url}: {str(e)}")
+            return {}
+
+    def extract_text_from_pdf(self, pdf_path: Path) -> str:
+        """
+        Extract text content from a PDF file
+        """
+        try:
+            text_content = ""
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text_content += page_text + "\n"
+            return text_content
+        except Exception as e:
+            logger.error(f"Error extracting text from PDF {pdf_path}: {str(e)}")
+            return ""
+
+    def find_meeting_minutes_links_in_pdf_text(self, pdf_text: str) -> List[str]:
+        """
+        Find meeting minutes links embedded in agenda PDF text
+        Looks for common patterns like URLs, file references, etc.
+        """
+        try:
+            minutes_links = []
+
+            # Pattern 1: Direct URLs in text
+            url_pattern = r'https?://[^\s<>"\']+\.pdf'
+            urls = re.findall(url_pattern, pdf_text, re.IGNORECASE)
+
+            for url in urls:
+                # Filter for likely meeting minutes URLs
+                if any(
+                    term in url.lower()
+                    for term in ["minute", "transcript", "recording"]
+                ):
+                    minutes_links.append(url)
+
+            # Pattern 2: Tulsa-specific patterns
+            tulsa_patterns = [
+                # Pattern for Tulsa city website links
+                r'(?:https?://)?(?:www\.)?cityoftulsa\.org[^\s<>"\']*\.pdf',
+                # Pattern for Granicus links
+                r'(?:https?://)?tulsa-ok\.granicus\.com[^\s<>"\']*(?:minute|transcript)',
+                # Pattern for file references with minutes
+                r"[A-Za-z0-9\-_]+[Mm]inutes?[A-Za-z0-9\-_]*\.pdf",
+            ]
+
+            for pattern in tulsa_patterns:
+                matches = re.findall(pattern, pdf_text, re.IGNORECASE)
+                for match in matches:
+                    # Ensure it's a complete URL
+                    if not match.startswith("http"):
+                        if "cityoftulsa.org" in match:
+                            match = (
+                                f"https://{match}"
+                                if not match.startswith("www.")
+                                else f"https://{match}"
+                            )
+                        elif "granicus.com" in match:
+                            match = f"https://{match}"
+
+                    if match not in minutes_links:
+                        minutes_links.append(match)
+
+            # Pattern 3: Look for common minutes file naming patterns
+            filename_patterns = [
+                r"[0-9]{2}-[0-9]{2,4}-[0-9]+[^\.]*minutes?[^\.]*\.pdf",
+                r"[0-9]{4}-[0-9]{2}-[0-9]{2}[^\.]*minutes?[^\.]*\.pdf",
+                r"minutes?[_\-][0-9]{2,4}[_\-][0-9]{2}[_\-][0-9]{2,4}\.pdf",
+            ]
+
+            for pattern in filename_patterns:
+                matches = re.findall(pattern, pdf_text, re.IGNORECASE)
+                for match in matches:
+                    # Try to construct full URL if it's just a filename
+                    if not match.startswith("http"):
+                        # Try common base URLs
+                        possible_urls = [
+                            f"https://www.cityoftulsa.org/media/{match}",
+                            f"https://tulsa-ok.granicus.com/DocumentViewer.php?file={match}",
+                        ]
+                        minutes_links.extend(possible_urls)
+                    else:
+                        minutes_links.append(match)
+
+            # Remove duplicates and invalid URLs
+            unique_links = []
+            for link in minutes_links:
+                if link not in unique_links and self._is_valid_url(link):
+                    unique_links.append(link)
+
+            logger.info(
+                f"Found {len(unique_links)} potential meeting minutes links in PDF text"
+            )
+            return unique_links
+
+        except Exception as e:
+            logger.error(f"Error finding meeting minutes links in PDF text: {str(e)}")
+            return []
+
+    def _is_valid_url(self, url: str) -> bool:
+        """Check if a URL is valid"""
+        try:
+            result = urllib.parse.urlparse(url)
+            return all([result.scheme, result.netloc])
+        except:
+            return False
+
+    def download_meeting_minutes_from_agenda(
+        self, agenda_pdf_path: Path, meeting_id: str
+    ) -> List[str]:
+        """
+        Download meeting minutes by extracting links from agenda PDF
+        Returns list of downloaded minutes file paths
+        """
+        try:
+            logger.info(
+                f"Searching for meeting minutes links in agenda: {agenda_pdf_path}"
+            )
+
+            # Extract text from agenda PDF
+            pdf_text = self.extract_text_from_pdf(agenda_pdf_path)
+            if not pdf_text.strip():
+                logger.warning(f"No text content extracted from {agenda_pdf_path}")
+                return []
+
+            # Find meeting minutes links
+            minutes_links = self.find_meeting_minutes_links_in_pdf_text(pdf_text)
+
+            if not minutes_links:
+                logger.info(f"No meeting minutes links found in {agenda_pdf_path}")
+                return []
+
+            logger.info(f"Found {len(minutes_links)} potential minutes links")
+
+            # Download each minutes PDF
+            downloaded_minutes = []
+            for i, minutes_url in enumerate(minutes_links):
+                try:
+                    logger.info(
+                        f"  Attempting to download minutes {i+1}: {minutes_url}"
+                    )
+
+                    # Create unique filename for minutes
+                    minutes_filename = f"{meeting_id}-minutes-{i+1}"
+
+                    # Download the minutes PDF
+                    minutes_path = self.download_pdf(minutes_url, minutes_filename)
+                    if minutes_path:
+                        downloaded_minutes.append(minutes_path)
+                        logger.info(f"  ✅ Downloaded: {minutes_path}")
+                    else:
+                        logger.warning(f"  ❌ Failed to download: {minutes_url}")
+
+                except Exception as e:
+                    logger.error(
+                        f"  Error downloading minutes from {minutes_url}: {str(e)}"
+                    )
+                    continue
+
+            logger.info(
+                f"Successfully downloaded {len(downloaded_minutes)} meeting minutes files"
+            )
+            return downloaded_minutes
+
+        except Exception as e:
+            logger.error(
+                f"Error downloading meeting minutes from agenda {agenda_pdf_path}: {str(e)}"
+            )
+            return []
+
     async def scrape_agenda_items(self, meeting: Meeting) -> List[Meeting]:
         """
         Scrape agenda items for a meeting
@@ -374,6 +786,13 @@ class TGOVScraper:
         """
         try:
             if not meeting.agenda_url:
+                return []
+
+            # Validate URL before attempting to scrape
+            if "tulsa-ok.granicus.com/tulsa-ok.granicus.com/" in meeting.agenda_url:
+                logger.warning(
+                    f"Corrupted URL detected for meeting {meeting.id}: {meeting.agenda_url}"
+                )
                 return []
 
             response = self.session.get(meeting.agenda_url)

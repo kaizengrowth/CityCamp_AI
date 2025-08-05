@@ -14,6 +14,7 @@ import os
 import sys
 import re
 import shutil
+import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple, List
@@ -24,7 +25,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 from app.core.database import SessionLocal, engine, Base
 from app.models.meeting import Meeting, AgendaItem, MeetingCategory
 from app.services.ai_categorization_service import AICategorization
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
 
 # Configuration
 DOCUMENTS_FOLDER = Path(__file__).parent.parent / "tests" / "downloaded_documents"
@@ -41,8 +43,8 @@ def parse_filename(filename: str) -> Tuple[Optional[str], Optional[datetime], Op
         # Remove .pdf extension
         name = filename.replace('.pdf', '')
 
-        # Extract meeting ID (e.g., "22-1017-1")
-        meeting_id_match = re.search(r'(\d{2}-\d{4}-\d+)', name)
+        # Extract meeting ID - flexible format (e.g., "22-1017-1", "24-522-1", "23-78-1")
+        meeting_id_match = re.search(r'(\d{2}-\d{2,4}-\d+)', name)
         meeting_id = meeting_id_match.group(1) if meeting_id_match else None
 
         # Extract date (e.g., "2022-10-19")
@@ -122,14 +124,16 @@ def process_pdf_file(pdf_path: Path, ai_service: AICategorization, db: Session) 
             print(f"  ⚠️  Could not parse metadata from filename: {pdf_path.name}")
             return False
 
-        # Check if meeting already exists (after clearing placeholders)
+        # Check if meeting already exists - use upsert logic
         existing_meeting = db.query(Meeting).filter(
             Meeting.external_id == meeting_id
         ).first()
 
-        if existing_meeting:
-            print(f"  ⏭️  Meeting {meeting_id} already exists, skipping...")
-            return True
+        is_update = existing_meeting is not None
+        if is_update:
+            print(f"  🔄 Meeting {meeting_id} exists, updating with enhanced AI...")
+        else:
+            print(f"  ➕ Creating new meeting {meeting_id}...")
 
         # Read PDF content
         with open(pdf_path, 'rb') as f:
@@ -148,23 +152,45 @@ def process_pdf_file(pdf_path: Path, ai_service: AICategorization, db: Session) 
             print(f"  ❌ Failed to store PDF file")
             return False
 
-        # Create meeting record
-        meeting = Meeting(
-            title=f"{meeting_type} - {meeting_date.strftime('%B %d, %Y')}",
-            description=processed_content.summary[:500] if processed_content.summary else "City Council Meeting",
-            meeting_type=meeting_type,
-            meeting_date=meeting_date,
-            location="City Hall",
-            external_id=meeting_id,
-            source="tulsa_city_council_pdf",
-            topics=processed_content.categories,
-            keywords=processed_content.keywords,
-            summary=processed_content.summary,
-            minutes_url=pdf_storage_path,
-            status="completed"
-        )
+        # Create or update meeting record with enhanced AI data
+        if is_update:
+            # Update existing meeting with enhanced AI analysis
+            meeting = existing_meeting
+            meeting.description = processed_content.summary[:500] if processed_content.summary else meeting.description
+            meeting.topics = processed_content.categories
+            meeting.keywords = processed_content.keywords
+            meeting.summary = processed_content.summary
+            meeting.detailed_summary = processed_content.detailed_summary
+            meeting.voting_records = [vote.__dict__ for vote in processed_content.voting_records]
+            meeting.vote_statistics = processed_content.vote_statistics
+            if pdf_storage_path:  # Only update if new PDF was stored successfully
+                meeting.minutes_url = pdf_storage_path
 
-        db.add(meeting)
+            # Clear existing agenda items for this meeting
+            db.query(AgendaItem).filter(AgendaItem.meeting_id == meeting.id).delete()
+            print(f"  🔄 Updated existing meeting and cleared old agenda items")
+        else:
+            # Create new meeting record
+            meeting = Meeting(
+                title=f"{meeting_type} - {meeting_date.strftime('%B %d, %Y')}",
+                description=processed_content.summary[:500] if processed_content.summary else "City Council Meeting",
+                meeting_type=meeting_type,
+                meeting_date=meeting_date,
+                location="City Hall",
+                external_id=meeting_id,
+                source="tulsa_city_council_pdf",
+                topics=processed_content.categories,
+                keywords=processed_content.keywords,
+                summary=processed_content.summary,
+                detailed_summary=processed_content.detailed_summary,
+                voting_records=[vote.__dict__ for vote in processed_content.voting_records],
+                vote_statistics=processed_content.vote_statistics,
+                minutes_url=pdf_storage_path,
+                status="completed"
+            )
+            db.add(meeting)
+            print(f"  ➕ Created new meeting record")
+
         db.flush()  # Get the meeting ID
 
         # Create agenda items
@@ -182,10 +208,13 @@ def process_pdf_file(pdf_path: Path, ai_service: AICategorization, db: Session) 
 
         db.commit()
 
-        print(f"  ✅ Successfully processed meeting {meeting_id}")
+        action = "Updated" if is_update else "Created"
+        print(f"  ✅ {action} meeting {meeting_id}")
         print(f"     📊 Categories: {', '.join(processed_content.categories)}")
         print(f"     🏷️  Keywords: {', '.join(processed_content.keywords[:5])}")
         print(f"     📝 Agenda items: {len(processed_content.agenda_items)}")
+        print(f"     🗳️  Voting records: {len(processed_content.voting_records)}")
+        print(f"     📈 Vote statistics: {processed_content.vote_statistics}")
         print(f"     📄 PDF stored: {pdf_storage_path}")
 
         return True
@@ -197,6 +226,11 @@ def process_pdf_file(pdf_path: Path, ai_service: AICategorization, db: Session) 
 
 def main():
     """Main function to reprocess all meetings"""
+    parser = argparse.ArgumentParser(description="Reprocess all meetings with enhanced AI categorization")
+    parser.add_argument("--aws-db-url", help="AWS RDS database URL (optional - uses local DB if not provided)")
+
+    args = parser.parse_args()
+
     print("🚀 Starting comprehensive meeting reprocessing...")
 
     # Check if documents folder exists
@@ -208,15 +242,25 @@ def main():
     if not setup_storage_directory():
         return
 
-    # Initialize database
-    db = SessionLocal()
+    # Initialize database connection
+    if args.aws_db_url:
+        print(f"📡 Connecting to AWS RDS database...")
+        aws_engine = create_engine(args.aws_db_url)
+        AWSSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=aws_engine)
+        db = AWSSessionLocal()
+    else:
+        print(f"🏠 Using local database...")
+        db = SessionLocal()
 
     try:
         # Initialize AI service
         ai_service = AICategorization()
 
         # Initialize categories in database
-        ai_service.initialize_categories_in_db(db)
+        try:
+            ai_service.initialize_categories_in_db(db)
+        except Exception as e:
+            print(f"Error initializing categories: {e}")
 
         # Clear placeholder meetings
         clear_placeholder_meetings(db)
