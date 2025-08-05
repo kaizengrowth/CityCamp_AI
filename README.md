@@ -23,7 +23,8 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 
 ### 🤖 **AI-Powered Civic Assistant**
 - Interactive chatbot with real-time city council knowledge
-- Natural language queries about Tulsa government
+- **RAG-Enhanced Responses**: Document-based answers using city budgets, legislation, and policies
+- Natural language queries about Tulsa government with contextual document search
 - Meeting summary generation and analysis
 
 ### 📅 **Smart Meeting Notifications**
@@ -45,6 +46,80 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 - Campaign tracking and petition management
 - Neighborhood-based organizing tools
 - User preference and notification management
+
+## 📄 **RAG System (Retrieval-Augmented Generation)**
+
+### **🎯 What is RAG?**
+The RAG system enables the chatbot to search and reference actual city documents, budgets, legislation, and policies to provide accurate, source-backed answers instead of generic responses.
+
+### **🔧 Key Components**
+- **Vector Database**: ChromaDB (dev) / FAISS (production) for semantic search
+- **Document Processing**: AI-powered text extraction, chunking, and summarization
+- **Embedding Generation**: OpenAI text-embedding-3-small for vector representations
+- **Smart Search**: Contextual document retrieval with relevance scoring
+
+### **📁 Supported Document Types**
+- 💰 **Budgets**: City financial documents and allocations
+- 📜 **Legislation**: Ordinances, resolutions, and policies
+- 📋 **Meeting Minutes**: City council and committee records
+- 📊 **Reports**: Studies, analyses, and official reports
+- 📝 **Policies**: Administrative procedures and guidelines
+
+### **🚀 Quick RAG Setup**
+```bash
+# Install RAG dependencies
+pip install -r backend/requirements.txt
+
+# Run database migration
+cd backend && python -m alembic upgrade head
+
+# Test the system
+python scripts/test_rag_system.py
+```
+
+**📖 Full Documentation**: See [`docs/RAG_SYSTEM_README.md`](docs/RAG_SYSTEM_README.md)
+
+## 🧪 **LLM-as-Judge Evaluation System**
+
+### **🎯 Intelligent Chatbot Testing**
+Advanced evaluation framework using GPT-4 to assess chatbot response quality beyond traditional keyword matching.
+
+### **🔧 Key Features**
+- **Smart Quality Assessment**: GPT-4 evaluates helpfulness, accuracy, and civic appropriateness
+- **Semantic Understanding**: Goes beyond keywords to understand context and meaning
+- **Comparative Analysis**: Traditional metrics vs. LLM evaluation with combined scoring
+- **Actionable Feedback**: Specific improvement suggestions and response strengths
+
+### **📊 Evaluation Metrics**
+- **Accuracy**: Factual correctness and Tulsa civic relevance
+- **Helpfulness**: How well responses assist users with civic questions
+- **Completeness**: Information sufficiency without verbosity
+- **Civic Appropriateness**: Tone and context suitability for government use
+
+### **🚀 Quick Evaluation**
+```bash
+# LLM-as-Judge evaluation
+python scripts/run_eval.py --mode llm-judge
+
+# Compare traditional vs LLM metrics
+python scripts/llm_judge_evaluator.py
+
+# Performance benchmarking
+python scripts/run_eval.py --mode performance
+```
+
+### **📈 Sample Results**
+```
+LLM-AS-JUDGE EVALUATION SUMMARY
+Combined Score: 0.847/1.0 (Grade: B)
+Traditional Score: 0.789/1.0
+LLM Judge Score: 0.873/1.0
+Score Improvement: +0.084
+
+Grade Distribution: A: 2, B: 6, C: 2, D: 0, F: 0
+```
+
+**📖 Full Documentation**: See [`docs/CHATBOT_EVALUATION_README.md`](docs/CHATBOT_EVALUATION_README.md)
 
 ## 🚀 Quick Start
 
@@ -85,7 +160,9 @@ npm run dev
 ### **Technology Stack**
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
 - **Backend**: FastAPI + Python 3.11 + PostgreSQL + Redis
-- **AI/ML**: OpenAI GPT-4 + Custom categorization models
+- **AI/ML**: OpenAI GPT-4 + Custom categorization models + **RAG System (ChromaDB/FAISS)**
+- **Document Processing**: Multi-format support (PDF, DOCX, TXT) with vector embeddings
+- **Evaluation**: **LLM-as-Judge system** with GPT-4 intelligent response assessment
 - **Infrastructure**: AWS (ECS Fargate, RDS, ElastiCache, S3, CloudFront)
 - **CI/CD**: GitHub Actions with automated testing and deployment
 
@@ -104,6 +181,12 @@ npm run dev
                 │ PostgreSQL  │   │    Redis    │   │   OpenAI    │
                 │   (RDS)     │   │  (Cache)    │   │    API      │
                 └─────────────┘   └─────────────┘   └─────────────┘
+                       │                                   │
+                       │         ┌─────────────────┐       │
+                       └─────────│  RAG System     │───────┘
+                                 │ ChromaDB/FAISS  │
+                                 │ Vector Store    │
+                                 └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -135,6 +218,8 @@ CityCamp_AI/
 │
 ├── 📚 docs/                  # Comprehensive documentation
 │   ├── QUICKSTART.md        # 5-minute setup guide
+│   ├── RAG_SYSTEM_README.md # RAG architecture & usage guide
+│   ├── CHATBOT_EVALUATION_README.md # LLM-as-Judge evaluation guide
 │   ├── aws-deployment-guide.md
 │   ├── TROUBLESHOOTING.md   # Issue resolution
 │   └── API_DOCUMENTATION.md # API reference
@@ -146,6 +231,10 @@ CityCamp_AI/
 │
 └── 🔧 scripts/               # Development & deployment
     ├── start-dev.sh         # Local development setup
+    ├── eval_chatbot_system.py # Traditional evaluation system
+    ├── llm_judge_evaluator.py # LLM-as-Judge evaluation
+    ├── run_eval.py          # Evaluation runner with multiple modes
+    ├── test_rag_system.py   # RAG system testing
     ├── test_production_api.sh # Production diagnostics
     └── fix_production_api.sh  # Production issue fixes
 ```
@@ -279,6 +368,8 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 ### **API & Development**
 - 📖 **[API Documentation](http://localhost:8000/docs)** - Interactive API docs
 - 🤖 **[Chatbot Guide](docs/ENHANCED_CHATBOT_GUIDE.md)** - AI assistant setup
+- 📄 **[RAG System Guide](docs/RAG_SYSTEM_README.md)** - Document processing & vector search
+- 🧪 **[Evaluation System Guide](docs/CHATBOT_EVALUATION_README.md)** - LLM-as-Judge testing framework
 - 🔧 **[Scraper Documentation](docs/SCRAPER_TEST_README.md)** - Meeting discovery & PDF import
 
 ## 🤝 Contributing
@@ -342,6 +433,34 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ### **Contact**
 - 📧 **Email**: kaitlin.cort@owasp.org
 - 🐙 **GitHub**: [@kaizengrowth](https://github.com/kaizengrowth)
+
+---
+
+## 📈 Recent Updates
+
+**Latest Changes** (August 5, 2025):
+- ✅ **Implemented LLM-as-Judge evaluation system** using GPT-4 for intelligent response assessment
+- ✅ **Comprehensive RAG system** for document-based chatbot responses with vector search
+- ✅ Added advanced evaluation framework with traditional + LLM metrics comparison
+- ✅ Created document processing pipeline with multi-format support (PDF, DOCX, TXT)
+- ✅ Integrated RAG into existing chatbot with OpenAI function calling
+- ✅ Added complete document management API with upload/search endpoints
+- ✅ Built evaluation suite with multiple modes (quick, full, RAG, performance, LLM-judge)
+- ✅ Fixed production meeting details loading issues
+- ✅ Added comprehensive production troubleshooting scripts
+- ✅ Resolved security vulnerabilities (esbuild, dependencies)
+- ✅ Enhanced CI/CD pipeline with automated testing
+- ✅ Updated documentation and README files
+
+**Next Planned Features**:
+- 📄 **RAG System Expansion**: Upload city budgets, ordinances, and legislation
+- 🔍 **Advanced Document Search**: Semantic search across all city documents
+- 🧪 **Evaluation System Enhancement**: A/B testing, user satisfaction metrics, continuous monitoring
+- 🤖 **Multi-Judge Evaluation**: Compare GPT-4 vs Claude vs other LLMs as judges
+- 🔄 Enhanced meeting data scraping automation
+- 📱 Mobile app development
+- 🤖 Advanced AI categorization improvements
+- 📊 User analytics dashboard
 
 ---
 
