@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class TopicSubscriptionCreate(BaseModel):
@@ -22,23 +22,18 @@ class TopicSubscriptionCreate(BaseModel):
     timezone: str = "America/Chicago"
     digest_mode: bool = False
 
-    @validator("phone_number")
+    @field_validator("phone_number")
+    @classmethod
     def validate_phone_number(cls, v):
         if v and not v.startswith("+"):
             # Simple validation - in production, use a proper phone number library
-            if (
-                len(
-                    v.replace("-", "")
-                    .replace("(", "")
-                    .replace(")", "")
-                    .replace(" ", "")
-                )
-                < 10
-            ):
+            digits_only = "".join(filter(str.isdigit, v))
+            if len(digits_only) < 10:
                 raise ValueError("Phone number must be at least 10 digits")
         return v
 
-    @validator("advance_notice_hours")
+    @field_validator("advance_notice_hours")
+    @classmethod
     def validate_advance_notice(cls, v):
         if v < 1 or v > 168:  # 1 hour to 1 week
             raise ValueError("Advance notice must be between 1 and 168 hours")
@@ -87,7 +82,8 @@ class TopicSubscriptionUpdate(BaseModel):
     quiet_hours_end: Optional[str] = None
     digest_mode: Optional[bool] = None
 
-    @validator("advance_notice_hours")
+    @field_validator("advance_notice_hours")
+    @classmethod
     def validate_advance_notice(cls, v):
         if v is not None and (v < 1 or v > 168):
             raise ValueError("Advance notice must be between 1 and 168 hours")

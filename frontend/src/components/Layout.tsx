@@ -6,6 +6,7 @@ import { ChatbotWidget } from './ChatbotWidget';
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Meetings', href: '/meetings' },
+  { name: 'Organizations', href: '/organizations' },
   { name: 'Campaigns', href: '/campaigns' },
   { name: 'Contact Reps', href: '/contact-representatives' },
 ];

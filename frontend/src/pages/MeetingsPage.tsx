@@ -1,8 +1,29 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
-import { Meeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
+import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
+import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
+
+// Extended Meeting interface with additional properties
+interface Meeting extends BaseMeeting {
+  detailed_summary?: string;
+  voting_records?: Array<{
+    item_title: string;
+    vote_result: string;
+    votes: Array<{
+      member: string;
+      vote: string;
+    }>;
+  }>;
+  document_type?: 'agenda' | 'minutes';
+  vote_statistics?: {
+    total_votes: number;
+    items_passed: number;
+    items_failed: number;
+    unanimous_votes: number;
+  };
+}
 
 export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -32,6 +53,28 @@ export const MeetingsPage: React.FC = () => {
 
   const fetchMeetings = async (isRetry = false) => {
     if (fetchingRef.current) return;
+
+    // For local development, check if we should load sample data immediately
+    const environment = getEnvironmentConfig();
+    const forceBackup = environment.shouldUseBackupData && !isRetry;
+    
+    if (forceBackup) {
+      console.log('Development mode: Loading sample meeting data immediately');
+      setLoading(true);
+      fetchingRef.current = true;
+      
+      // Simulate loading delay
+      setTimeout(() => {
+        setMeetings(SAMPLE_MEETINGS);
+        setDemoMode(true);
+        setError(null);
+        setLoading(false);
+        fetchingRef.current = false;
+        setInitialLoadComplete(true);
+        console.log('Sample meeting data loaded successfully');
+      }, 500);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -75,35 +118,23 @@ export const MeetingsPage: React.FC = () => {
       }
 
     } catch (err) {
-      console.error('API error:', {
+      console.error('API error - falling back to sample data:', {
         error: err,
         errorMessage: err instanceof Error ? err.message : 'Unknown error',
         environment: process.env.NODE_ENV,
         url: window.location.href
       });
 
-      // Only show demo data as fallback, don't auto-retry in production
-      if (!isRetry && process.env.NODE_ENV === 'production') {
-        console.log('Production: showing demo data as fallback');
-        setMeetings(SAMPLE_MEETINGS);
-        setDemoMode(true);
-        setError(`API temporarily unavailable: ${err instanceof Error ? err.message : 'Unknown error occurred'}. Showing sample data.`);
+      // Always show sample data as fallback
+      console.log('Using sample meeting data for local development');
+      setMeetings(SAMPLE_MEETINGS);
+      setDemoMode(true);
+      setError(null); // Clear error since we have sample data
 
-        // Show subtle notification
-        toast.error('Could not load latest data. Showing sample content.', {
-          duration: 3000,
-          id: 'fetch-meetings'
-        });
-      } else {
-        // Development mode or retry - show error
-        setError(`Failed to load meetings: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
-        setMeetings(SAMPLE_MEETINGS);
-        setDemoMode(true);
-
-        if (isRetry) {
-          toast.error('Still unable to connect. Showing demo data.', { id: 'fetch-meetings' });
-        }
+      if (isRetry) {
+        toast.success('Sample data loaded successfully', { id: 'fetch-meetings' });
       }
+
     } finally {
       setLoading(false);
       fetchingRef.current = false;
@@ -138,7 +169,7 @@ export const MeetingsPage: React.FC = () => {
       console.log('Fetching meeting details from API...');
       const loadingToast = toast.loading('Loading meeting details...', { duration: 0 });
 
-      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: any[], pdf_url: string | null}>(
+      const response = await apiRequest<{meeting: Meeting, agenda_items: AgendaItem[], categories: string[], pdf_url: string | null}>(
         API_ENDPOINTS.meetingById(meetingId)
       );
       console.log('Meeting response received:', response);
@@ -186,13 +217,26 @@ export const MeetingsPage: React.FC = () => {
   // Enhanced filtered meetings with date filtering and smart sorting
   const filteredMeetings = useMemo(() => {
     const filtered = meetings.filter(meeting => {
+      // Only show meetings that have meaningful content
+      const hasContent = meeting.summary && 
+                        meeting.summary.trim() !== '' && 
+                        !meeting.summary.includes('Minutes imported from PDF') &&
+                        (meeting.keywords?.length > 0 || 
+                         meeting.topics?.length > 0 || 
+                         meeting.detailed_summary ||
+                         (meeting.voting_records?.length ?? 0) > 0);
+      
+      if (!hasContent) {
+        return false; // Skip meetings with no meaningful data
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Document type filter
       const matchesDocumentType = documentTypeFilter === 'all' ||
-                                 (meeting as any).document_type === documentTypeFilter ||
-                                 (!((meeting as any).document_type) && documentTypeFilter === 'agenda'); // Default to agenda
+                                 meeting.document_type === documentTypeFilter ||
+                                 (!meeting.document_type && documentTypeFilter === 'agenda'); // Default to agenda
 
       // Meeting type filter
       const matchesMeetingType = meetingTypeFilter === 'all' ||
@@ -284,20 +328,47 @@ export const MeetingsPage: React.FC = () => {
     });
   }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter, dateFilter, startDate, endDate]);
 
-  // Memoized topic and keyword calculations
+  // Memoized topic and keyword calculations from recent completed meetings
   const { topTopics, topKeywords } = useMemo(() => {
     const topicCounts: { [key: string]: number } = {};
     const keywordCounts: { [key: string]: number } = {};
 
-    meetings.slice(0, 10).forEach(meeting => {
+    // Filter to only completed meetings with content and take the 5 most recent
+    const now = new Date();
+    const recentCompletedMeetings = meetings
+      .filter(meeting => {
+        const isCompleted = new Date(meeting.meeting_date) < now;
+        const hasContent = meeting.summary && 
+                          meeting.summary.trim() !== '' && 
+                          !meeting.summary.includes('Minutes imported from PDF') &&
+                          (meeting.keywords?.length > 0 || 
+                           meeting.topics?.length > 0 || 
+                           meeting.detailed_summary ||
+                           (meeting.voting_records?.length ?? 0) > 0);
+        return isCompleted && hasContent;
+      })
+      .slice(0, 5);
+
+    recentCompletedMeetings.forEach(meeting => {
+      // Handle topics (could be array or string depending on data format)
       if (meeting.topics) {
-        meeting.topics.forEach(topic => {
-          topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+        const topics = Array.isArray(meeting.topics) ? meeting.topics : 
+                      typeof meeting.topics === 'string' ? [meeting.topics] : [];
+        topics.forEach(topic => {
+          if (topic && typeof topic === 'string') {
+            topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+          }
         });
       }
+      
+      // Handle keywords (could be array or string depending on data format)
       if (meeting.keywords) {
-        meeting.keywords.forEach(keyword => {
-          keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+        const keywords = Array.isArray(meeting.keywords) ? meeting.keywords : 
+                        typeof meeting.keywords === 'string' ? [meeting.keywords] : [];
+        keywords.forEach(keyword => {
+          if (keyword && typeof keyword === 'string') {
+            keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+          }
         });
       }
     });
@@ -425,12 +496,12 @@ export const MeetingsPage: React.FC = () => {
       <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-gray-900">City Council Meetings</h1>
         <div className="text-sm text-gray-600">
-          Displaying all {meetings.length} meetings chronologically (most recent first)
+          Displaying {filteredMeetings.length} meetings with content (most recent first)
         </div>
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-              Demo Mode
+              {getDevModeDisplayText('Demo Mode')}
             </span>
           )}
           {(error || demoMode) && (
@@ -449,19 +520,19 @@ export const MeetingsPage: React.FC = () => {
           <div className="flex">
             <div className="ml-3 flex-1">
               <h3 className="text-sm font-medium text-blue-800">
-                {error ? 'Demo Mode - API Issue' : 'Demo Mode Active'}
+                {getEnvironmentConfig().isDevelopment ? 
+                  'Development Mode - Sample Data Loaded' : 
+                  (error ? 'Demo Mode - API Issue' : 'Demo Mode Active')
+                }
               </h3>
               <p className="mt-2 text-sm text-blue-700">
-                {error ?
-                  'API connection issue detected. Showing sample data to demonstrate functionality. Click "Load Latest Data" to retry.' :
-                  'Showing sample meeting data. This demonstrates how your generated meeting minutes will appear when the backend API is connected.'
-                }
+                {getDevModeInfoMessage(!!error)}
               </p>
               <button
                 onClick={handleForceRefresh}
                 className="mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
               >
-                Try to load real data
+                {getApiRetryButtonText()}
               </button>
             </div>
           </div>
@@ -471,7 +542,7 @@ export const MeetingsPage: React.FC = () => {
       {/* Most Frequent Topics & Keywords */}
       {!demoMode && meetings.length > 0 && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Meetings Analysis</h2>
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Completed Meetings Analysis</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Most Frequent Topics */}
             <div>
@@ -517,7 +588,7 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                onChange={(e) => setFilter(e.target.value as 'all' | 'upcoming' | 'completed')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Meetings</option>
@@ -528,12 +599,12 @@ export const MeetingsPage: React.FC = () => {
             <div>
               <select
                 value={documentTypeFilter}
-                onChange={(e) => setDocumentTypeFilter(e.target.value as any)}
+                onChange={(e) => setDocumentTypeFilter(e.target.value as 'all' | 'agenda' | 'minutes')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Documents</option>
-                <option value="agenda">📋 Agendas</option>
-                <option value="minutes">📝 Minutes</option>
+                <option value="agenda">Agendas</option>
+                <option value="minutes">Minutes</option>
               </select>
             </div>
           </div>
@@ -547,14 +618,14 @@ export const MeetingsPage: React.FC = () => {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Dates</option>
-                <option value="last30Days">📅 Last 30 Days</option>
-                <option value="last90Days">📅 Last 90 Days</option>
-                <option value="thisYear">📅 This Year</option>
-                <option value="lastYear">📅 Last Year</option>
-                <option value="2024">📅 2024</option>
-                <option value="2023">📅 2023</option>
-                <option value="2022">📅 2022</option>
-                <option value="custom">📅 Custom Range</option>
+                <option value="last30Days">Last 30 Days</option>
+                <option value="last90Days">Last 90 Days</option>
+                <option value="thisYear">This Year</option>
+                <option value="lastYear">Last Year</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="custom">Custom Range</option>
               </select>
             </div>
 
@@ -590,27 +661,27 @@ export const MeetingsPage: React.FC = () => {
               >
                 <option value="all">All Types</option>
                 <optgroup label="Main Council & Committees">
-                  <option value="regular_council">🏛️ Regular Council</option>
-                  <option value="budget_committee">💰 Budget Committee</option>
-                  <option value="public_works_committee">🚧 Public Works</option>
-                  <option value="urban_economic_committee">🏙️ Urban & Economic</option>
+                  <option value="regular_council">Regular Council</option>
+                  <option value="budget_committee">Budget Committee</option>
+                  <option value="public_works_committee">Public Works</option>
+                  <option value="urban_economic_committee">Urban & Economic</option>
                 </optgroup>
                 <optgroup label="Task Forces & Special Committees">
-                  <option value="quality_of_life_task_force">🌟 61st & Peoria Quality of Life</option>
-                  <option value="capital_improvement_task_force">🏗️ Capital Improvement</option>
-                  <option value="passenger_rail_task_force">🚊 Eastern Flyer Rail</option>
-                  <option value="hud_grant_committee">🏠 HUD Grant Fund</option>
-                  <option value="hunger_food_task_force">🍽️ Hunger & Food</option>
-                  <option value="mayor_council_retreat">🤝 Mayor-Council Retreat</option>
-                  <option value="public_safety_task_force">🚔 Public Safety</option>
-                  <option value="river_infrastructure_task_force">🌊 River Infrastructure</option>
-                  <option value="street_lighting_task_force">💡 Street Lighting</option>
-                  <option value="food_desert_task_force">🏪 Food Desert</option>
-                  <option value="tribal_nations_committee">🪶 Tribal Nations Relations</option>
-                  <option value="truancy_prevention_task_force">🎒 Truancy Prevention</option>
+                  <option value="quality_of_life_task_force">61st & Peoria Quality of Life</option>
+                  <option value="capital_improvement_task_force">Capital Improvement</option>
+                  <option value="passenger_rail_task_force">Eastern Flyer Rail</option>
+                  <option value="hud_grant_committee">HUD Grant Fund</option>
+                  <option value="hunger_food_task_force">Hunger & Food</option>
+                  <option value="mayor_council_retreat">Mayor-Council Retreat</option>
+                  <option value="public_safety_task_force">Public Safety</option>
+                  <option value="river_infrastructure_task_force">River Infrastructure</option>
+                  <option value="street_lighting_task_force">Street Lighting</option>
+                  <option value="food_desert_task_force">Food Desert</option>
+                  <option value="tribal_nations_committee">Tribal Nations Relations</option>
+                  <option value="truancy_prevention_task_force">Truancy Prevention</option>
                 </optgroup>
                 <optgroup label="Other">
-                  <option value="other">📄 Other</option>
+                  <option value="other">Other</option>
                 </optgroup>
               </select>
             </div>
@@ -665,10 +736,6 @@ export const MeetingsPage: React.FC = () => {
                     <p className="flex items-center">
                       <span className="font-medium">Type:</span>
                       <span className="ml-2">{getMeetingTypeLabel(meeting.meeting_type)}</span>
-                    </p>
-                    <p className="flex items-center">
-                      <span className="font-medium">Location:</span>
-                      <span className="ml-2">{meeting.location}</span>
                     </p>
                       {meeting.summary && (
                         <div className="flex items-center mb-2">

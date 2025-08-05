@@ -2,17 +2,27 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
-interface Message {
-  id: string;
+interface ChatMessage {
+  id: number;
   text: string;
-  sender: 'user' | 'bot';
+  isUser: boolean;
   timestamp: Date;
+}
+
+// Proper types for markdown components
+interface MarkdownLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  href?: string;
+  children?: React.ReactNode;
+}
+
+interface MarkdownElementProps extends React.HTMLAttributes<HTMLElement> {
+  children?: React.ReactNode;
 }
 
 // Custom components for markdown rendering
 const MarkdownComponents = {
   // Handle links with proper styling and external opening
-  a: ({ href, children, ...props }: any) => (
+  a: ({ href, children, ...props }: MarkdownLinkProps) => (
     <a
       href={href}
       target="_blank"
@@ -24,47 +34,47 @@ const MarkdownComponents = {
     </a>
   ),
   // Handle paragraphs with proper spacing
-  p: ({ children, ...props }: any) => (
+  p: ({ children, ...props }: MarkdownElementProps) => (
     <p className="mb-2 last:mb-0" {...props}>
       {children}
     </p>
   ),
   // Handle lists with proper styling
-  ul: ({ children, ...props }: any) => (
+  ul: ({ children, ...props }: MarkdownElementProps) => (
     <ul className="list-disc list-inside mb-2 ml-2" {...props}>
       {children}
     </ul>
   ),
-  ol: ({ children, ...props }: any) => (
+  ol: ({ children, ...props }: MarkdownElementProps) => (
     <ol className="list-decimal list-inside mb-2 ml-2" {...props}>
       {children}
     </ol>
   ),
-  li: ({ children, ...props }: any) => (
+  li: ({ children, ...props }: MarkdownElementProps) => (
     <li className="mb-1" {...props}>
       {children}
     </li>
   ),
   // Handle strong/bold text
-  strong: ({ children, ...props }: any) => (
+  strong: ({ children, ...props }: MarkdownElementProps) => (
     <strong className="font-semibold" {...props}>
       {children}
     </strong>
   ),
   // Handle emphasis/italic text
-  em: ({ children, ...props }: any) => (
+  em: ({ children, ...props }: MarkdownElementProps) => (
     <em className="italic" {...props}>
       {children}
     </em>
   ),
   // Handle code blocks
-  code: ({ children, ...props }: any) => (
+  code: ({ children, ...props }: MarkdownElementProps) => (
     <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
       {children}
     </code>
   ),
   // Handle blockquotes
-  blockquote: ({ children, ...props }: any) => (
+  blockquote: ({ children, ...props }: MarkdownElementProps) => (
     <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-2" {...props}>
       {children}
     </blockquote>
@@ -87,11 +97,11 @@ const renderMarkdownMessage = (text: string): React.ReactNode => {
 
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
+      id: 1,
       text: "Hello! I'm your **CivicSpark AI assistant** for Tulsa civic engagement.\n\nI can help you with:\n• 🏛️ City council meetings and agendas\n• 📋 Local campaigns and initiatives\n• 🔔 Setting up notifications\n• 🗳️ Civic participation opportunities\n\nWhat would you like to know about **Tulsa** local government?",
-      sender: 'bot',
+      isUser: false,
       timestamp: new Date(),
     },
   ]);
@@ -117,10 +127,10 @@ export const ChatbotWidget: React.FC = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
+    const userMessage: ChatMessage = {
+      id: Date.now(),
       text: inputValue,
-      sender: 'user',
+      isUser: true,
       timestamp: new Date(),
     };
 
@@ -133,7 +143,7 @@ export const ChatbotWidget: React.FC = () => {
       // Prepare conversation history for API
       const conversationHistory = messages.map(msg => ({
         text: msg.text,
-        sender: msg.sender
+        sender: msg.isUser ? 'user' : 'bot'
       }));
 
       // Call the API
@@ -148,10 +158,10 @@ export const ChatbotWidget: React.FC = () => {
         }
       );
 
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      const botMessage: ChatMessage = {
+        id: Date.now() + 1,
         text: response.response,
-        sender: 'bot',
+        isUser: false,
         timestamp: new Date(),
       };
 
@@ -160,10 +170,10 @@ export const ChatbotWidget: React.FC = () => {
       console.error('Error getting AI response:', error);
 
       // Fallback to local response if API fails
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      const botMessage: ChatMessage = {
+        id: Date.now() + 1,
         text: getBotResponse(messageText),
-        sender: 'bot',
+        isUser: false,
         timestamp: new Date(),
       };
 
@@ -241,20 +251,20 @@ export const ChatbotWidget: React.FC = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.sender === 'user'
+                      message.isUser
                         ? 'bg-primary-600 text-white'
                         : 'bg-white text-gray-800 border border-gray-200'
                     }`}
                   >
                     <div className="text-sm">
-                      {message.sender === 'bot' ? renderMarkdownMessage(message.text) : message.text}
+                      {message.isUser ? message.text : renderMarkdownMessage(message.text)}
                     </div>
                     <p className={`text-xs mt-2 ${
-                      message.sender === 'user' ? 'text-primary-100' : 'text-gray-500'
+                      message.isUser ? 'text-primary-100' : 'text-gray-500'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
