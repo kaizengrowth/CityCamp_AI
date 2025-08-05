@@ -28,6 +28,15 @@ class CategoryDefinition(BaseModel):
     icon: str
 
 
+class VotingRecord(BaseModel):
+    """Individual voting record for a council member on an agenda item"""
+
+    agenda_item: str
+    council_member: str
+    vote: str  # "yes", "no", "abstain", "absent"
+    outcome: str  # "passed", "failed", "tabled"
+
+
 class ProcessedMeetingContent(BaseModel):
     summary: str
     categories: List[str]
@@ -36,6 +45,10 @@ class ProcessedMeetingContent(BaseModel):
     impact_assessment: str
     key_decisions: List[str]
     public_comments: List[str]
+    # Enhanced fields for better tracking
+    detailed_summary: str
+    voting_records: List[VotingRecord]
+    vote_statistics: Dict[str, int]
 
 
 class AICategorization:
@@ -582,104 +595,126 @@ class AICategorization:
 
     def categorize_content_with_ai(
         self, content: str
-    ) -> Tuple[List[str], List[str], str]:
-        """Use OpenAI to categorize content and extract keywords"""
+    ) -> Tuple[List[str], List[str], str, str, List[VotingRecord], Dict[str, int]]:
+        """Use OpenAI to categorize content and extract enhanced information"""
         if not openai.api_key:
             logger.warning(
                 "OpenAI API key not configured. Using fallback categorization."
             )
-            return self._fallback_categorization(content)
+            fallback_cats, fallback_keywords, fallback_summary = (
+                self._fallback_categorization(content)
+            )
+            return (
+                fallback_cats,
+                fallback_keywords,
+                fallback_summary,
+                fallback_summary,
+                [],
+                {},
+            )
 
         try:
             categories_list = "\n".join(
-                [
-                    f"- {cat.name}: {cat.description}"
-                    for cat in self.SOCIAL_ISSUE_CATEGORIES.values()
-                ]
+                [f"- {cat.name}" for cat in self.SOCIAL_ISSUE_CATEGORIES.values()]
             )
 
             prompt = f"""
-            You are analyzing Tulsa City Council meeting minutes. Extract COMPREHENSIVE information including:
+            Analyze this Tulsa City Council meeting document and extract clean, structured information.
 
-            1. CATEGORIES: Which topics apply (use exact category names from list)
-            2. KEYWORDS: Extract 10-15 meaningful terms including:
-               - All council member names mentioned
-               - Locations, street names, districts
-               - Key topics and issues discussed
-               - Action words (approved, denied, passed, failed)
-            3. SUMMARY: 2-3 sentence overview of key proceedings
-            4. AGENDA ITEMS: Count every distinct agenda item, motion, ordinance, or resolution discussed
-            5. VOTING RECORDS: Find all votes, approvals, motions - include outcomes and any vote counts mentioned
-
-            Available categories (use exact names):
+            Available Categories (select relevant ones):
             {categories_list}
 
-            Meeting content to analyze:
-            {content[:6000]}
+            Meeting Content:
+            {content[:8000]}
 
-            IMPORTANT INSTRUCTIONS:
-            - COUNT every agenda item mentioned (numbered items, motions, ordinances, resolutions, approvals)
-            - EXTRACT all council member names as keywords
-            - FIND all voting activity (voice votes, roll calls, unanimous approvals, motions passed/failed)
-            - IDENTIFY specific outcomes (passed, failed, approved, denied, tabled)
+            Please extract:
+            1. Categories (2-4 most relevant from the list above)
+            2. Keywords (5-8 key terms: council members, locations, main topics only)
+            3. Clean Summary (2-3 clear sentences about main decisions/discussions)
+            4. Detailed Summary (well-formatted overview with bullet points for key items)
+            5. Voting Records (any votes with member names and outcomes)
+            6. Statistics (count of agenda items, votes, etc.)
 
-            Respond in this exact JSON format:
+            Return valid JSON in this format:
             {{
-                "categories": ["exact_category_name1", "exact_category_name2"],
-                "keywords": ["councilor_name1", "councilor_name2", "location", "topic", "action_word", "street_name", "district"],
-                "summary": "Brief summary highlighting key decisions and proceedings",
-                "stats": {{
-                    "agenda_items": 0,
-                    "votes_found": 0,
-                    "motions_made": 0,
-                    "approvals": 0
+                "categories": ["Category Name 1", "Category Name 2"],
+                "keywords": ["Councilor Smith", "Downtown", "Budget"],
+                "summary": "Clear 2-3 sentence summary of key points.",
+                "detailed_summary": "**Key Decisions Made:**\\n• Item 1: Description and outcome\\n• Item 2: Description and outcome\\n\\n**Main Topics Discussed:**\\n• Topic 1\\n• Topic 2",
+                "voting_records": [
+                    {{
+                        "agenda_item": "Budget Amendment #2024-01",
+                        "council_member": "Councilor Smith",
+                        "vote": "yes",
+                        "outcome": "passed"
+                    }}
+                ],
+                "vote_statistics": {{
+                    "total_votes": 5,
+                    "items_passed": 4,
+                    "items_failed": 1,
+                    "unanimous_votes": 2
                 }}
             }}
 
-            Count carefully - your numbers must reflect actual content in the meeting minutes.
+            Keep summaries concise and factual. Avoid repetitive content.
             """
 
             response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",  # Upgrade to GPT-4 for better accuracy
                 messages=[
                     {
                         "role": "system",
                         "content": (
-                            "You are an expert at analyzing Tulsa City Council meeting minutes. "
-                            "Extract comprehensive information and respond only in valid JSON format. "
-                            "Count carefully and ensure all numbers match the actual content."
+                            "You are an expert at analyzing city council meeting documents. "
+                            "Provide clean, well-structured information without repetition. "
+                            "Return only valid JSON with no extra text."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=1200,  # Increased for more detailed response
+                max_tokens=2000,
                 temperature=0.1,
             )
 
             result = json.loads(response.choices[0].message.content)
 
-            # Log enhanced extraction results
-            stats = result.get("stats", {})
-            agenda_count = stats.get("agenda_items", 0)
-            votes_count = stats.get("votes_found", 0)
-            motions_count = stats.get("motions_made", 0)
-            approvals_count = stats.get("approvals", 0)
+            # Parse voting records
+            voting_records = []
+            for vote_data in result.get("voting_records", []):
+                try:
+                    voting_records.append(VotingRecord(**vote_data))
+                except Exception as e:
+                    logger.warning(f"Could not parse voting record: {e}")
 
             logger.info(
-                f"Enhanced AI extraction: {len(result.get('categories', []))} categories, "
+                f"AI extraction: {len(result.get('categories', []))} categories, "
                 f"{len(result.get('keywords', []))} keywords, "
-                f"{agenda_count} agenda items, {votes_count} votes, {motions_count} motions"
+                f"{len(voting_records)} voting records"
             )
 
             return (
                 result.get("categories", []),
                 result.get("keywords", []),
                 result.get("summary", ""),
+                result.get("detailed_summary", ""),
+                voting_records,
+                result.get("vote_statistics", {}),
             )
 
         except Exception as e:
             logger.error(f"OpenAI categorization failed: {str(e)}")
-            return self._fallback_categorization(content)
+            fallback_cats, fallback_keywords, fallback_summary = (
+                self._fallback_categorization(content)
+            )
+            return (
+                fallback_cats,
+                fallback_keywords,
+                fallback_summary,
+                fallback_summary,
+                [],
+                {},
+            )
 
     def _fallback_categorization(
         self, content: str
@@ -724,12 +759,20 @@ class AICategorization:
                     impact_assessment="Unable to assess impact - no content extracted",
                     key_decisions=[],
                     public_comments=[],
+                    detailed_summary="",
+                    voting_records=[],
+                    vote_statistics={},
                 )
 
-            # Categorize content
-            categories, keywords, summary = self.categorize_content_with_ai(
-                text_content
-            )
+            # Categorize content with enhanced AI processing
+            (
+                categories,
+                keywords,
+                summary,
+                detailed_summary,
+                voting_records,
+                vote_statistics,
+            ) = self.categorize_content_with_ai(text_content)
 
             # Extract agenda items (this could be enhanced
             # with more sophisticated parsing)
@@ -754,6 +797,9 @@ class AICategorization:
                 impact_assessment=impact_assessment,
                 key_decisions=key_decisions,
                 public_comments=public_comments,
+                detailed_summary=detailed_summary,
+                voting_records=voting_records,
+                vote_statistics=vote_statistics,
             )
 
         except Exception as e:
