@@ -27,7 +27,7 @@ export const HomePage: React.FC = () => {
                 <div className="flex gap-4">
                   <Link
                     to="/register"
-                    className="px-8 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                    className="px-8 py-3 bg-brand-dark-blue text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     Get Started
                   </Link>
