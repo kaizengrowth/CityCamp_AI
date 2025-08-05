@@ -107,6 +107,7 @@ def reprocess_production_meetings_direct(
                     sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
                     from app.services.ai_categorization_service import AICategorization
                     
+                    # Initialize AI service (it will pick up the API key from environment)
                     ai_service = AICategorization()
                     
                     # Read PDF content
