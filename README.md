@@ -23,7 +23,8 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 
 ### 🤖 **AI-Powered Civic Assistant**
 - Interactive chatbot with real-time city council knowledge
-- Natural language queries about Tulsa government
+- **RAG-Enhanced Responses**: Document-based answers using city budgets, legislation, and policies
+- Natural language queries about Tulsa government with contextual document search
 - Meeting summary generation and analysis
 
 ### 📅 **Smart Meeting Notifications**
@@ -45,6 +46,38 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 - Campaign tracking and petition management
 - Neighborhood-based organizing tools
 - User preference and notification management
+
+## 📄 **RAG System (Retrieval-Augmented Generation)**
+
+### **🎯 What is RAG?**
+The RAG system enables the chatbot to search and reference actual city documents, budgets, legislation, and policies to provide accurate, source-backed answers instead of generic responses.
+
+### **🔧 Key Components**
+- **Vector Database**: ChromaDB (dev) / FAISS (production) for semantic search
+- **Document Processing**: AI-powered text extraction, chunking, and summarization
+- **Embedding Generation**: OpenAI text-embedding-3-small for vector representations
+- **Smart Search**: Contextual document retrieval with relevance scoring
+
+### **📁 Supported Document Types**
+- 💰 **Budgets**: City financial documents and allocations
+- 📜 **Legislation**: Ordinances, resolutions, and policies
+- 📋 **Meeting Minutes**: City council and committee records
+- 📊 **Reports**: Studies, analyses, and official reports
+- 📝 **Policies**: Administrative procedures and guidelines
+
+### **🚀 Quick RAG Setup**
+```bash
+# Install RAG dependencies
+pip install -r backend/requirements.txt
+
+# Run database migration
+cd backend && python -m alembic upgrade head
+
+# Test the system
+python scripts/test_rag_system.py
+```
+
+**📖 Full Documentation**: See [`docs/RAG_SYSTEM_README.md`](docs/RAG_SYSTEM_README.md)
 
 ## 🚀 Quick Start
 
@@ -85,7 +118,8 @@ npm run dev
 ### **Technology Stack**
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
 - **Backend**: FastAPI + Python 3.11 + PostgreSQL + Redis
-- **AI/ML**: OpenAI GPT-4 + Custom categorization models
+- **AI/ML**: OpenAI GPT-4 + Custom categorization models + **RAG System (ChromaDB/FAISS)**
+- **Document Processing**: Multi-format support (PDF, DOCX, TXT) with vector embeddings
 - **Infrastructure**: AWS (ECS Fargate, RDS, ElastiCache, S3, CloudFront)
 - **CI/CD**: GitHub Actions with automated testing and deployment
 
@@ -104,6 +138,12 @@ npm run dev
                 │ PostgreSQL  │   │    Redis    │   │   OpenAI    │
                 │   (RDS)     │   │  (Cache)    │   │    API      │
                 └─────────────┘   └─────────────┘   └─────────────┘
+                       │                                   │
+                       │         ┌─────────────────┐       │
+                       └─────────│  RAG System     │───────┘
+                                 │ ChromaDB/FAISS  │
+                                 │ Vector Store    │
+                                 └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -135,6 +175,7 @@ CityCamp_AI/
 │
 ├── 📚 docs/                  # Comprehensive documentation
 │   ├── QUICKSTART.md        # 5-minute setup guide
+│   ├── RAG_SYSTEM_README.md # RAG architecture & usage guide
 │   ├── aws-deployment-guide.md
 │   ├── TROUBLESHOOTING.md   # Issue resolution
 │   └── API_DOCUMENTATION.md # API reference
@@ -213,8 +254,9 @@ python -m app.services.meeting_scraper  # Live meeting discovery
 ### **✅ Current Status (January 2025)**
 - 🟢 **Frontend**: React app with Vite 6.3.5, 0 vulnerabilities
 - 🟢 **Backend**: FastAPI with 42+ meeting records imported
-- 🟢 **Database**: PostgreSQL with 11 tables, full schema
-- 🟢 **AI Services**: OpenAI integration for categorization
+- 🟢 **Database**: PostgreSQL with 15+ tables, full schema including RAG models
+- 🟢 **AI Services**: OpenAI integration for categorization + **RAG document search**
+- 🟢 **Document Processing**: Multi-format support with vector embeddings
 - 🟢 **Notifications**: SMS/Email with Twilio integration
 - 🟢 **Production**: AWS deployment with CloudFront CDN
 - 🟢 **CI/CD**: GitHub Actions with automated testing
@@ -295,6 +337,7 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 ### **API & Development**
 - 📖 **[API Documentation](http://localhost:8000/docs)** - Interactive API docs
 - 🤖 **[Chatbot Guide](docs/ENHANCED_CHATBOT_GUIDE.md)** - AI assistant setup
+- 📄 **[RAG System Guide](docs/RAG_SYSTEM_README.md)** - Document processing & vector search
 - 🔧 **[Scraper Documentation](docs/SCRAPER_TEST_README.md)** - Meeting discovery & PDF import
 
 ## 🤝 Contributing
@@ -364,6 +407,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 📈 Recent Updates
 
 **Latest Changes** (January 2025):
+- ✅ **Implemented comprehensive RAG system** for document-based chatbot responses
+- ✅ Added vector database support (ChromaDB/FAISS) with OpenAI embeddings
+- ✅ Created document processing pipeline with multi-format support (PDF, DOCX, TXT)
+- ✅ Integrated RAG into existing chatbot with function calling
+- ✅ Added complete document management API with upload/search endpoints
 - ✅ Fixed production meeting details loading issues
 - ✅ Added comprehensive production troubleshooting scripts
 - ✅ Resolved security vulnerabilities (esbuild, dependencies)
@@ -371,6 +419,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - ✅ Updated documentation and README files
 
 **Next Planned Features**:
+- 📄 **RAG System Expansion**: Upload city budgets, ordinances, and legislation
+- 🔍 **Advanced Document Search**: Semantic search across all city documents
 - 🔄 Enhanced meeting data scraping automation
 - 📱 Mobile app development
 - 🤖 Advanced AI categorization improvements
