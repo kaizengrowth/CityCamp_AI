@@ -41,17 +41,13 @@ export const HomePage: React.FC = () => {
               )}
             </div>
 
-                        {/* Right side - Hero Image */}
-            <div className="hidden lg:block relative">
-              <div className="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl">
-                <img
-                  src={heroImage}
-                  alt="Civic Spark AI - Connecting Tulsa residents with city government and civic engagement features"
-                  className="w-full h-full object-cover object-center"
-                />
-                {/* Optional subtle gradient overlay for better integration */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-brand-dark-blue/5 to-transparent"></div>
-              </div>
+                                    {/* Right side - Hero Image */}
+            <div className="hidden lg:block">
+              <img
+                src={heroImage}
+                alt="Civic Spark AI - Connecting Tulsa residents with city government and civic engagement features"
+                className="w-full h-auto"
+              />
             </div>
           </div>
         </div>
