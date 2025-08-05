@@ -13,6 +13,9 @@ export const MeetingsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [documentTypeFilter, setDocumentTypeFilter] = useState<'all' | 'agenda' | 'minutes'>('all');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all'); // New date filter
+  const [startDate, setStartDate] = useState<string>(''); // Date range start
+  const [endDate, setEndDate] = useState<string>(''); // Date range end
   const [demoMode, setDemoMode] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
@@ -41,12 +44,12 @@ export const MeetingsPage: React.FC = () => {
 
       console.log('Fetching meetings from API...');
 
-      // Increase timeout for production
+      // Increase timeout for production and fetch more meetings
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(
-        API_ENDPOINTS.meetings,
+        `${API_ENDPOINTS.meetings}?limit=100&skip=0`, // Fetch up to 100 meetings
         { signal: controller.signal }
       );
 
@@ -55,7 +58,12 @@ export const MeetingsPage: React.FC = () => {
 
       // Only update if we got valid data
       if (response.meetings && Array.isArray(response.meetings)) {
-        setMeetings(response.meetings);
+        // Sort meetings chronologically from most recent to farthest back
+        const sortedMeetings = response.meetings.sort((a, b) => 
+          new Date(b.meeting_date).getTime() - new Date(a.meeting_date).getTime()
+        );
+        
+        setMeetings(sortedMeetings);
         setDemoMode(false);
         setError(null);
 
@@ -175,7 +183,7 @@ export const MeetingsPage: React.FC = () => {
     fetchMeetings(true);
   }, []);
 
-  // Memoized filtered meetings to prevent recalculation on every render
+  // Enhanced filtered meetings with date filtering
   const filteredMeetings = useMemo(() => {
     return meetings.filter(meeting => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -193,6 +201,7 @@ export const MeetingsPage: React.FC = () => {
       const now = new Date();
       const meetingDate = new Date(meeting.meeting_date);
 
+      // Time-based filter (upcoming/completed)
       let matchesTimeFilter = true;
       switch (filter) {
         case 'upcoming':
@@ -205,9 +214,61 @@ export const MeetingsPage: React.FC = () => {
           matchesTimeFilter = true;
       }
 
-      return matchesSearch && matchesDocumentType && matchesMeetingType && matchesTimeFilter;
+      // Date range filter
+      let matchesDateFilter = true;
+      if (dateFilter === 'custom' && (startDate || endDate)) {
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999); // Include the entire end date
+          matchesDateFilter = meetingDate >= start && meetingDate <= end;
+        } else if (startDate) {
+          const start = new Date(startDate);
+          matchesDateFilter = meetingDate >= start;
+        } else if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          matchesDateFilter = meetingDate <= end;
+        }
+      } else if (dateFilter !== 'all' && dateFilter !== 'custom') {
+        // Predefined date filters
+        const currentYear = now.getFullYear();
+        const startOfYear = new Date(currentYear, 0, 1);
+        const startOfLastYear = new Date(currentYear - 1, 0, 1);
+        const endOfLastYear = new Date(currentYear - 1, 11, 31, 23, 59, 59, 999);
+        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const ninetyDaysAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+
+        switch (dateFilter) {
+          case 'thisYear':
+            matchesDateFilter = meetingDate >= startOfYear;
+            break;
+          case 'lastYear':
+            matchesDateFilter = meetingDate >= startOfLastYear && meetingDate <= endOfLastYear;
+            break;
+          case 'last30Days':
+            matchesDateFilter = meetingDate >= thirtyDaysAgo;
+            break;
+          case 'last90Days':
+            matchesDateFilter = meetingDate >= ninetyDaysAgo;
+            break;
+          case '2024':
+            matchesDateFilter = meetingDate >= new Date(2024, 0, 1) && meetingDate <= new Date(2024, 11, 31, 23, 59, 59, 999);
+            break;
+          case '2023':
+            matchesDateFilter = meetingDate >= new Date(2023, 0, 1) && meetingDate <= new Date(2023, 11, 31, 23, 59, 59, 999);
+            break;
+          case '2022':
+            matchesDateFilter = meetingDate >= new Date(2022, 0, 1) && meetingDate <= new Date(2022, 11, 31, 23, 59, 59, 999);
+            break;
+          default:
+            matchesDateFilter = true;
+        }
+      }
+
+      return matchesSearch && matchesDocumentType && matchesMeetingType && matchesTimeFilter && matchesDateFilter;
     });
-  }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter]);
+  }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter, dateFilter, startDate, endDate]);
 
   // Memoized topic and keyword calculations
   const { topTopics, topKeywords } = useMemo(() => {
@@ -349,6 +410,9 @@ export const MeetingsPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-gray-900">City Council Meetings</h1>
+        <div className="text-sm text-gray-600">
+          Displaying all {meetings.length} meetings chronologically (most recent first)
+        </div>
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -422,71 +486,120 @@ export const MeetingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Search and Filter Controls */}
+      {/* Enhanced Search and Filter Controls */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search meetings..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+        <div className="flex flex-col gap-4">
+          {/* First row: Search and basic filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search meetings..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as any)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Meetings</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <select
+                value={documentTypeFilter}
+                onChange={(e) => setDocumentTypeFilter(e.target.value as any)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Documents</option>
+                <option value="agenda">📋 Agendas</option>
+                <option value="minutes">📝 Minutes</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="all">All Meetings</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div>
-            <select
-              value={documentTypeFilter}
-              onChange={(e) => setDocumentTypeFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="all">All Documents</option>
-              <option value="agenda">📋 Agendas</option>
-              <option value="minutes">📝 Minutes</option>
-            </select>
-          </div>
-          <div>
-            <select
-              value={meetingTypeFilter}
-              onChange={(e) => setMeetingTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="all">All Types</option>
-              <optgroup label="Main Council & Committees">
-                <option value="regular_council">🏛️ Regular Council</option>
-                <option value="budget_committee">💰 Budget Committee</option>
-                <option value="public_works_committee">🚧 Public Works</option>
-                <option value="urban_economic_committee">🏙️ Urban & Economic</option>
-              </optgroup>
-              <optgroup label="Task Forces & Special Committees">
-                <option value="quality_of_life_task_force">🌟 61st & Peoria Quality of Life</option>
-                <option value="capital_improvement_task_force">🏗️ Capital Improvement</option>
-                <option value="passenger_rail_task_force">🚊 Eastern Flyer Rail</option>
-                <option value="hud_grant_committee">🏠 HUD Grant Fund</option>
-                <option value="hunger_food_task_force">🍽️ Hunger & Food</option>
-                <option value="mayor_council_retreat">🤝 Mayor-Council Retreat</option>
-                <option value="public_safety_task_force">🚔 Public Safety</option>
-                <option value="river_infrastructure_task_force">🌊 River Infrastructure</option>
-                <option value="street_lighting_task_force">💡 Street Lighting</option>
-                <option value="food_desert_task_force">🏪 Food Desert</option>
-                <option value="tribal_nations_committee">🪶 Tribal Nations Relations</option>
-                <option value="truancy_prevention_task_force">🎒 Truancy Prevention</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="other">📄 Other</option>
-              </optgroup>
-            </select>
+
+          {/* Second row: Date selector and meeting type */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Dates</option>
+                <option value="last30Days">📅 Last 30 Days</option>
+                <option value="last90Days">📅 Last 90 Days</option>
+                <option value="thisYear">📅 This Year</option>
+                <option value="lastYear">📅 Last Year</option>
+                <option value="2024">📅 2024</option>
+                <option value="2023">📅 2023</option>
+                <option value="2022">📅 2022</option>
+                <option value="custom">📅 Custom Range</option>
+              </select>
+            </div>
+
+            {/* Custom date range inputs */}
+            {dateFilter === 'custom' && (
+              <>
+                <div>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Start Date"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="End Date"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="flex-1">
+              <select
+                value={meetingTypeFilter}
+                onChange={(e) => setMeetingTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Types</option>
+                <optgroup label="Main Council & Committees">
+                  <option value="regular_council">🏛️ Regular Council</option>
+                  <option value="budget_committee">💰 Budget Committee</option>
+                  <option value="public_works_committee">🚧 Public Works</option>
+                  <option value="urban_economic_committee">🏙️ Urban & Economic</option>
+                </optgroup>
+                <optgroup label="Task Forces & Special Committees">
+                  <option value="quality_of_life_task_force">🌟 61st & Peoria Quality of Life</option>
+                  <option value="capital_improvement_task_force">🏗️ Capital Improvement</option>
+                  <option value="passenger_rail_task_force">🚊 Eastern Flyer Rail</option>
+                  <option value="hud_grant_committee">🏠 HUD Grant Fund</option>
+                  <option value="hunger_food_task_force">🍽️ Hunger & Food</option>
+                  <option value="mayor_council_retreat">🤝 Mayor-Council Retreat</option>
+                  <option value="public_safety_task_force">🚔 Public Safety</option>
+                  <option value="river_infrastructure_task_force">🌊 River Infrastructure</option>
+                  <option value="street_lighting_task_force">💡 Street Lighting</option>
+                  <option value="food_desert_task_force">🏪 Food Desert</option>
+                  <option value="tribal_nations_committee">🪶 Tribal Nations Relations</option>
+                  <option value="truancy_prevention_task_force">🎒 Truancy Prevention</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="other">📄 Other</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
         </div>
       </div>
