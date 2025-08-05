@@ -1,0 +1,27 @@
+.sparkle-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.sparkle-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), transparent);
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 1;
+}
+
+.sparkle-effect:hover::after {
+  opacity: 1;
+  animation: sparkle 3s infinite linear;
+}
+
+@keyframes sparkle {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
