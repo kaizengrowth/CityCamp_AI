@@ -90,8 +90,7 @@ TULSA_ORGANIZATIONS = [
         "focus_areas": ["social_justice", "public_safety", "community_building", "healthcare"],
         "service_areas": ["North Tulsa", "Tulsa Metro"],
         "founded_year": 2016,
-        "is_verified": True,
-        "organization_type": "nonprofit"
+        "is_verified": True
     },
     {
         "name": "Growing Together Tulsa",
