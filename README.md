@@ -180,7 +180,7 @@ cd backend
 source venv/bin/activate
 python -m app.main   # Start development server
 python -m pytest ../tests/backend/ -v  # Run API tests
-python -m app.services.meeting_scraper  # Data collection
+python -m app.services.meeting_scraper  # Live meeting discovery
 
 # Full system
 ./scripts/start-dev.sh     # Start all services
@@ -295,7 +295,7 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 ### **API & Development**
 - 📖 **[API Documentation](http://localhost:8000/docs)** - Interactive API docs
 - 🤖 **[Chatbot Guide](docs/ENHANCED_CHATBOT_GUIDE.md)** - AI assistant setup
-- 🔧 **[Scraper Documentation](docs/SCRAPER_TEST_README.md)** - Data collection
+- 🔧 **[Scraper Documentation](docs/SCRAPER_TEST_README.md)** - Meeting discovery & PDF import
 
 ## 🤝 Contributing
 
