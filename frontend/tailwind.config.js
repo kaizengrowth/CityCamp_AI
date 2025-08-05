@@ -71,6 +71,8 @@ export default {
           'dark-blue': '#162a49',    // Main brand color for text, titles, badges
           'medium-blue': '#5086d3',  // Button color for CTAs
         },
+        'brand-red': '#B10E1C',
+        'brand-yellow': '#E8A613',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

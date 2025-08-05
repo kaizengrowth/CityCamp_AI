@@ -1,4 +1,4 @@
-# 🏛️ CityCamp AI - Tulsa Civic Engagement Platform
+# 🏛️ CivicSpark AI - Tulsa Civic Engagement Platform
 
 A comprehensive CivicTech platform connecting Tulsa residents with city government through AI-powered tools, automated notifications, and intelligent meeting analytics.
 
