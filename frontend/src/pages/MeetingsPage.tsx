@@ -330,10 +330,10 @@ export const MeetingsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-gray-900">City Council Meetings</h1>
-        <div className="flex gap-2">
+        <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
               Demo Mode
@@ -461,9 +461,7 @@ export const MeetingsPage: React.FC = () => {
               filteredMeetings.map((meeting) => (
                 <div
                   key={meeting.id}
-                  className={`bg-white p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${
-                    selectedMeeting?.id === meeting.id ? 'ring-2 ring-primary-500' : ''
-                  }`}
+                  className={`p-6 rounded-lg shadow cursor-pointer transition-all hover:shadow-md ${selectedMeeting?.id === meeting.id ? 'bg-white border border-primary-800 shadow-lg' : 'bg-[#fdf8f3]'}`}
                   onClick={(e) => handleMeetingClick(meeting.id, e)}
                 >
                   <div className="flex justify-between items-start mb-3">

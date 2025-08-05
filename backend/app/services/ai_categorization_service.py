@@ -39,7 +39,7 @@ class ProcessedMeetingContent(BaseModel):
 
 
 class AICategorization:
-    """AI-powered categorization service for meeting minutes and civic content"""
+    """AI-powered categorization service for meeting minutes and CivicSpark content"""
 
     # Comprehensive social issue categories for civic engagement
     SOCIAL_ISSUE_CATEGORIES = {
