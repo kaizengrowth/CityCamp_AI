@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiRequest } from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface Organization {
   id: number;
@@ -160,6 +162,7 @@ const BACKUP_ORGANIZATIONS: Organization[] = [
 ];
 
 export const OrganizationsPage: React.FC = () => {
+  const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +172,8 @@ export const OrganizationsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [focusAreaFilter, setFocusAreaFilter] = useState<string>('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [connectedOrganizations, setConnectedOrganizations] = useState<Set<number>>(new Set());
+  const [connectingOrganizations, setConnectingOrganizations] = useState<Set<number>>(new Set());
 
   // Available filter options
   const organizationTypes = [
@@ -287,6 +292,43 @@ export const OrganizationsPage: React.FC = () => {
   const handleOrganizationClick = useCallback((organization: Organization) => {
     setSelectedOrganization(organization);
   }, []);
+
+  const handleConnect = useCallback(async (organizationId: number, organizationName: string) => {
+    if (!user) {
+      toast.error('Please log in to connect with organizations');
+      return;
+    }
+
+    if (connectingOrganizations.has(organizationId)) return;
+
+    setConnectingOrganizations(prev => new Set(prev).add(organizationId));
+
+    try {
+      const isConnected = connectedOrganizations.has(organizationId);
+      
+      if (isConnected) {
+        // Disconnect logic - for now just update local state
+        setConnectedOrganizations(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(organizationId);
+          return newSet;
+        });
+        toast.success(`Disconnected from ${organizationName}`);
+      } else {
+        // Connect logic - for now just update local state
+        setConnectedOrganizations(prev => new Set(prev).add(organizationId));
+        toast.success(`Connected to ${organizationName}! You'll receive updates about their activities.`);
+      }
+    } catch (error) {
+      toast.error('Failed to update connection. Please try again.');
+    } finally {
+      setConnectingOrganizations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(organizationId);
+        return newSet;
+      });
+    }
+  }, [user, connectedOrganizations, connectingOrganizations]);
 
   const getTypeLabel = (type?: string) => {
     const typeObj = organizationTypes.find(t => t.value === type);
@@ -431,11 +473,26 @@ export const OrganizationsPage: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                       {org.name}
                     </h3>
-                    {org.is_verified && (
-                      <span className="flex-shrink-0 ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        ✓ Verified
-                      </span>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConnect(org.id, org.name);
+                      }}
+                      disabled={connectingOrganizations.has(org.id)}
+                      className={`flex-shrink-0 ml-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        connectedOrganizations.has(org.id)
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      } ${connectingOrganizations.has(org.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      {connectingOrganizations.has(org.id) ? (
+                        '...'
+                      ) : connectedOrganizations.has(org.id) ? (
+                        '✓ Connected'
+                      ) : (
+                        '+ Connect'
+                      )}
+                    </button>
                   </div>
 
                   <div className="space-y-2 text-sm">
@@ -493,11 +550,23 @@ export const OrganizationsPage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedOrganization.name}
                 </h2>
-                {selectedOrganization.is_verified && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    ✓ Verified
-                  </span>
-                )}
+                <button
+                  onClick={() => handleConnect(selectedOrganization.id, selectedOrganization.name)}
+                  disabled={connectingOrganizations.has(selectedOrganization.id)}
+                  className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    connectedOrganizations.has(selectedOrganization.id)
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-green-100 text-green-800 hover:bg-green-200'
+                  } ${connectingOrganizations.has(selectedOrganization.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {connectingOrganizations.has(selectedOrganization.id) ? (
+                    'Loading...'
+                  ) : connectedOrganizations.has(selectedOrganization.id) ? (
+                    '✓ Connected'
+                  ) : (
+                    '+ Connect'
+                  )}
+                </button>
               </div>
 
               <div className="space-y-4">
