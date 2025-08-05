@@ -11,7 +11,7 @@ export const HomePage: React.FC = () => {
       <div className="text-center space-y-6">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 gradient-text">
-            CityCamp AI
+            Civic Spark AI
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">
             Connecting Tulsa residents with city government and neighborhood organizations.
@@ -97,7 +97,7 @@ export const HomePage: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="bg-white rounded-xl p-8 shadow-sm">
-        <h2 className="text-3xl font-bold text-center mb-8">Explore CityCamp AI</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">Explore Civic Spark AI</h2>
         <div className="grid md:grid-cols-3 gap-6">
           <Link
             to="/meetings"
