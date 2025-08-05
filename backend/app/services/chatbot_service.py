@@ -7,6 +7,7 @@ from app.core.config import Settings
 from app.models.campaign import Campaign
 from app.models.meeting import Meeting
 from app.services.research_service import ResearchService
+from app.services.vector_service import VectorService
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
@@ -30,48 +31,63 @@ class ChatbotService:
             self.client = OpenAI(api_key=settings.openai_api_key)
 
         self.research_service = ResearchService(settings)
+        self.vector_service = VectorService(settings)
 
     def get_system_prompt(self) -> str:
         """Get the enhanced system prompt for the chatbot"""
-        return """You are CityCamp AI, a specialized assistant for Tulsa, Oklahoma civic engagement and local government.
+        return """You are CityCamp AI for Tulsa, Oklahoma civic engagement.
 
-IMPORTANT GUARDRAILS:
-- You ONLY answer questions related to Tulsa, Oklahoma local government, civic engagement, and municipal services
-- If asked about other cities, states, or non-Tulsa topics, politely redirect to Tulsa-specific matters
-- Always emphasize "Tulsa" in your responses to maintain local focus
-- Do not provide information about other municipalities unless directly comparing to Tulsa
+FOCUS: Only answer Tulsa government, civic engagement, and municipal service questions.
 
-You can help with:
-- Information about Tulsa City Council meetings, agendas, and minutes
-- Details about local Tulsa campaigns and civic initiatives
-- Guidance on civic participation and engagement in Tulsa
-- General information about Tulsa city government
-- How to use the CityCamp AI platform
-- Current events and news related to Tulsa government
+RESPONSE STYLE:
+- Keep responses short and conversational (2-3 sentences max)
+- Use simple language, avoid jargon
+- Be helpful but concise
+- Use **bold** for key terms
+- Provide links when relevant: [text](url)
 
-ENHANCED CAPABILITIES:
-- You can search the web for current information about Tulsa government
-- You can retrieve and analyze official documents, PDFs, and meeting minutes
-- You can provide links to relevant resources and documents
-- Use **bold** text for emphasis and proper markdown formatting
-- Always provide clickable links in markdown format: [text](url)
+CAPABILITIES:
+- Search web for current Tulsa government info
+- Retrieve official documents and meeting minutes
+- Help with civic participation
 
-Key guidelines:
-- Be helpful, friendly, and encouraging about civic engagement in Tulsa
-- Provide accurate, up-to-date information about local government processes
-- Encourage users to participate in democracy and civic activities
-- When you find relevant documents or web pages, always provide the links
-- Use markdown formatting for better readability
-- Break up long responses into clear paragraphs with proper spacing
+If asked about non-Tulsa topics: "I focus on **Tulsa, Oklahoma** civic matters. What can I help you with regarding Tulsa government?"
 
-If asked about non-Tulsa topics, respond with: "I'm specifically designed to help with **Tulsa, Oklahoma** civic engagement and local government matters. Please ask me about Tulsa-specific topics!\""""
+Be friendly, encouraging, and brief."""
 
     def get_function_definitions(self) -> List[Dict[str, Any]]:
         """Define available functions for OpenAI function calling"""
         return [
             {
+                "name": "search_documents",
+                "description": "Search Tulsa city documents, budgets, legislation, policies, and meeting minutes using semantic search",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query for Tulsa government documents",
+                        },
+                        "document_type": {
+                            "type": "string",
+                            "description": "Filter by document type: budget, legislation, policy, meeting_minutes, ordinance",
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "Filter by category: transportation, housing, finance, public_safety, utilities",
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": "Maximum number of results to return (default: 3)",
+                            "default": 3,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+            {
                 "name": "search_web",
-                "description": "Search the web for current information about Tulsa government, meetings, ordinances, or civic matters",
+                "description": "Search the web for current information about Tulsa government when documents don't have the answer",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -81,8 +97,8 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
                         },
                         "num_results": {
                             "type": "integer",
-                            "description": "Number of search results to return (default: 5)",
-                            "default": 5,
+                            "description": "Number of search results to return (default: 3)",
+                            "default": 3,
                         },
                     },
                     "required": ["query"],
@@ -102,20 +118,6 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
                     "required": ["url"],
                 },
             },
-            {
-                "name": "search_tulsa_documents",
-                "description": "Search specifically for Tulsa government documents, PDFs, meeting minutes, and official records",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "Search query for Tulsa government documents",
-                        }
-                    },
-                    "required": ["query"],
-                },
-            },
         ]
 
     async def process_function_call(
@@ -123,9 +125,47 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
     ) -> str:
         """Process function calls from OpenAI"""
         try:
-            if function_name == "search_web":
+            if function_name == "search_documents":
                 query = arguments.get("query", "")
-                num_results = arguments.get("num_results", 5)
+                document_type = arguments.get("document_type")
+                category = arguments.get("category")
+                max_results = arguments.get("max_results", 3)
+
+                # Build filters
+                filters = {}
+                if document_type:
+                    filters["document_type"] = document_type
+                if category:
+                    filters["category"] = category
+
+                # Search documents using RAG
+                results = await self.vector_service.search_documents(
+                    query, max_results, filters
+                )
+
+                if results:
+                    formatted_results = "**Relevant Tulsa Documents:**\n\n"
+                    for i, result in enumerate(results, 1):
+                        metadata = result.get("metadata", {})
+                        content = result.get("content", "")
+                        similarity = result.get("similarity", 0)
+
+                        formatted_results += (
+                            f"**{i}. Document Excerpt** (relevance: {similarity:.2f})\n"
+                        )
+                        if metadata.get("document_type"):
+                            formatted_results += f"Type: {metadata['document_type']}\n"
+                        if metadata.get("category"):
+                            formatted_results += f"Category: {metadata['category']}\n"
+                        formatted_results += f"Content: {content[:300]}...\n\n"
+
+                    return formatted_results
+                else:
+                    return "No relevant documents found in the database."
+
+            elif function_name == "search_web":
+                query = arguments.get("query", "")
+                num_results = arguments.get("num_results", 3)
 
                 results = await self.research_service.search_web(query, num_results)
                 return self.research_service.format_search_results(results)
@@ -135,12 +175,6 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
 
                 document = await self.research_service.retrieve_document(url)
                 return self.research_service.format_document_content(document)
-
-            elif function_name == "search_tulsa_documents":
-                query = arguments.get("query", "")
-
-                documents = await self.research_service.search_tulsa_documents(query)
-                return self.research_service.format_search_results(documents)
 
             else:
                 return f"Unknown function: {function_name}"
@@ -250,7 +284,7 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
             response = self.client.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=messages,
-                max_tokens=1000,
+                max_tokens=300,  # Reduced from 1000 to encourage shorter responses
                 temperature=0.7,
                 functions=self.get_function_definitions(),
                 function_call="auto",
@@ -294,7 +328,7 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
                 final_response = self.client.chat.completions.create(
                     model="gpt-4-turbo-preview",
                     messages=messages,
-                    max_tokens=1000,
+                    max_tokens=300,  # Reduced from 1000 to encourage shorter responses
                     temperature=0.7,
                 )
 
@@ -350,92 +384,29 @@ If asked about non-Tulsa topics, respond with: "I'm specifically designed to hel
         ]
 
         if not any(keyword in message_lower for keyword in tulsa_keywords):
-            return """I'm specifically designed to help with **Tulsa, Oklahoma** civic engagement and local government matters.
-
-I can assist you with:
-• **Tulsa City Council** meetings and agendas
-• Local **Tulsa** campaigns and initiatives
-• **Tulsa** civic participation opportunities
-• **Tulsa** government services and information
-
-Please ask me about **Tulsa-specific** topics! For general information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)."""
+            return "I focus on **Tulsa, Oklahoma** civic matters. What can I help you with regarding Tulsa government?"
 
         # Meeting-related queries
         if any(
             word in message_lower
             for word in ["meeting", "council", "agenda", "minutes"]
         ):
-            return """I can help you find information about **Tulsa City Council meetings**!
-
-You can:
-• View upcoming meetings and agendas on the Meetings page
-• Read past meeting minutes and summaries
-• Get notifications about meetings that interest you
-
-For official information, visit:
-• [Tulsa City Council](https://www.cityoftulsa.org/government/city-council/)
-• [City Clerk's Office](https://www.cityoftulsa.org/government/city-clerk/)
-
-What specific **Tulsa** meeting information are you looking for?"""
+            return "Check the Meetings page for **Tulsa City Council** agendas and minutes. What specific meeting info do you need?"
 
         # Campaign-related queries
         if any(
             word in message_lower
             for word in ["campaign", "petition", "initiative", "vote"]
         ):
-            return """**CityCamp AI** helps you stay informed about local **Tulsa** campaigns and civic initiatives!
-
-Check out the Campaigns page to:
-• See active petitions and initiatives in **Tulsa**
-• Learn about local ballot measures
-• Find ways to get involved in your **Tulsa** community
-
-For election information, visit:
-• [Tulsa Elections](https://www.cityoftulsa.org/government/city-clerk/elections/)
-• [Tulsa County Election Board](https://www.tulsacounty.org/election-board/)
-
-Is there a specific **Tulsa** campaign or issue you're interested in?"""
+            return "Visit the Campaigns page to see active **Tulsa** initiatives and petitions. Which campaign interests you?"
 
         # Notification queries
         if any(word in message_lower for word in ["notification", "alert", "remind"]):
-            return """You can set up **personalized notifications** to stay engaged with **Tulsa** local government!
-
-Go to your Profile settings to:
-• Get alerts about upcoming **Tulsa** meetings
-• Receive updates on **Tulsa** campaigns you care about
-• Set preferences for topics that matter to you
-
-For city services, you can also use:
-• [Tulsa 311 Services](https://www.cityoftulsa.org/services/311/)
-
-Would you like help setting up notifications for **Tulsa** civic activities?"""
+            return "Set up **notifications** in your Profile settings for **Tulsa** meetings and campaigns. Need help with that?"
 
         # General greeting
         if any(word in message_lower for word in ["hello", "hi", "help", "start"]):
-            return """Hello! I'm your **CityCamp AI assistant**, here to help you stay engaged with **Tulsa local government**.
-
-I can help you with:
-🏛️ **Tulsa City Council** meetings and agendas
-📋 Local **Tulsa** campaigns and initiatives
-🔔 Setting up notifications for **Tulsa** civic activities
-🗳️ **Tulsa** civic participation opportunities
-
-For official information, visit the [City of Tulsa website](https://www.cityoftulsa.org/)
-
-What would you like to know about **Tulsa** local government?"""
+            return "Hi! I'm your **CityCamp AI** assistant for **Tulsa** civic engagement. I can help with meetings, campaigns, and notifications. What do you need?"
 
         # Default response
-        return """I'm here to help you stay informed about **Tulsa local government** and civic engagement.
-
-You can ask me about:
-• Upcoming **Tulsa City Council** meetings
-• Local **Tulsa** campaigns and initiatives
-• How to get more involved in your **Tulsa** community
-• Using the CityCamp AI platform
-
-Helpful resources:
-• [City of Tulsa](https://www.cityoftulsa.org/)
-• [Tulsa City Council](https://www.cityoftulsa.org/government/city-council/)
-• [Tulsa 311 Services](https://www.cityoftulsa.org/services/311/)
-
-You can also explore the Meetings and Campaigns pages for the latest information. What would you like to know about **Tulsa**?"""
+        return "I help with **Tulsa** civic engagement - meetings, campaigns, and community involvement. What can I assist you with?"
