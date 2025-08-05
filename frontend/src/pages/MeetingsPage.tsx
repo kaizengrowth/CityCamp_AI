@@ -10,7 +10,7 @@ export const MeetingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('completed');
   const [documentTypeFilter, setDocumentTypeFilter] = useState<'all' | 'agenda' | 'minutes'>('all');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all'); // New date filter
@@ -183,9 +183,9 @@ export const MeetingsPage: React.FC = () => {
     fetchMeetings(true);
   }, []);
 
-  // Enhanced filtered meetings with date filtering
+  // Enhanced filtered meetings with date filtering and smart sorting
   const filteredMeetings = useMemo(() => {
-    return meetings.filter(meeting => {
+    const filtered = meetings.filter(meeting => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -267,6 +267,20 @@ export const MeetingsPage: React.FC = () => {
       }
 
       return matchesSearch && matchesDocumentType && matchesMeetingType && matchesTimeFilter && matchesDateFilter;
+    });
+
+    // Apply smart sorting based on filter type
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.meeting_date).getTime();
+      const dateB = new Date(b.meeting_date).getTime();
+      
+      if (filter === 'upcoming') {
+        // For upcoming meetings, show soonest first (earliest to latest)
+        return dateA - dateB;
+      } else {
+        // For completed and all meetings, show most recent first (latest to earliest) 
+        return dateB - dateA;
+      }
     });
   }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter, dateFilter, startDate, endDate]);
 
