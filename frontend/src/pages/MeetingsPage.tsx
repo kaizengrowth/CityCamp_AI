@@ -11,6 +11,8 @@ export const MeetingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<'all' | 'agenda' | 'minutes'>('all');
+  const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>('all');
   const [demoMode, setDemoMode] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
@@ -179,19 +181,33 @@ export const MeetingsPage: React.FC = () => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
 
+      // Document type filter
+      const matchesDocumentType = documentTypeFilter === 'all' ||
+                                 (meeting as any).document_type === documentTypeFilter ||
+                                 (!((meeting as any).document_type) && documentTypeFilter === 'agenda'); // Default to agenda
+
+      // Meeting type filter
+      const matchesMeetingType = meetingTypeFilter === 'all' ||
+                               meeting.meeting_type === meetingTypeFilter;
+
       const now = new Date();
       const meetingDate = new Date(meeting.meeting_date);
 
+      let matchesTimeFilter = true;
       switch (filter) {
         case 'upcoming':
-          return matchesSearch && meetingDate >= now;
+          matchesTimeFilter = meetingDate >= now;
+          break;
         case 'completed':
-          return matchesSearch && meetingDate < now;
+          matchesTimeFilter = meetingDate < now;
+          break;
         default:
-          return matchesSearch;
+          matchesTimeFilter = true;
       }
+
+      return matchesSearch && matchesDocumentType && matchesMeetingType && matchesTimeFilter;
     });
-  }, [meetings, searchTerm, filter]);
+  }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter]);
 
   // Memoized topic and keyword calculations
   const { topTopics, topKeywords } = useMemo(() => {
@@ -427,6 +443,49 @@ export const MeetingsPage: React.FC = () => {
               <option value="all">All Meetings</option>
               <option value="upcoming">Upcoming</option>
               <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div>
+            <select
+              value={documentTypeFilter}
+              onChange={(e) => setDocumentTypeFilter(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Documents</option>
+              <option value="agenda">📋 Agendas</option>
+              <option value="minutes">📝 Minutes</option>
+            </select>
+          </div>
+          <div>
+            <select
+              value={meetingTypeFilter}
+              onChange={(e) => setMeetingTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="all">All Types</option>
+              <optgroup label="Main Council & Committees">
+                <option value="regular_council">🏛️ Regular Council</option>
+                <option value="budget_committee">💰 Budget Committee</option>
+                <option value="public_works_committee">🚧 Public Works</option>
+                <option value="urban_economic_committee">🏙️ Urban & Economic</option>
+              </optgroup>
+              <optgroup label="Task Forces & Special Committees">
+                <option value="quality_of_life_task_force">🌟 61st & Peoria Quality of Life</option>
+                <option value="capital_improvement_task_force">🏗️ Capital Improvement</option>
+                <option value="passenger_rail_task_force">🚊 Eastern Flyer Rail</option>
+                <option value="hud_grant_committee">🏠 HUD Grant Fund</option>
+                <option value="hunger_food_task_force">🍽️ Hunger & Food</option>
+                <option value="mayor_council_retreat">🤝 Mayor-Council Retreat</option>
+                <option value="public_safety_task_force">🚔 Public Safety</option>
+                <option value="river_infrastructure_task_force">🌊 River Infrastructure</option>
+                <option value="street_lighting_task_force">💡 Street Lighting</option>
+                <option value="food_desert_task_force">🏪 Food Desert</option>
+                <option value="tribal_nations_committee">🪶 Tribal Nations Relations</option>
+                <option value="truancy_prevention_task_force">🎒 Truancy Prevention</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="other">📄 Other</option>
+              </optgroup>
             </select>
           </div>
         </div>
