@@ -284,20 +284,37 @@ export const MeetingsPage: React.FC = () => {
     });
   }, [meetings, searchTerm, filter, documentTypeFilter, meetingTypeFilter, dateFilter, startDate, endDate]);
 
-  // Memoized topic and keyword calculations
+  // Memoized topic and keyword calculations from recent completed meetings
   const { topTopics, topKeywords } = useMemo(() => {
     const topicCounts: { [key: string]: number } = {};
     const keywordCounts: { [key: string]: number } = {};
 
-    meetings.slice(0, 10).forEach(meeting => {
+    // Filter to only completed meetings and take the 5 most recent
+    const now = new Date();
+    const recentCompletedMeetings = meetings
+      .filter(meeting => new Date(meeting.meeting_date) < now)
+      .slice(0, 5);
+
+    recentCompletedMeetings.forEach(meeting => {
+      // Handle topics (could be array or string depending on data format)
       if (meeting.topics) {
-        meeting.topics.forEach(topic => {
-          topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+        const topics = Array.isArray(meeting.topics) ? meeting.topics : 
+                      typeof meeting.topics === 'string' ? [meeting.topics] : [];
+        topics.forEach(topic => {
+          if (topic && typeof topic === 'string') {
+            topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+          }
         });
       }
+      
+      // Handle keywords (could be array or string depending on data format)
       if (meeting.keywords) {
-        meeting.keywords.forEach(keyword => {
-          keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+        const keywords = Array.isArray(meeting.keywords) ? meeting.keywords : 
+                        typeof meeting.keywords === 'string' ? [meeting.keywords] : [];
+        keywords.forEach(keyword => {
+          if (keyword && typeof keyword === 'string') {
+            keywordCounts[keyword] = (keywordCounts[keyword] || 0) + 1;
+          }
         });
       }
     });
@@ -471,7 +488,7 @@ export const MeetingsPage: React.FC = () => {
       {/* Most Frequent Topics & Keywords */}
       {!demoMode && meetings.length > 0 && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Meetings Analysis</h2>
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Recent Completed Meetings Analysis</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Most Frequent Topics */}
             <div>
