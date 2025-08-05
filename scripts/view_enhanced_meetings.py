@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 """
-View Enhanced Meetings
-Display enhanced meetings from production database with detailed formatting
+View Enhanced Meetings from Production Database
+Query the production database to view meetings with enhanced AI processing
 """
 
 import os
 import sys
-import json
 import psycopg2
-from pathlib import Path
+from datetime import datetime
+from typing import List, Dict, Any
+
+
+def get_database_url():
+    """Get database URL from environment variable"""
+    db_url = os.getenv('AWS_DB_URL')
+    if not db_url:
+        print("❌ Error: AWS_DB_URL environment variable not set")
+        print("Please set the AWS_DB_URL environment variable with your database connection string")
+        print("Example: export AWS_DB_URL='postgresql://user:password@host:port/database'")
+        sys.exit(1)
+    return db_url
 
 def view_enhanced_meetings(aws_db_url: str, meeting_ids: list = None):
     """View enhanced meetings from production database"""
@@ -162,13 +173,15 @@ def main():
     
     parser = argparse.ArgumentParser(description="View enhanced meetings from production database")
     parser.add_argument("--aws-db-url", type=str, 
-                       default="postgresql://citycamp_user:REDACTED_PASSWORD@citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com:5432/citycamp_db",
-                       help="AWS RDS database URL")
+                       help="AWS RDS database URL (defaults to AWS_DB_URL environment variable)")
     parser.add_argument("--meeting-ids", type=int, nargs='+', help="Specific meeting IDs to view")
     
     args = parser.parse_args()
     
-    view_enhanced_meetings(args.aws_db_url, args.meeting_ids)
+    # Use provided URL or get from environment
+    aws_db_url = args.aws_db_url or get_database_url()
+    
+    view_enhanced_meetings(aws_db_url, args.meeting_ids)
 
 if __name__ == "__main__":
     main() 
