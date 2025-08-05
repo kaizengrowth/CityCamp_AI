@@ -10,7 +10,7 @@ export const MeetingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('completed');
   const [documentTypeFilter, setDocumentTypeFilter] = useState<'all' | 'agenda' | 'minutes'>('all');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all'); // New date filter
