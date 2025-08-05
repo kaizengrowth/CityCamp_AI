@@ -30,14 +30,18 @@ export const Layout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2">
-                <div className="w-12 h-8 bg-brand-dark-blue rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">Tulsa</span>
+            <Link to="/" className="relative group flex items-center">
+              <button className="flex items-center space-x-2 sparkle-effect hover:text-black mb-4 relative">
+                <div className="w-12 h-8 bg-brand-yellow rounded-lg flex items-center justify-center hover:text-black">
+                  <span className="text-white font-bold text-xs group-hover:text-black">TULSA</span>
                 </div>
-                <span className="text-xl font-bold text-brand-dark-blue">Civic Spark AI</span>
-              </Link>
-            </div>
+                <span className="text-xl font-bold text-brand-dark-blue">CivicSpark AI</span>
+              </button>
+              <div className="absolute mt-24 w-48 bg-white rounded-md shadow-lg z-10 hidden group-hover:block group-focus-within:block">
+                <Link to="https://www.tulsacouncil.org" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tulsa</Link>
+                <Link to="https://council.nyc.gov" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">New York City</Link>
+              </div>
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
@@ -94,7 +98,7 @@ export const Layout: React.FC = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
                   <Link
                     to="/signup/notifications"
-                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:bg-brand-red hover:text-white whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">Get Notified</span>
                     <span className="sm:hidden">Notify</span>
@@ -103,13 +107,7 @@ export const Layout: React.FC = () => {
                     to="/login"
                     className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
                   >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
-                  >
-                    Register
+                    Login / Register
                   </Link>
                 </div>
               )}
@@ -184,14 +182,7 @@ export const Layout: React.FC = () => {
                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-3 py-2 text-base font-medium text-white bg-brand-medium-blue rounded-md transition-colors text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Register
+                    Login / Register
                   </Link>
                 </div>
               )}
@@ -201,7 +192,7 @@ export const Layout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className={`flex-1 ${location.pathname === '/' ? '' : 'px-4 sm:px-6 lg:px-8 pt-4'}`}>
         <Outlet />
       </main>
 
@@ -210,7 +201,7 @@ export const Layout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center">
             <span className="text-sm text-gray-600">
-              © 2025 <span className="text-primary-600 font-semibold">Civic Spark AI</span>. Connecting Tulsa residents to city government and neighborhood organizations.
+              © 2025 <span className="text-brand-red font-semibold">CivicSpark AI</span>. Connecting Tulsa and NYC residents to city government and neighborhood organizations.
             </span>
           </div>
         </div>

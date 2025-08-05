@@ -4,9 +4,10 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
   moduleNameMapper: {
+    '^@/assets/images/(.*)\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '^@/(.*)$': '<rootDir>/../../frontend/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js',
+    '^react-markdown$': '<rootDir>/__mocks__/react-markdown.js'
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
