@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-// import heroImage from '@/assets/images/hero-image.jpg'; // Uncomment when you add the image
+import heroImage from '@/assets/images/Hero.png';
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -41,29 +41,16 @@ export const HomePage: React.FC = () => {
               )}
             </div>
 
-            {/* Right side - Hero Image */}
+                        {/* Right side - Hero Image */}
             <div className="hidden lg:block relative">
-              <div className="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-brand-medium-blue to-brand-dark-blue">
-                {/* Placeholder until hero image is added */}
-                <div className="flex items-center justify-center h-full text-white">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    </div>
-                    <p className="text-sm opacity-80">Hero Image Placeholder</p>
-                  </div>
-                </div>
-
-                {/* Uncomment below when you add the hero image:
+              <div className="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl">
                 <img
                   src={heroImage}
-                  alt="Civic Spark AI - Connecting Tulsa residents with city government"
-                  className="w-full h-full object-cover"
+                  alt="Civic Spark AI - Connecting Tulsa residents with city government and civic engagement features"
+                  className="w-full h-full object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-brand-dark-blue/20 to-transparent"></div>
-                */}
+                {/* Optional subtle gradient overlay for better integration */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-brand-dark-blue/5 to-transparent"></div>
               </div>
             </div>
           </div>
