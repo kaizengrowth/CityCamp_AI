@@ -32,10 +32,138 @@ interface OrganizationListResponse {
   limit: number;
 }
 
+// Backup data for when API is not available (local development)
+const BACKUP_ORGANIZATIONS: Organization[] = [
+  {
+    id: 1,
+    name: "Tulsa Community Foundation",
+    slug: "tulsa-community-foundation",
+    description: "The Tulsa Community Foundation connects generous people with nonprofits and causes they care about to strengthen our community. Since 1952, we have awarded more than $700 million in grants and scholarships to build a stronger, more equitable Tulsa region.",
+    short_description: "Connecting generous people with causes to strengthen Tulsa since 1952.",
+    website_url: "https://www.tulsacf.org",
+    organization_type: "nonprofit",
+    focus_areas: ["community_building", "economic_development", "education", "arts_culture"],
+    service_areas: ["Greater Tulsa Area", "Northeastern Oklahoma"],
+    founded_year: 1952,
+    is_verified: true,
+    is_active: true,
+    contact_email: "info@tulsacf.org",
+    address: "7030 S Yale Ave #600, Tulsa, OK 74136",
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 2,
+    name: "Terrence Crutcher Foundation",
+    slug: "terrence-crutcher-foundation",
+    description: "The Terrence Crutcher Foundation works to improve police and community relations through education, advocacy, and community engagement. Founded in memory of Terence Crutcher, we focus on police violence prevention, mental health outreach, and supporting families affected by police violence in Tulsa's Black communities.",
+    short_description: "Neighborhood organizing in Tulsa's Black communities, focusing on police violence and mental health outreach.",
+    website_url: "https://www.tcrucherfoundation.org",
+    organization_type: "nonprofit",
+    focus_areas: ["social_justice", "public_safety", "community_building", "healthcare"],
+    service_areas: ["North Tulsa", "Tulsa Metro"],
+    founded_year: 2016,
+    is_verified: true,
+    is_active: true,
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 3,
+    name: "Growing Together Tulsa",
+    slug: "growing-together-tulsa",
+    description: "Growing Together Tulsa is a resident-led organization focused on education and housing advocacy in the Kendall-Whittier neighborhood. We work to strengthen our community through neighborhood organizing, educational programs, and affordable housing initiatives that preserve our historic character.",
+    short_description: "Resident-led education and housing advocacy centered on Tulsa's Kendall-Whittier neighborhood.",
+    website_url: "https://www.growingtogethertulsa.org",
+    organization_type: "community_group",
+    focus_areas: ["education", "housing", "community_building", "historic_preservation"],
+    service_areas: ["Kendall-Whittier"],
+    is_verified: true,
+    is_active: true,
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 4,
+    name: "South Tulsa Community House",
+    slug: "south-tulsa-community-house",
+    description: "South Tulsa Community House provides vital services like food assistance, computer access, and legal aid to residents of Riverwood and surrounding neighborhoods. We serve as a community hub offering emergency assistance, educational programs, and advocacy for one of Tulsa's most high-need areas.",
+    short_description: "Providing vital services like food, computer access, and legal aid in Riverwood, one of Tulsa's most high-need neighborhoods.",
+    website_url: "https://www.stulsa.org",
+    organization_type: "nonprofit",
+    focus_areas: ["social_justice", "community_building", "economic_development", "education"],
+    service_areas: ["Riverwood", "South Tulsa"],
+    is_verified: true,
+    is_active: true,
+    contact_email: "info@stulsa.org",
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 5,
+    name: "El Centro",
+    slug: "el-centro-tulsa",
+    description: "El Centro offers immigrant education and resource services in East Tulsa, providing ESL classes, citizenship preparation, community advocacy, and family support services. We serve as a cultural bridge helping immigrant families integrate while preserving their heritage and addressing systemic barriers.",
+    short_description: "Offers immigrant education & resource services in East Tulsa.",
+    website_url: "https://www.elcentrotulsa.org",
+    organization_type: "nonprofit",
+    focus_areas: ["education", "social_justice", "community_building"],
+    service_areas: ["East Tulsa"],
+    is_verified: true,
+    is_active: true,
+    contact_email: "info@elcentrotulsa.org",
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 6,
+    name: "Emergency Infant Services",
+    slug: "emergency-infant-services",
+    description: "Emergency Infant Services has broad reach among low-income families across Tulsa, providing mothers with essential resources for childcare, including diapers, formula, baby clothing, and parenting education. We work to ensure every baby has what they need to thrive during their critical early months.",
+    short_description: "Broad reach among low-income families across Tulsa, providing mothers with resources for childcare.",
+    website_url: "https://www.emergencyinfantservices.org",
+    organization_type: "nonprofit",
+    focus_areas: ["healthcare", "social_justice", "youth_development"],
+    service_areas: ["Tulsa Metro"],
+    founded_year: 1983,
+    is_verified: true,
+    is_active: true,
+    contact_email: "info@emergencyinfantservices.org",
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 7,
+    name: "Oklahomans for Equality",
+    slug: "oklahomans-for-equality",
+    description: "Oklahomans for Equality (OkEq) serves as a center for LGBTQ+ community organizing and civic engagement in Tulsa. We provide advocacy, education, support services, and community events while working to advance equality and protect civil rights for LGBTQ+ individuals and families.",
+    short_description: "Center for LGBTQ+ community organizing and civic engagement.",
+    website_url: "https://www.okeq.org",
+    organization_type: "advocacy",
+    focus_areas: ["social_justice", "community_building", "education"],
+    service_areas: ["Tulsa Metro", "Oklahoma"],
+    founded_year: 1980,
+    is_verified: true,
+    is_active: true,
+    contact_email: "info@okeq.org",
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 8,
+    name: "Tulsa Remote",
+    slug: "tulsa-remote",
+    description: "Tulsa Remote is a program that brings remote workers to Tulsa by providing financial incentives and community support, helping to grow Tulsa's population and economy. The program offers $10,000 grants, community events, and professional networking opportunities.",
+    short_description: "Bringing remote workers to Tulsa to grow our community.",
+    website_url: "https://www.tulsaremote.com",
+    organization_type: "economic_development",
+    focus_areas: ["economic_development", "community_building"],
+    founded_year: 2018,
+    is_verified: true,
+    is_active: true,
+    member_count: 3000,
+    created_at: "2024-01-01T00:00:00Z"
+  }
+];
+
 export const OrganizationsPage: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingBackupData, setUsingBackupData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -78,6 +206,7 @@ export const OrganizationsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setUsingBackupData(false);
 
       console.log('Fetching organizations from API...');
 
@@ -100,8 +229,12 @@ export const OrganizationsPage: React.FC = () => {
         errorMessage: err instanceof Error ? err.message : 'Unknown error',
       });
 
-      setError(`Failed to load organizations: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
-      setOrganizations([]);
+      // Use backup data when API fails
+      console.log('Using backup organization data for local development');
+      setOrganizations(BACKUP_ORGANIZATIONS);
+      setUsingBackupData(true);
+      setError(null); // Clear error since we have backup data
+
     } finally {
       setLoading(false);
     }
@@ -172,6 +305,11 @@ export const OrganizationsPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">Community Organizations</h1>
         <div className="text-sm text-gray-600">
           Discover {filteredOrganizations.length} active community organizations in Tulsa
+          {usingBackupData && (
+            <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              ⚠️ Using backup data (API unavailable)
+            </div>
+          )}
         </div>
       </div>
 

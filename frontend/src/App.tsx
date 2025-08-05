@@ -12,6 +12,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MeetingsPage } from './pages/MeetingsPage';
+import { OrganizationsPage } from './pages/OrganizationsPage';
 import { CampaignsPage } from './pages/CampaignsPage';
 import { ContactRepresentativesLayoutPage } from './pages/ContactRepresentativesLayoutPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -30,6 +31,7 @@ function App() {
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
               <Route path="meetings" element={<MeetingsPage />} />
+              <Route path="organizations" element={<OrganizationsPage />} />
               <Route path="campaigns" element={<CampaignsPage />} />
               <Route path="contact-representatives/*" element={<ContactRepresentativesLayoutPage />} />
               <Route path="signup/notifications" element={<NotificationSignupPage />} />
