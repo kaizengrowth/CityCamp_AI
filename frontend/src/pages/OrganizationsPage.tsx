@@ -508,13 +508,13 @@ export const OrganizationsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Organization Type</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Organization Type</h3>
                   <p className="text-gray-600">{getTypeLabel(selectedOrganization.organization_type)}</p>
                 </div>
 
                 {selectedOrganization.focus_areas && selectedOrganization.focus_areas.length > 0 && (
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Focus Areas</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Focus Areas</h3>
                     <div className="flex flex-wrap gap-1">
                       {selectedOrganization.focus_areas.map((area, index) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
@@ -527,7 +527,7 @@ export const OrganizationsPage: React.FC = () => {
 
                 {selectedOrganization.service_areas && selectedOrganization.service_areas.length > 0 && (
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Service Areas</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Service Areas</h3>
                     <ul className="text-gray-600 text-sm space-y-1">
                       {selectedOrganization.service_areas.map((area, index) => (
                         <li key={index}>• {area}</li>
@@ -537,7 +537,7 @@ export const OrganizationsPage: React.FC = () => {
                 )}
 
                 <div className="border-t pt-4">
-                  <h3 className="font-medium text-gray-900 mb-2">Contact Information</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Contact Information</h3>
                   <div className="space-y-2 text-sm">
                     {selectedOrganization.website_url && (
                       <div>
@@ -580,7 +580,7 @@ export const OrganizationsPage: React.FC = () => {
 
                 {(selectedOrganization.founded_year || selectedOrganization.member_count) && (
                   <div className="border-t pt-4">
-                    <h3 className="font-medium text-gray-900 mb-2">Organization Details</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Organization Details</h3>
                     <div className="space-y-1 text-sm">
                       {selectedOrganization.founded_year && (
                         <div>
