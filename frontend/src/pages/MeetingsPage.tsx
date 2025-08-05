@@ -186,6 +186,19 @@ export const MeetingsPage: React.FC = () => {
   // Enhanced filtered meetings with date filtering and smart sorting
   const filteredMeetings = useMemo(() => {
     const filtered = meetings.filter(meeting => {
+      // Only show meetings that have meaningful content
+      const hasContent = meeting.summary && 
+                        meeting.summary.trim() !== '' && 
+                        !meeting.summary.includes('Minutes imported from PDF') &&
+                        (meeting.keywords?.length > 0 || 
+                         meeting.topics?.length > 0 || 
+                         (meeting as any).detailed_summary ||
+                         (meeting as any).voting_records?.length > 0);
+      
+      if (!hasContent) {
+        return false; // Skip meetings with no meaningful data
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -289,10 +302,20 @@ export const MeetingsPage: React.FC = () => {
     const topicCounts: { [key: string]: number } = {};
     const keywordCounts: { [key: string]: number } = {};
 
-    // Filter to only completed meetings and take the 5 most recent
+    // Filter to only completed meetings with content and take the 5 most recent
     const now = new Date();
     const recentCompletedMeetings = meetings
-      .filter(meeting => new Date(meeting.meeting_date) < now)
+      .filter(meeting => {
+        const isCompleted = new Date(meeting.meeting_date) < now;
+        const hasContent = meeting.summary && 
+                          meeting.summary.trim() !== '' && 
+                          !meeting.summary.includes('Minutes imported from PDF') &&
+                          (meeting.keywords?.length > 0 || 
+                           meeting.topics?.length > 0 || 
+                           (meeting as any).detailed_summary ||
+                           (meeting as any).voting_records?.length > 0);
+        return isCompleted && hasContent;
+      })
       .slice(0, 5);
 
     recentCompletedMeetings.forEach(meeting => {
@@ -442,7 +465,7 @@ export const MeetingsPage: React.FC = () => {
       <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-gray-900">City Council Meetings</h1>
         <div className="text-sm text-gray-600">
-          Displaying all {meetings.length} meetings chronologically (most recent first)
+          Displaying {filteredMeetings.length} meetings with content (most recent first)
         </div>
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
