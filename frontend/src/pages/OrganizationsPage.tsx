@@ -203,6 +203,24 @@ export const OrganizationsPage: React.FC = () => {
   }, []);
 
   const fetchOrganizations = async () => {
+    // For local development, check if we should load backup data immediately
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const forceBackup = isDevelopment && !window.location.search.includes('use-api');
+    
+    if (forceBackup) {
+      console.log('Development mode: Loading backup data immediately');
+      setLoading(true);
+      // Simulate loading delay
+      setTimeout(() => {
+        setOrganizations(BACKUP_ORGANIZATIONS);
+        setUsingBackupData(true);
+        setError(null);
+        setLoading(false);
+        console.log('Backup data loaded successfully');
+      }, 500);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -210,21 +228,29 @@ export const OrganizationsPage: React.FC = () => {
 
       console.log('Fetching organizations from API...');
 
-      const response = await apiRequest<OrganizationListResponse>(
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API request timeout')), 5000); // 5 second timeout
+      });
+
+      const apiPromise = apiRequest<OrganizationListResponse>(
         `/api/v1/organizations/?limit=100&skip=0&active_only=true`
       );
 
-      console.log('Organizations response received:', response.organizations.length, 'organizations');
+      const response = await Promise.race([apiPromise, timeoutPromise]) as OrganizationListResponse;
 
-      if (response.organizations && Array.isArray(response.organizations)) {
+      console.log('Organizations response received:', response?.organizations?.length || 0, 'organizations');
+
+      if (response?.organizations && Array.isArray(response.organizations) && response.organizations.length > 0) {
         setOrganizations(response.organizations);
         setError(null);
+        console.log('Successfully loaded organizations from API');
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('No organizations data received from API');
       }
 
     } catch (err) {
-      console.error('API error:', {
+      console.error('API error - falling back to backup data:', {
         error: err,
         errorMessage: err instanceof Error ? err.message : 'Unknown error',
       });
