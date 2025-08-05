@@ -32,10 +32,10 @@ export const Layout: React.FC = () => {
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="w-12 h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: '#162a49'}}>
+                <div className="w-12 h-8 bg-brand-dark-blue rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xs">Tulsa</span>
                 </div>
-                <span className="text-xl font-bold" style={{color: '#162a49'}}>Civic Spark AI</span>
+                <span className="text-xl font-bold text-brand-dark-blue">Civic Spark AI</span>
               </Link>
             </div>
 
@@ -94,8 +94,7 @@ export const Layout: React.FC = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
                   <Link
                     to="/signup/notifications"
-                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
-                    style={{backgroundColor: '#5086d3'}}
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">Get Notified</span>
                     <span className="sm:hidden">Notify</span>
@@ -108,8 +107,7 @@ export const Layout: React.FC = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
-                    style={{backgroundColor: '#5086d3'}}
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-brand-medium-blue rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
                   >
                     Register
                   </Link>
@@ -176,8 +174,7 @@ export const Layout: React.FC = () => {
                 <div className="space-y-2">
                   <Link
                     to="/signup/notifications"
-                    className="block px-3 py-2 text-base font-medium text-white rounded-md transition-colors text-center"
-                    style={{backgroundColor: '#5086d3'}}
+                    className="block px-3 py-2 text-base font-medium text-white bg-brand-medium-blue rounded-md transition-colors text-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Get Notified
@@ -191,8 +188,7 @@ export const Layout: React.FC = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 text-base font-medium text-white rounded-md transition-colors text-center"
-                    style={{backgroundColor: '#5086d3'}}
+                    className="block px-3 py-2 text-base font-medium text-white bg-brand-medium-blue rounded-md transition-colors text-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Register
