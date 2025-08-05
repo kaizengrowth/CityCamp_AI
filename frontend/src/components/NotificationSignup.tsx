@@ -434,9 +434,10 @@ export const NotificationSignup: React.FC = () => {
 
       setSubscriptionSuccess(true);
       toast.success('🎉 Signup successful! Please check your email to confirm your subscription.');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Subscription error:', error);
-      if (error.message?.includes('already subscribed')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage?.includes('already subscribed')) {
         toast.error('This email is already subscribed. Check your email for a link to update your preferences.');
       } else {
         toast.error('Signup failed. Please try again or contact support.');
