@@ -706,10 +706,6 @@ export const MeetingsPage: React.FC = () => {
                       <span className="font-medium">Type:</span>
                       <span className="ml-2">{getMeetingTypeLabel(meeting.meeting_type)}</span>
                     </p>
-                    <p className="flex items-center">
-                      <span className="font-medium">Location:</span>
-                      <span className="ml-2">{meeting.location}</span>
-                    </p>
                       {meeting.summary && (
                         <div className="flex items-center mb-2">
                           <span className="font-medium">Status:</span>
