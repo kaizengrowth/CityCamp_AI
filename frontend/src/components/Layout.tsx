@@ -8,7 +8,6 @@ const navigation = [
   { name: 'Meetings', href: '/meetings' },
   { name: 'Campaigns', href: '/campaigns' },
   { name: 'Contact Reps', href: '/contact-representatives' },
-  { name: 'Get Notified', href: '/signup/notifications' },
 ];
 
 const userNavigation = [
@@ -27,16 +26,16 @@ export const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
+      <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <div className="w-12 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: '#162a49'}}>
                   <span className="text-white font-bold text-xs">Tulsa</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Civic Spark AI</span>
+                <span className="text-xl font-bold" style={{color: '#162a49'}}>Civic Spark AI</span>
               </Link>
             </div>
 
@@ -49,15 +48,10 @@ export const Layout: React.FC = () => {
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(item.href)
                       ? 'text-primary-600 bg-primary-50'
-                      : item.name === 'Get Notified'
-                      ? 'text-white bg-primary-600 hover:bg-gray-50'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
                   {item.name}
-                  {item.name === 'Get Notified' && (
-                    <span className="ml-1 text-xs">📬</span>
-                  )}
                 </Link>
               ))}
             </nav>
@@ -97,24 +91,25 @@ export const Layout: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="hidden md:flex space-x-4">
+                <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
+                  <Link
+                    to="/signup/notifications"
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
+                    style={{backgroundColor: '#5086d3'}}
+                  >
+                    <span className="hidden sm:inline">Get Notified</span>
+                    <span className="sm:hidden">Notify</span>
+                  </Link>
                   <Link
                     to="/login"
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isActive('/login')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                    }`}
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isActive('/register')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-white bg-primary-600 hover:bg-gray-50'
-                    }`}
+                    className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-white rounded-md transition-colors hover:opacity-90 whitespace-nowrap"
+                    style={{backgroundColor: '#5086d3'}}
                   >
                     Register
                   </Link>
@@ -143,16 +138,11 @@ export const Layout: React.FC = () => {
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive(item.href)
                       ? 'text-primary-600 bg-primary-50'
-                      : item.name === 'Get Notified'
-                      ? 'text-white bg-primary-600'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.name}
-                  {item.name === 'Get Notified' && (
-                    <span className="ml-1 text-xs">📬</span>
-                  )}
                 </Link>
               ))}
 
@@ -183,7 +173,15 @@ export const Layout: React.FC = () => {
                   </button>
                 </>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-2">
+                  <Link
+                    to="/signup/notifications"
+                    className="block px-3 py-2 text-base font-medium text-white rounded-md transition-colors text-center"
+                    style={{backgroundColor: '#5086d3'}}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Get Notified
+                  </Link>
                   <Link
                     to="/login"
                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 transition-colors"
@@ -193,7 +191,8 @@ export const Layout: React.FC = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 text-base font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                    className="block px-3 py-2 text-base font-medium text-white rounded-md transition-colors text-center"
+                    style={{backgroundColor: '#5086d3'}}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Register
@@ -206,7 +205,7 @@ export const Layout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1">
         <Outlet />
       </main>
 
