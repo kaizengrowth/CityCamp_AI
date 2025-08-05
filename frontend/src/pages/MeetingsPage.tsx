@@ -549,8 +549,8 @@ export const MeetingsPage: React.FC = () => {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Documents</option>
-                <option value="agenda">📋 Agendas</option>
-                <option value="minutes">📝 Minutes</option>
+                <option value="agenda">Agendas</option>
+                <option value="minutes">Minutes</option>
               </select>
             </div>
           </div>
@@ -564,14 +564,14 @@ export const MeetingsPage: React.FC = () => {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Dates</option>
-                <option value="last30Days">📅 Last 30 Days</option>
-                <option value="last90Days">📅 Last 90 Days</option>
-                <option value="thisYear">📅 This Year</option>
-                <option value="lastYear">📅 Last Year</option>
-                <option value="2024">📅 2024</option>
-                <option value="2023">📅 2023</option>
-                <option value="2022">📅 2022</option>
-                <option value="custom">📅 Custom Range</option>
+                <option value="last30Days">Last 30 Days</option>
+                <option value="last90Days">Last 90 Days</option>
+                <option value="thisYear">This Year</option>
+                <option value="lastYear">Last Year</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="custom">Custom Range</option>
               </select>
             </div>
 
@@ -607,27 +607,27 @@ export const MeetingsPage: React.FC = () => {
               >
                 <option value="all">All Types</option>
                 <optgroup label="Main Council & Committees">
-                  <option value="regular_council">🏛️ Regular Council</option>
-                  <option value="budget_committee">💰 Budget Committee</option>
-                  <option value="public_works_committee">🚧 Public Works</option>
-                  <option value="urban_economic_committee">🏙️ Urban & Economic</option>
+                  <option value="regular_council">Regular Council</option>
+                  <option value="budget_committee">Budget Committee</option>
+                  <option value="public_works_committee">Public Works</option>
+                  <option value="urban_economic_committee">Urban & Economic</option>
                 </optgroup>
                 <optgroup label="Task Forces & Special Committees">
-                  <option value="quality_of_life_task_force">🌟 61st & Peoria Quality of Life</option>
-                  <option value="capital_improvement_task_force">🏗️ Capital Improvement</option>
-                  <option value="passenger_rail_task_force">🚊 Eastern Flyer Rail</option>
-                  <option value="hud_grant_committee">🏠 HUD Grant Fund</option>
-                  <option value="hunger_food_task_force">🍽️ Hunger & Food</option>
-                  <option value="mayor_council_retreat">🤝 Mayor-Council Retreat</option>
-                  <option value="public_safety_task_force">🚔 Public Safety</option>
-                  <option value="river_infrastructure_task_force">🌊 River Infrastructure</option>
-                  <option value="street_lighting_task_force">💡 Street Lighting</option>
-                  <option value="food_desert_task_force">🏪 Food Desert</option>
-                  <option value="tribal_nations_committee">🪶 Tribal Nations Relations</option>
-                  <option value="truancy_prevention_task_force">🎒 Truancy Prevention</option>
+                  <option value="quality_of_life_task_force">61st & Peoria Quality of Life</option>
+                  <option value="capital_improvement_task_force">Capital Improvement</option>
+                  <option value="passenger_rail_task_force">Eastern Flyer Rail</option>
+                  <option value="hud_grant_committee">HUD Grant Fund</option>
+                  <option value="hunger_food_task_force">Hunger & Food</option>
+                  <option value="mayor_council_retreat">Mayor-Council Retreat</option>
+                  <option value="public_safety_task_force">Public Safety</option>
+                  <option value="river_infrastructure_task_force">River Infrastructure</option>
+                  <option value="street_lighting_task_force">Street Lighting</option>
+                  <option value="food_desert_task_force">Food Desert</option>
+                  <option value="tribal_nations_committee">Tribal Nations Relations</option>
+                  <option value="truancy_prevention_task_force">Truancy Prevention</option>
                 </optgroup>
                 <optgroup label="Other">
-                  <option value="other">📄 Other</option>
+                  <option value="other">Other</option>
                 </optgroup>
               </select>
             </div>
