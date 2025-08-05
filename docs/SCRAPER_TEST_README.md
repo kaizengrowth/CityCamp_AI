@@ -1,6 +1,6 @@
 # CityCamp AI Scraper Testing Guide
 
-This guide shows you how to test the scraper functionality locally to see if it can generate meeting minutes and agenda items.
+This guide shows you how to test the scraper functionality locally to see if it can discover meetings and agenda items. **Note**: Meeting minutes require a two-step process (see Meeting Minutes section below).
 
 ## Quick Start
 
@@ -35,12 +35,12 @@ The test script provides several options:
 - Attempts to scrape upcoming meetings from tulsacouncil.org
 - For each meeting found:
   - Scrapes agenda items
-  - Attempts to scrape minutes (for past meetings)
+  - **For minutes**: Identifies PDF links but does NOT extract content (see Meeting Minutes section)
   - Shows preview of found content
 
 ### 2. Test Meeting Scraper (Full Workflow)
 - Runs the complete scraping pipeline
-- Shows statistics: meetings found, agenda items created, minutes scraped
+- Shows statistics: meetings found, agenda items created, PDF links identified
 - Stores results in a local SQLite database
 
 ### 3. Test Specific URL
@@ -49,7 +49,30 @@ The test script provides several options:
 
 ### 4. Show Database Contents
 - Displays all meetings and agenda items found
-- Shows which meetings have minutes available
+- Shows which meetings have PDF links available
+
+## Meeting Minutes: Two-Step Process
+
+**Important**: The scraper workflow for meeting minutes involves two separate steps:
+
+### Step 1: Live Scraping (BeautifulSoup)
+- **What it does**: Discovers meetings and identifies PDF links
+- **Technology**: BeautifulSoup for HTML parsing
+- **Output**: Stores PDF URLs like "PDF minutes available at: [URL]"
+- **Does NOT**: Extract actual PDF text content
+
+### Step 2: PDF Import (pdfplumber)
+- **What it does**: Extracts full text content from downloaded PDFs
+- **Technology**: pdfplumber for PDF text extraction
+- **Script**: `scripts/import_meeting_minutes.py`
+- **Input**: PDF files in `tests/downloaded_documents/`
+- **Output**: Full meeting minutes text stored in database
+
+### Running PDF Import
+```bash
+# After PDFs are downloaded to tests/downloaded_documents/
+python scripts/import_meeting_minutes.py
+```
 
 ## Expected Output
 
@@ -64,9 +87,10 @@ TESTING TGOV SCRAPER
      Testing agenda items for: City Council Meeting
      Found 8 agenda items
      Testing minutes for: City Council Meeting
-     Minutes found: 15432 characters
-     Preview: TULSA CITY COUNCIL MEETING MINUTES January 15, 2024...
+     Minutes found: PDF minutes available at: https://example.com/minutes.pdf
 ```
+
+**Note**: The scraper identifies PDF links but doesn't extract content. Use the import script for full text extraction.
 
 ## Troubleshooting
 
@@ -74,6 +98,10 @@ TESTING TGOV SCRAPER
 - Check if tulsacouncil.org is accessible
 - The website structure may have changed
 - Check the scraper selectors in `app/scrapers/tgov_scraper.py`
+
+### Minutes Show Only URLs
+- This is expected behavior - the live scraper only identifies PDF links
+- To extract content, download PDFs and run `scripts/import_meeting_minutes.py`
 
 ### Import Errors
 - Make sure you're in the backend directory
@@ -106,10 +134,11 @@ You can modify the test script to:
 
 ## Integration with Your Existing Scripts
 
-The scraper is designed to work with your existing tgov_scraper_api code:
+The scraper system uses a two-tier approach:
 
-- **TGOVScraper**: Adapts your scraping logic to CityCamp AI models
-- **MeetingScraper**: Orchestrates the complete workflow
+- **TGOVScraper**: Discovers meetings and PDF links using BeautifulSoup
+- **MeetingScraper**: Orchestrates the live scraping workflow
+- **import_meeting_minutes.py**: Extracts text from downloaded PDFs using pdfplumber
 - **Database Integration**: Stores results in CityCamp AI database schema
 
 ## Next Steps
@@ -118,13 +147,22 @@ Once the scraper is working locally:
 
 1. **Deploy to production**: The scraper endpoints are available at `/api/v1/scraper/`
 2. **Schedule regular runs**: Use the admin endpoints to run scraping cycles
-3. **Monitor results**: Check the database for scraped meetings and minutes
-4. **Integrate notifications**: Users will be notified of new meetings
+3. **Set up PDF import**: Configure automated PDF download and text extraction
+4. **Monitor results**: Check the database for scraped meetings and extracted minutes
+5. **Integrate notifications**: Users will be notified of new meetings
 
 ## Files Involved
 
+### Live Scraping (BeautifulSoup)
 - `test_scraper.py`: This test script
 - `app/scrapers/tgov_scraper.py`: Core scraping logic
 - `app/scrapers/meeting_scraper.py`: Workflow orchestration
 - `app/api/v1/endpoints/scraper.py`: API endpoints
+
+### PDF Import (pdfplumber)
+- `scripts/import_meeting_minutes.py`: PDF text extraction
+- `backend/extract_minutes_content.py`: Alternative PDF processor
+- `scripts/import_meetings_to_aws_rds.py`: AWS-specific importer
+
+### Data Models
 - `app/models/meeting.py`: Database models
