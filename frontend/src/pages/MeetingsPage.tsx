@@ -5,6 +5,9 @@ import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sam
 import toast from 'react-hot-toast';
 import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
 import { PDFViewer } from '../components/PDFViewer';
+import { Layout } from '../components/Layout';
+import { ChatbotWidget } from '../components/ChatbotWidget';
+import { ImageCarousel } from '../components/ImageCarousel';
 
 // Extended Meeting interface with additional properties
 interface Meeting extends BaseMeeting {
@@ -24,6 +27,7 @@ interface Meeting extends BaseMeeting {
     items_failed: number;
     unanimous_votes: number;
   };
+  image_paths?: string[];  // Add image_paths field
 }
 
 export const MeetingsPage: React.FC = () => {
@@ -897,6 +901,14 @@ export const MeetingsPage: React.FC = () => {
                         meetingTitle={selectedMeeting.title}
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Image Carousel */}
+                {selectedMeeting.image_paths && selectedMeeting.image_paths.length > 0 && (
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📸 Meeting Images</h3>
+                    <ImageCarousel images={selectedMeeting.image_paths} />
                   </div>
                 )}
               </div>

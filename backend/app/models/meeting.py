@@ -48,6 +48,9 @@ class Meeting(Base):
     voting_records = Column(JSON, default=list)  # List of all votes taken
     vote_statistics = Column(JSON, default=dict)  # Overall voting statistics
 
+    # PDF Images
+    image_paths = Column(JSON, default=list)  # Paths to saved PDF page images
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
