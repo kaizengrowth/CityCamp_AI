@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # External APIs
     openai_api_key: Optional[str] = None
+    geocodio_api_key: Optional[str] = None
     twilio_account_sid: Optional[str] = None
     twilio_auth_token: Optional[str] = None
     twilio_phone_number: Optional[str] = None
