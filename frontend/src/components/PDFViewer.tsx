@@ -25,6 +25,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
     ? pdfUrl
     : `${window.location.origin}${pdfUrl}`;
 
+  // Detect Safari browser
+  const isSafari = (): boolean => {
+    const userAgent = navigator.userAgent;
+    return /Safari/.test(userAgent) && !/Chrome/.test(userAgent) && !/Chromium/.test(userAgent);
+  };
+
   // Reset states when URL changes
   useEffect(() => {
     setUseIframe(false); // Always start with PDF.js enhanced viewer
@@ -164,6 +170,11 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
           >
             Open in New Tab →
           </button>
+          {isSafari() && (
+            <span className="text-xs text-gray-500">
+              (Allow popups if blocked)
+            </span>
+          )}
         </div>
       </div>
 
@@ -205,6 +216,11 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
                   Open in New Tab →
                 </button>
               </div>
+              {isSafari() && (
+                <p className="mt-2 text-xs text-red-600">
+                  <strong>Safari users:</strong> If the PDF doesn't open, please allow popups for this site in Safari → Settings → Websites → Pop-up Windows
+                </p>
+              )}
             </div>
           </div>
         </div>
