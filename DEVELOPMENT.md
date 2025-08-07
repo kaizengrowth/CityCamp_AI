@@ -1,5 +1,67 @@
 # 🚀 CityCamp AI Development Guide
 
+## Docker Architecture Compatibility
+
+### ⚠️ Important: Platform-Specific Builds
+
+When developing on Apple Silicon (M1/M2/M3) Macs, Docker images are built for ARM64 architecture by default. However, AWS ECS Fargate runs on AMD64/x86_64 architecture. This mismatch causes "exec format error" when containers try to start.
+
+### 🔧 Solutions:
+
+#### **1. Always Use Platform-Specific Builds for Production**
+
+```bash
+# For production deployments (AMD64/x86_64)
+docker buildx build --platform linux/amd64 -t myimage:latest .
+
+# For local development (matches your machine)
+docker build -t myimage:latest .
+```
+
+#### **2. Setup Docker Buildx (One-time setup)**
+
+```bash
+# Run this once to setup multi-platform building
+./scripts/setup-docker-buildx.sh
+```
+
+#### **3. Production Dockerfile**
+
+The `backend/Dockerfile.prod` now includes `--platform=linux/amd64` to ensure consistent builds:
+
+```dockerfile
+FROM --platform=linux/amd64 python:3.11-slim
+```
+
+#### **4. Deployment Script**
+
+The `aws/scripts/deploy.sh` now uses `docker buildx build --platform linux/amd64` for all production builds.
+
+### 🚨 Common Error Signs:
+
+- **"exec format error"** in ECS logs
+- Containers failing to start in production
+- New deployments not taking effect
+- Health checks failing immediately
+
+### 🔍 Debugging Architecture Issues:
+
+```bash
+# Check image architecture
+docker image inspect myimage:latest --format '{{.Architecture}}'
+
+# Should return "amd64" for production images
+# Will return "arm64" if built on Apple Silicon without platform flag
+```
+
+### 📋 Development Workflow:
+
+1. **Local Development**: Use regular `docker build` for faster builds
+2. **Production Deployment**: Always use `docker buildx build --platform linux/amd64`
+3. **CI/CD**: Configure to use AMD64 platform for production builds
+
+---
+
 ## **Quick Start (Recommended)**
 
 ### **One-Command Startup:**
