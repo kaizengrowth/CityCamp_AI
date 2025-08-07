@@ -13,6 +13,7 @@ from .document import (
 )
 from .meeting import AgendaItem, Meeting, MeetingCategory
 from .notification import Notification, NotificationPreference, NotificationTemplate
+from .notification_preferences import NotificationPreferences
 from .subscription import MeetingTopic, NotificationLog, TopicSubscription
 from .user import User, UserInterests
 
@@ -29,6 +30,7 @@ __all__ = [
     "Notification",
     "NotificationTemplate",
     "NotificationPreference",
+    "NotificationPreferences",
     "TopicSubscription",
     "MeetingTopic",
     "NotificationLog",
