@@ -22,6 +22,10 @@ class MeetingResponse(BaseModel):
     topics: List[str] = []
     keywords: List[str] = []
     summary: Optional[str]
+    detailed_summary: Optional[str] = None
+    voting_records: Optional[List[Dict[str, Any]]] = []
+    vote_statistics: Optional[Dict[str, Any]] = None
+    image_paths: List[str] = []
     created_at: datetime
     updated_at: Optional[datetime]
 

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
+import httpx
 from app.core.database import get_db
 from app.models.meeting import AgendaItem, Meeting, MeetingCategory
 from app.schemas.meeting import (
@@ -15,7 +16,7 @@ from app.schemas.meeting import (
 )
 from app.services.ai_categorization_service import AICategorization
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import Text, cast
 from sqlalchemy.orm import Session
@@ -118,13 +119,36 @@ async def get_meeting_detail(meeting_id: int, db: Session = Depends(get_db)):
 @router.get("/{meeting_id}/pdf")
 async def get_meeting_pdf(meeting_id: int, db: Session = Depends(get_db)):
     """
-    Serve the PDF file for a specific meeting.
+    Serve the PDF file for a specific meeting, with support for both local files and external URLs.
+    This endpoint acts as a proxy for external PDFs to bypass CSP restrictions.
     """
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
 
     if not meeting or not meeting.minutes_url:
         raise HTTPException(status_code=404, detail="Meeting PDF not found")
 
+    # Check if this is an external URL (like GitHub)
+    if meeting.minutes_url.startswith("http"):
+        try:
+            # Proxy the external PDF through our backend to bypass CSP restrictions
+            async with httpx.AsyncClient() as client:
+                response = await client.get(meeting.minutes_url)
+                response.raise_for_status()
+
+                return StreamingResponse(
+                    iter([response.content]),
+                    media_type="application/pdf",
+                    headers={
+                        "Content-Disposition": f"inline; filename=meeting_{meeting.external_id}_minutes.pdf",
+                        "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+                    },
+                )
+        except httpx.HTTPError as e:
+            raise HTTPException(
+                status_code=404, detail=f"Failed to fetch external PDF: {str(e)}"
+            )
+
+    # Handle local files (existing logic)
     # Construct file path - use absolute path from project root
     # meetings.py is at: backend/app/api/v1/endpoints/meetings.py
     # We need to go up 5 levels to get to the project root, then down to backend
