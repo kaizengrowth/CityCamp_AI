@@ -17,13 +17,7 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
 
-    # Notification preferences
-    sms_notifications = Column(Boolean, default=True)
-    email_notifications = Column(Boolean, default=True)
-    push_notifications = Column(Boolean, default=True)
-
-    # User preferences and interests
-    interests = Column(JSON, default=list)  # List of topic categories
+    # Location information (kept for backward compatibility)
     zip_code = Column(String, nullable=True)
     council_district = Column(String, nullable=True)
 
@@ -36,6 +30,9 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user")
     campaigns = relationship("Campaign", back_populates="creator")
     campaign_memberships = relationship("CampaignMembership", back_populates="user")
+    notification_preferences = relationship(
+        "NotificationPreferences", back_populates="user", uselist=False
+    )
 
 
 class UserInterests(Base):
