@@ -33,9 +33,9 @@ async def get_chatbot_status(settings: Settings = Depends(get_settings)):
     """
     return {
         "openai_configured": settings.is_openai_configured,
-        "model": "gpt-4-turbo-preview",
+        "model": "gpt-4.1",
         "features": {
-            "web_search": bool(settings.google_api_key),
+            "web_search": bool(settings.google_api_key and settings.google_cse_id),
             "document_retrieval": True,
             "function_calling": True,
         },
