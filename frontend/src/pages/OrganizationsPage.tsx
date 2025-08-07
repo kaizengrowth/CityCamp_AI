@@ -168,7 +168,6 @@ export const OrganizationsPage: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usingBackupData, setUsingBackupData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -221,7 +220,6 @@ export const OrganizationsPage: React.FC = () => {
       // Simulate loading delay
       setTimeout(() => {
         setOrganizations(BACKUP_ORGANIZATIONS);
-        setUsingBackupData(true);
         setError(null);
         setLoading(false);
         console.log('Backup organization data loaded successfully');
@@ -232,7 +230,6 @@ export const OrganizationsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      setUsingBackupData(false);
 
       console.log('Fetching organizations from API...');
 
@@ -265,7 +262,6 @@ export const OrganizationsPage: React.FC = () => {
         // Use backup data when API fails
         console.log('Using backup organization data for local development');
         setOrganizations(BACKUP_ORGANIZATIONS);
-        setUsingBackupData(true);
         setError(null); // Clear error since we have backup data
       } finally {
         clearTimeout(timeoutId);
@@ -280,7 +276,6 @@ export const OrganizationsPage: React.FC = () => {
       // Use backup data when API fails
       console.log('Using backup organization data for local development');
       setOrganizations(BACKUP_ORGANIZATIONS);
-      setUsingBackupData(true);
       setError(null); // Clear error since we have backup data
 
     } finally {
