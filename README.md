@@ -179,6 +179,28 @@ The application follows a **layered architecture** with clear separation of conc
 5. **Data Layer**: PostgreSQL with unified models and Redis caching
 6. **External Services**: AI APIs, notification services, and third-party integrations
 
+### **System Components**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   CloudFront    │────│  React Frontend │    │   FastAPI API   │
+│  (CDN/Routing)  │    │   (Static SPA)  │    │   (Backend)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │
+                                └────────┬───────────────┘
+                                         │
+                       ┌─────────────────┼─────────────────┐
+                       │                 │                 │
+                ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+                │ PostgreSQL  │   │    Redis    │   │   OpenAI    │
+                │   (RDS)     │   │  (Cache)    │   │    API      │
+                └─────────────┘   └─────────────┘   └─────────────┘
+                       │                                   │
+                       │         ┌─────────────────┐       │
+                       └─────────│  RAG System     │───────┘
+                                 │ ChromaDB/FAISS  │
+                                 │ Vector Store    │
+                                 └─────────────────┘
+
 #### **🔧 Key Architectural Patterns**
 
 - **Dependency Injection**: Services use constructor injection for better testability
@@ -188,7 +210,7 @@ The application follows a **layered architecture** with clear separation of conc
 - **RAG Architecture**: Document processing with vector embeddings for semantic search
 - **Event-Driven Notifications**: Async notification processing with queue management
 
-#### **📊 Service Dependencies**
+#### **📊 Detailed Service Dependencies**
 
 ```mermaid
 graph TB
