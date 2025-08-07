@@ -9,7 +9,6 @@ class UserBase(BaseModel):
     username: str
     full_name: str
     phone_number: Optional[str] = None
-    interests: List[str] = []
     zip_code: Optional[str] = None
     council_district: Optional[str] = None
 
@@ -28,12 +27,8 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
-    interests: Optional[List[str]] = None
     zip_code: Optional[str] = None
     council_district: Optional[str] = None
-    sms_notifications: Optional[bool] = None
-    email_notifications: Optional[bool] = None
-    push_notifications: Optional[bool] = None
 
 
 class UserResponse(UserBase):
@@ -41,9 +36,6 @@ class UserResponse(UserBase):
     is_active: bool
     is_verified: bool
     is_admin: bool
-    sms_notifications: bool
-    email_notifications: bool
-    push_notifications: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
