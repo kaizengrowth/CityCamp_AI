@@ -170,14 +170,62 @@ npm run dev
 
 The application follows a **layered architecture** with clear separation of concerns, dependency injection, and standardized patterns across all components.
 
-#### **🏛️ Architectural Layers**
+#### **📊 System Architecture Overview**
 
-1. **Frontend Layer**: React SPA with TypeScript, component-based architecture
-2. **API Gateway Layer**: CloudFront CDN with routing and load balancing
-3. **Application Layer**: FastAPI with standardized routing and middleware
-4. **Service Layer**: Business logic with dependency injection and base service patterns
-5. **Data Layer**: PostgreSQL with unified models and Redis caching
-6. **External Services**: AI APIs, notification services, and third-party integrations
+```mermaid
+graph TB
+    subgraph "🌐 Frontend"
+        FE[React + TypeScript SPA]
+    end
+
+    subgraph "🚀 API Layer"
+        API[FastAPI Backend]
+        ENDPOINTS[REST Endpoints]
+        API --> ENDPOINTS
+    end
+
+    subgraph "⚙️ Services"
+        CHAT[AI Chatbot Service]
+        RAG[RAG Document Search]
+        NOTIF[Notification Service]
+        SCRAPER[Meeting Scrapers]
+    end
+
+    subgraph "💾 Data Layer"
+        DB[(PostgreSQL)]
+        VECTOR[(Vector Store)]
+        CACHE[(Redis Cache)]
+        S3[(File Storage)]
+    end
+
+    subgraph "🤖 External APIs"
+        OPENAI[OpenAI GPT-4]
+        TWILIO[Twilio SMS]
+    end
+
+    %% Main connections
+    FE --> API
+    API --> CHAT
+    API --> RAG
+    API --> NOTIF
+    API --> SCRAPER
+
+    CHAT --> OPENAI
+    RAG --> VECTOR
+    NOTIF --> TWILIO
+    SCRAPER --> DB
+
+    API --> DB
+    API --> CACHE
+    API --> S3
+```
+
+**🎯 Key Architecture Components:**
+- **Frontend**: React 18 SPA with TypeScript for type safety
+- **API Layer**: FastAPI with standardized responses and error handling
+- **AI Services**: GPT-4 chatbot with RAG document search capabilities
+- **Data Storage**: PostgreSQL + Vector store + Redis caching + S3 files
+- **External Integrations**: OpenAI for AI, Twilio for SMS notifications
 
 #### **🔧 Key Architectural Patterns**
 
@@ -188,7 +236,7 @@ The application follows a **layered architecture** with clear separation of conc
 - **RAG Architecture**: Document processing with vector embeddings for semantic search
 - **Event-Driven Notifications**: Async notification processing with queue management
 
-#### **📊 Service Dependencies**
+#### **📊 Detailed Service Dependencies**
 
 ```mermaid
 graph TB
