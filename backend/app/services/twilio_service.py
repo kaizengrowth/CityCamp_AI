@@ -1,44 +1,41 @@
-import logging
 from typing import Any, Dict, List, Optional
 
 from app.core.config import Settings
 from app.models.subscription import NotificationLog, TopicSubscription
+from app.services.base import BaseService
 from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioException
 from twilio.rest import Client
 
-logger = logging.getLogger(__name__)
 
-
-class TwilioService:
+class TwilioService(BaseService):
     """Service for sending SMS notifications via Twilio"""
 
-    def __init__(self, settings: Settings):
-        self.settings = settings
+    def __init__(self, db: Session, settings: Settings):
         self.client: Optional[Client] = None
+        super().__init__(db, settings)
 
+    def _setup(self):
+        """Initialize Twilio client"""
         if self._is_configured():
             try:
                 self.client = Client(
-                    settings.twilio_account_sid, settings.twilio_auth_token
+                    self.settings.twilio_account_sid, self.settings.twilio_auth_token
                 )
-                logger.info("Twilio service initialized successfully")
+                self._log_operation("Twilio service initialized successfully")
             except Exception as e:
-                logger.error(f"Failed to initialize Twilio client: {e}")
+                self.logger.error(f"Failed to initialize Twilio client: {e}")
                 self.client = None
         else:
-            logger.warning(
+            self.logger.warning(
                 "Twilio is not configured. SMS notifications will be disabled."
             )
 
     def _is_configured(self) -> bool:
         """Check if Twilio is properly configured"""
-        return (
-            self.settings.twilio_account_sid is not None
-            and self.settings.twilio_auth_token is not None
-            and self.settings.twilio_phone_number is not None
-            and not self.settings.twilio_account_sid.startswith("placeholder")
-        )
+        return self._validate_required_config(
+            "twilio_account_sid", "twilio_auth_token", "twilio_phone_number"
+        ) and not self.settings.twilio_account_sid.startswith("placeholder")
 
     async def send_sms(
         self,

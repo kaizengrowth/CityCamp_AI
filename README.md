@@ -166,28 +166,242 @@ npm run dev
 - **Infrastructure**: AWS (ECS Fargate, RDS, ElastiCache, S3, CloudFront)
 - **CI/CD**: GitHub Actions with automated testing and deployment
 
-### **System Components**
+### **Comprehensive System Architecture**
+
+The application follows a **layered architecture** with clear separation of concerns, dependency injection, and standardized patterns across all components.
+
+#### **🏛️ Architectural Layers**
+
+1. **Frontend Layer**: React SPA with TypeScript, component-based architecture
+2. **API Gateway Layer**: CloudFront CDN with routing and load balancing
+3. **Application Layer**: FastAPI with standardized routing and middleware
+4. **Service Layer**: Business logic with dependency injection and base service patterns
+5. **Data Layer**: PostgreSQL with unified models and Redis caching
+6. **External Services**: AI APIs, notification services, and third-party integrations
+
+#### **🔧 Key Architectural Patterns**
+
+- **Dependency Injection**: Services use constructor injection for better testability
+- **Base Service Pattern**: All services inherit from `BaseService` for consistency
+- **Standardized Responses**: Unified API response formats with proper error handling
+- **Unified Data Models**: Consolidated notification preferences and user management
+- **RAG Architecture**: Document processing with vector embeddings for semantic search
+- **Event-Driven Notifications**: Async notification processing with queue management
+
+#### **📊 Service Dependencies**
+
+```mermaid
+graph TB
+    subgraph "🌐 Frontend Layer"
+        FE[React 18 + TypeScript SPA]
+        FE_COMP[Components Layer]
+        FE_PAGES[Pages Layer]
+        FE_CTX[Contexts Layer]
+        FE_API[API Config]
+
+        FE --> FE_COMP
+        FE --> FE_PAGES
+        FE --> FE_CTX
+        FE --> FE_API
+    end
+
+    subgraph "🔌 API Gateway Layer"
+        CF[CloudFront CDN]
+        ALB[Application Load Balancer]
+        CORS[CORS Middleware]
+
+        CF --> ALB
+        ALB --> CORS
+    end
+
+    subgraph "🚀 FastAPI Application"
+        MAIN[main.py - App Entry]
+        ROUTER[API Router v1]
+        MIDDLEWARE[Middleware Stack]
+        EXCEPTION[Exception Handlers]
+
+        MAIN --> ROUTER
+        MAIN --> MIDDLEWARE
+        MAIN --> EXCEPTION
+    end
+
+    subgraph "📡 API Endpoints"
+        EP_AUTH[Auth Endpoints]
+        EP_MEET[Meetings Endpoints]
+        EP_ORG[Organizations Endpoints]
+        EP_CAMP[Campaigns Endpoints]
+        EP_CHAT[Chatbot Endpoints]
+        EP_DOC[Documents Endpoints]
+        EP_SUB[Subscriptions Endpoints]
+        EP_REP[Representatives Endpoints]
+
+        ROUTER --> EP_AUTH
+        ROUTER --> EP_MEET
+        ROUTER --> EP_ORG
+        ROUTER --> EP_CAMP
+        ROUTER --> EP_CHAT
+        ROUTER --> EP_DOC
+        ROUTER --> EP_SUB
+        ROUTER --> EP_REP
+    end
+
+    subgraph "⚙️ Service Layer"
+        BASE_SVC[BaseService Abstract Class]
+        CHAT_SVC[ChatbotService]
+        DOC_SVC[DocumentProcessingService]
+        VEC_SVC[VectorService]
+        NOTIF_SVC[NotificationService]
+        TWILIO_SVC[TwilioService]
+        S3_SVC[S3Service]
+        GEO_SVC[GeocodingService]
+        AUTH_SVC[AuthService]
+        RESEARCH_SVC[ResearchService]
+
+        BASE_SVC -.-> CHAT_SVC
+        BASE_SVC -.-> DOC_SVC
+        BASE_SVC -.-> VEC_SVC
+        BASE_SVC -.-> NOTIF_SVC
+        BASE_SVC -.-> TWILIO_SVC
+        BASE_SVC -.-> S3_SVC
+        BASE_SVC -.-> GEO_SVC
+        BASE_SVC -.-> RESEARCH_SVC
+
+        CHAT_SVC --> VEC_SVC
+        CHAT_SVC --> RESEARCH_SVC
+        DOC_SVC --> VEC_SVC
+        NOTIF_SVC --> TWILIO_SVC
+    end
+
+    subgraph "🗄️ Data Models Layer"
+        USER_MODEL[User Model]
+        MEET_MODEL[Meeting Model]
+        ORG_MODEL[Organization Model]
+        CAMP_MODEL[Campaign Model]
+        DOC_MODEL[Document Model]
+        NOTIF_PREF[NotificationPreferences Model]
+        SUB_MODEL[Subscription Models]
+
+        NOTIF_PREF --> USER_MODEL
+    end
+
+    subgraph "💾 Data Storage Layer"
+        POSTGRES[(PostgreSQL Database)]
+        REDIS[(Redis Cache)]
+        CHROMA[(ChromaDB Vector Store)]
+        FAISS[(FAISS Vector Index)]
+        S3[(AWS S3 Storage)]
+
+        VEC_SVC --> CHROMA
+        VEC_SVC --> FAISS
+        S3_SVC --> S3
+    end
+
+    subgraph "🤖 AI & External Services"
+        OPENAI[OpenAI GPT-4 API]
+        EMBEDDING[OpenAI Embeddings]
+        TWILIO_API[Twilio SMS API]
+        GOOGLE_API[Google Search API]
+        GEOCODING[Geocoding APIs]
+
+        CHAT_SVC --> OPENAI
+        VEC_SVC --> EMBEDDING
+        TWILIO_SVC --> TWILIO_API
+        RESEARCH_SVC --> GOOGLE_API
+        GEO_SVC --> GEOCODING
+    end
+
+    subgraph "🔍 Data Collection"
+        SCRAPERS[Meeting Scrapers]
+        TGOV_SCRAPER[TGOV Scraper]
+        ARCHIVE_SCRAPER[Archive Scraper]
+
+        SCRAPERS --> TGOV_SCRAPER
+        SCRAPERS --> ARCHIVE_SCRAPER
+    end
+
+    subgraph "☁️ AWS Infrastructure"
+        ECS[ECS Fargate]
+        RDS[RDS PostgreSQL]
+        ELASTICACHE[ElastiCache Redis]
+        CLOUDFRONT[CloudFront CDN]
+
+        ECS --> RDS
+        ECS --> ELASTICACHE
+        CLOUDFRONT --> ECS
+    end
+
+    subgraph "📊 Response Standardization"
+        STD_LIST[StandardListResponse]
+        STD_RESP[StandardResponse]
+        ERR_RESP[ErrorResponse]
+        PAGINATION[PaginationParams]
+
+        EP_MEET --> STD_LIST
+        EP_ORG --> STD_LIST
+        EP_CAMP --> STD_LIST
+        EP_DOC --> STD_LIST
+    end
+
+    %% Connections
+    FE_API --> CF
+    CF --> MAIN
+
+    EP_AUTH --> AUTH_SVC
+    EP_MEET --> CHAT_SVC
+    EP_ORG --> BASE_SVC
+    EP_CAMP --> BASE_SVC
+    EP_CHAT --> CHAT_SVC
+    EP_DOC --> DOC_SVC
+    EP_SUB --> NOTIF_SVC
+
+    USER_MODEL --> POSTGRES
+    MEET_MODEL --> POSTGRES
+    ORG_MODEL --> POSTGRES
+    CAMP_MODEL --> POSTGRES
+    DOC_MODEL --> POSTGRES
+    NOTIF_PREF --> POSTGRES
+    SUB_MODEL --> POSTGRES
+
+    SCRAPERS --> MEET_MODEL
+
+    POSTGRES --> RDS
+    REDIS --> ELASTICACHE
+    S3 --> S3
+    CF --> CLOUDFRONT
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CloudFront    │────│  React Frontend │    │   FastAPI API   │
-│  (CDN/Routing)  │    │   (Static SPA)  │    │   (Backend)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                        │
-                                └────────┬───────────────┘
-                                         │
-                       ┌─────────────────┼─────────────────┐
-                       │                 │                 │
-                ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-                │ PostgreSQL  │   │    Redis    │   │   OpenAI    │
-                │   (RDS)     │   │  (Cache)    │   │    API      │
-                └─────────────┘   └─────────────┘   └─────────────┘
-                       │                                   │
-                       │         ┌─────────────────┐       │
-                       └─────────│  RAG System     │───────┘
-                                 │ ChromaDB/FAISS  │
-                                 │ Vector Store    │
-                                 └─────────────────┘
-```
+
+#### **🎯 Architectural Principles**
+
+- **Single Responsibility**: Each service has a focused, well-defined purpose
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+- **Interface Segregation**: Clients depend only on interfaces they use
+- **Open/Closed**: Open for extension, closed for modification
+- **DRY (Don't Repeat Yourself)**: Shared functionality in base classes
+- **Consistent Error Handling**: Standardized exception handling across all layers
+- **Type Safety**: Full TypeScript and Python type coverage
+
+#### **🔄 Recent Architectural Improvements**
+
+The codebase has been significantly refactored to improve maintainability and consistency:
+
+**✅ Standardization Improvements:**
+- **Unified Response Format**: All API endpoints now use `StandardListResponse` and `PaginationParams`
+- **Base Service Pattern**: All services inherit from `BaseService` with dependency injection
+- **Centralized Error Handling**: Custom exception classes with structured error responses
+- **Unified Notification System**: Consolidated user and subscription notification preferences
+
+**✅ Code Quality Improvements:**
+- **Reduced Duplication**: Eliminated ~200 lines of redundant code
+- **Better Type Safety**: Full type coverage with generic response types
+- **Improved Testability**: Dependency injection enables easier mocking
+- **Consistent Logging**: Standardized logging patterns across all services
+
+**✅ Database Improvements:**
+- **Unified Models**: `NotificationPreferences` model consolidates user notification settings
+- **Proper Migrations**: Alembic migrations preserve existing data during schema changes
+- **Better Relationships**: Cleaner model relationships with proper foreign keys
+
+See [`docs/ARCHITECTURE_IMPROVEMENTS.md`](docs/ARCHITECTURE_IMPROVEMENTS.md) for detailed implementation notes.
 
 ## 📁 Project Structure
 
@@ -204,12 +418,33 @@ CityCamp_AI/
 │
 ├── ⚙️ backend/               # FastAPI Python backend
 │   ├── app/
-│   │   ├── api/v1/          # API endpoints
-│   │   ├── models/          # Database models
-│   │   ├── services/        # Business logic
-│   │   └── scrapers/        # Data collection
+│   │   ├── api/v1/          # API endpoints with standardized responses
+│   │   │   └── endpoints/   # Individual endpoint modules
+│   │   ├── core/            # Core application components
+│   │   │   ├── config.py    # Application configuration
+│   │   │   ├── database.py  # Database connection and setup
+│   │   │   └── exceptions.py # Custom exception handling
+│   │   ├── models/          # SQLAlchemy database models
+│   │   │   ├── user.py      # User and authentication models
+│   │   │   ├── meeting.py   # Meeting and agenda models
+│   │   │   ├── organization.py # Community organization models
+│   │   │   ├── campaign.py  # Civic campaign models
+│   │   │   ├── document.py  # RAG document models
+│   │   │   └── notification_preferences.py # Unified notification system
+│   │   ├── schemas/         # Pydantic schemas for API
+│   │   │   ├── base.py      # Standardized response schemas
+│   │   │   └── *.py         # Individual endpoint schemas
+│   │   ├── services/        # Business logic layer
+│   │   │   ├── base.py      # BaseService abstract class
+│   │   │   ├── chatbot_service.py # AI chatbot with RAG
+│   │   │   ├── vector_service.py  # Vector embeddings and search
+│   │   │   ├── document_processing_service.py # Document processing
+│   │   │   ├── notification_service.py # Meeting notifications
+│   │   │   └── *.py         # Other specialized services
+│   │   └── scrapers/        # Data collection modules
+│   ├── alembic/            # Database migrations
 │   ├── requirements.txt     # Python dependencies
-│   └── main.py             # Application entry point
+│   └── main.py             # Application entry point with exception handlers
 │
 ├── ☁️ aws/                   # Infrastructure as Code
 │   ├── terraform/           # Terraform configurations
@@ -220,6 +455,7 @@ CityCamp_AI/
 │   ├── QUICKSTART.md        # 5-minute setup guide
 │   ├── RAG_SYSTEM_README.md # RAG architecture & usage guide
 │   ├── CHATBOT_EVALUATION_README.md # LLM-as-Judge evaluation guide
+│   ├── ARCHITECTURE_IMPROVEMENTS.md # Recent refactoring details
 │   ├── aws-deployment-guide.md
 │   ├── TROUBLESHOOTING.md   # Issue resolution
 │   └── API_DOCUMENTATION.md # API reference
@@ -438,7 +674,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📈 Recent Updates
 
-**Latest Changes** (August 5, 2025):
+**RAG System & Evaluation Architecture Changes** (August 5, 2025):
 - ✅ **Implemented LLM-as-Judge evaluation system** using GPT-4 for intelligent response assessment
 - ✅ **Comprehensive RAG system** for document-based chatbot responses with vector search
 - ✅ Added advanced evaluation framework with traditional + LLM metrics comparison

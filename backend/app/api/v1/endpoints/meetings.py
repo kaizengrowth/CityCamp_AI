@@ -6,6 +6,7 @@ from typing import List, Optional
 import httpx
 from app.core.database import get_db
 from app.models.meeting import AgendaItem, Meeting, MeetingCategory
+from app.schemas.base import PaginationParams, StandardListResponse
 from app.schemas.meeting import (
     AgendaItemResponse,
     CategoryResponse,
@@ -24,10 +25,9 @@ from sqlalchemy.orm import Session
 router = APIRouter()
 
 
-@router.get("/", response_model=MeetingListResponse)
+@router.get("/", response_model=StandardListResponse[MeetingResponse])
 async def list_meetings(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    pagination: PaginationParams = Depends(),
     category: Optional[str] = Query(None, description="Filter by category name"),
     search: Optional[str] = Query(
         None, description="Search in title, description, or keywords"
@@ -74,9 +74,11 @@ async def list_meetings(
     total = query.count()
 
     # Apply pagination
-    meetings = query.offset(skip).limit(limit).all()
+    meetings = query.offset(pagination.skip).limit(pagination.limit).all()
 
-    return MeetingListResponse(meetings=meetings, total=total, skip=skip, limit=limit)
+    return StandardListResponse[MeetingResponse].create(
+        items=meetings, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{meeting_id}", response_model=MeetingDetailResponse)
