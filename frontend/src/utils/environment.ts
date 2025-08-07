@@ -28,11 +28,10 @@ export const shouldForceApiUsage = (): boolean => {
  */
 export const getEnvironmentConfig = (): EnvironmentConfig => {
   const isDevelopment = isDevelopmentEnvironment();
-  const forceApi = shouldForceApiUsage();
-  
+
   return {
     isDevelopment,
-    shouldUseBackupData: isDevelopment && !forceApi,
+    shouldUseBackupData: false, // Always use API when available
     shouldShowDevMode: isDevelopment
   };
 };
@@ -61,10 +60,10 @@ export const getDevModeInfoMessage = (hasError?: boolean): string => {
   if (isDevelopmentEnvironment()) {
     return 'Sample data loaded for local development. Add "?use-api" to the URL to test API integration.';
   }
-  
+
   if (hasError) {
     return 'API connection issue detected. Showing sample data to demonstrate functionality. Click "Load Latest Data" to retry.';
   }
-  
+
   return 'Showing sample data. This demonstrates how your generated content will appear when the backend API is connected.';
-}; 
+};

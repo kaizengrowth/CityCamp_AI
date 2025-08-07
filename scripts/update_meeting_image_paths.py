@@ -130,19 +130,20 @@ def update_meeting_image_paths(dry_run: bool = True):
             if not image_files:
                 continue
 
-            # Create API URLs for the images
-            relative_paths = []
+            # Create GitHub raw URLs for the images
+            github_urls = []
             for image_file in image_files:
                 relative_path = str(image_file.relative_to(images_base_dir))
-                # Convert to API URL format
-                api_url = f"/api/v1/meeting-images/{relative_path}"
-                relative_paths.append(api_url)
+                # Convert to GitHub raw URL format
+                github_raw_base = "https://raw.githubusercontent.com/kaizengrowth/CityCamp_AI/main"
+                github_url = f"{github_raw_base}/backend/storage/meeting-images/{relative_path}"
+                github_urls.append(github_url)
 
-            logger.info(f"Meeting {meeting.id} ({meeting_date.date()} {meeting_time}): {len(relative_paths)} images")
+            logger.info(f"Meeting {meeting.id} ({meeting_date.date()} {meeting_time}): {len(github_urls)} images")
 
             if not dry_run:
                 # Update the meeting with image paths
-                meeting.image_paths = relative_paths
+                meeting.image_paths = github_urls
                 updated_count += 1
 
         if not dry_run:

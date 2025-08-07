@@ -6,15 +6,22 @@ from fastapi.responses import FileResponse
 
 router = APIRouter()
 
-# Base directory for meeting images
-IMAGES_BASE_DIR = Path("backend/storage/meeting-images")
+# NOTE: This endpoint is primarily for backward compatibility.
+# New meeting images are served directly from GitHub raw URLs.
+# Base directory for meeting images - use absolute path
+IMAGES_BASE_DIR = Path(
+    "/Users/kailin/Desktop/CityCamp_AI/backend/storage/meeting-images"
+)
 
 
-@router.get("/meeting-images/{image_path:path}")
-async def get_meeting_image(image_path: str):
+@router.get("/{year}/{month}/{day}/{meeting_folder}/{image_name}")
+async def get_meeting_image(
+    year: int, month: int, day: int, meeting_folder: str, image_name: str
+):
     """Serve meeting document images"""
     try:
-        # Construct the full file path
+        # Construct the full file path from parameters
+        image_path = f"{year}/{month:02d}/{day:02d}/{meeting_folder}/{image_name}"
         file_path = IMAGES_BASE_DIR / image_path
 
         # Security check: ensure the path is within our images directory
