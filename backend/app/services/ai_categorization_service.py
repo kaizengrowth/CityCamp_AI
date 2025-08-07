@@ -1,18 +1,22 @@
+import base64
+import datetime
 import io
 import json
 import logging
-from typing import Dict, List, Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import fitz  # PyMuPDF for better PDF text extraction
-
-# AI/ML imports
-from openai import OpenAI
 
 # PDF processing
 import PyPDF2
 from app.core.config import settings
 from app.models.meeting import MeetingCategory
-from pydantic import BaseModel
+
+# AI/ML imports
+from openai import OpenAI
+from PIL import Image
+from pydantic import BaseModel, Field
 
 # Database imports
 from sqlalchemy.orm import Session
@@ -46,9 +50,12 @@ class ProcessedMeetingContent(BaseModel):
     key_decisions: List[str]
     public_comments: List[str]
     # Enhanced fields for better tracking
-    detailed_summary: str
+    detailed_summary: str = ""
     voting_records: List[VotingRecord]
-    vote_statistics: Dict[str, int]
+    vote_statistics: Dict[
+        str, Union[int, List[str]]
+    ]  # Allow both int and List[str] for council members
+    image_paths: List[str] = Field(default_factory=list)
 
 
 class AICategorization:
@@ -765,6 +772,7 @@ class AICategorization:
                     detailed_summary="",
                     voting_records=[],
                     vote_statistics={},
+                    image_paths=[],
                 )
 
             # Categorize content with enhanced AI processing
@@ -803,6 +811,7 @@ class AICategorization:
                 detailed_summary=detailed_summary,
                 voting_records=voting_records,
                 vote_statistics=vote_statistics,
+                image_paths=[],  # Placeholder, will be populated later
             )
 
         except Exception as e:
@@ -983,3 +992,300 @@ class AICategorization:
                         break
 
         return comments
+
+    def _standardize_filename_for_path(self, filename: str) -> str:
+        """Standardize filename to create a consistent folder name"""
+        # Remove .pdf extension and replace problematic characters
+        name = filename.replace(".pdf", "")
+        # Replace spaces and special chars with underscores
+        name = name.replace(" ", "_").replace("-", "_")
+        # Remove multiple consecutive underscores
+        while "__" in name:
+            name = name.replace("__", "_")
+        return name
+
+    def _get_image_paths_from_disk(
+        self, meeting_date: datetime.datetime, pdf_filename: str
+    ) -> List[str]:
+        """Get image URLs using the MeetingImageService (S3 in production, local API in dev)."""
+        from app.core.config import settings
+        from app.services.s3_service import MeetingImageService
+
+        # Standardize filename for folder name
+        folder_name = self._standardize_filename_for_path(pdf_filename)
+
+        # Construct the expected directory path
+        year = meeting_date.year
+        month = meeting_date.month
+        day = meeting_date.day
+
+        base_dir = Path("backend/storage/meeting-images")
+        meeting_dir = base_dir / str(year) / f"{month:02d}" / f"{day:02d}" / folder_name
+
+        # Use MeetingImageService to get appropriate URLs
+        image_service = MeetingImageService(settings)
+        meeting_date_str = f"{year}-{month:02d}-{day:02d}"
+
+        return image_service.get_image_urls(
+            meeting_date_str, folder_name, str(meeting_dir)
+        )
+
+    def _load_image_as_base64(self, image_path: str) -> str:
+        """Load an image from disk and convert to base64 for OpenAI Vision"""
+        try:
+            # Convert API path to file system path
+            if image_path.startswith("/api/v1/meeting-images/"):
+                # Extract the path components
+                path_parts = image_path.replace("/api/v1/meeting-images/", "").split(
+                    "/"
+                )
+                if len(path_parts) >= 4:
+                    year, month, day, folder = path_parts[:4]
+                    filename = "/".join(path_parts[4:])  # Handle nested paths
+                    file_path = (
+                        Path("backend/storage/meeting-images")
+                        / year
+                        / month
+                        / day
+                        / folder
+                        / filename
+                    )
+
+                    if file_path.exists():
+                        with open(file_path, "rb") as image_file:
+                            image_data = image_file.read()
+                            base64_image = base64.b64encode(image_data).decode("utf-8")
+                            return f"data:image/png;base64,{base64_image}"
+        except Exception as e:
+            logger.warning(f"Could not load image {image_path}: {e}")
+        return ""
+
+    def convert_pdf_to_images(
+        self,
+        pdf_content: bytes,
+        meeting_id: int,
+        db: Session,
+        meeting_title: str = "",
+        pdf_filename: str = "",
+    ) -> List[str]:
+        """Convert PDF to images and return image paths.
+        If images already exist for this meeting, load them from disk instead."""
+
+        try:
+            # First, try to get meeting date for path construction
+            from app.models.meeting import Meeting
+
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+
+            if meeting and pdf_filename:
+                # Try to load existing images from disk first
+                existing_image_paths = self._get_image_paths_from_disk(
+                    meeting.meeting_date, pdf_filename
+                )
+                if existing_image_paths:
+                    logger.info(
+                        f"Found {len(existing_image_paths)} existing images for meeting {meeting_id}"
+                    )
+                    return existing_image_paths
+
+            # If no existing images found, convert PDF (fallback)
+            logger.info(
+                f"No existing images found, would need to convert PDF for meeting {meeting_id}"
+            )
+            # For now, return empty list as PDF conversion should be done separately
+            return []
+
+        except Exception as e:
+            logger.error(f"Error in convert_pdf_to_images: {e}")
+            return []
+
+    def process_meeting_minutes(
+        self,
+        pdf_content: bytes,
+        meeting_id: int,
+        db: Session,
+        meeting_title: str = "",
+        pdf_filename: str = "",
+    ) -> ProcessedMeetingContent:
+        """Process meeting minutes with enhanced AI and return structured data"""
+        try:
+            # First, get or load images
+            image_paths = self.convert_pdf_to_images(
+                pdf_content, meeting_id, db, meeting_title, pdf_filename
+            )
+
+            # If we have images, use OpenAI Vision, otherwise fall back to text extraction
+            if image_paths and self.openai_client:
+                logger.info(f"Processing {len(image_paths)} images with OpenAI Vision")
+                return self._process_with_vision(image_paths, meeting_title)
+            else:
+                # Fallback to text extraction
+                logger.info(
+                    "Processing with text extraction (no images or OpenAI client)"
+                )
+                text_content = self.extract_text_from_pdf(pdf_content)
+                return self._process_with_text(text_content, meeting_title)
+
+        except Exception as e:
+            logger.error(f"Error processing meeting minutes: {e}")
+            # Return minimal content on error
+            return ProcessedMeetingContent(
+                summary="Error processing meeting content",
+                categories=[],
+                keywords=[],
+                agenda_items=[],
+                impact_assessment="Unable to assess impact due to processing error",
+                key_decisions=[],
+                public_comments=[],
+                detailed_summary="",
+                voting_records=[],
+                vote_statistics={},
+                image_paths=[],
+            )
+
+    def _process_with_vision(
+        self, image_paths: List[str], meeting_title: str
+    ) -> ProcessedMeetingContent:
+        """Process meeting using OpenAI Vision API with multiple images"""
+        try:
+            # Load images as base64
+            image_messages = []
+            for image_path in image_paths:
+                base64_image = self._load_image_as_base64(image_path)
+                if base64_image:
+                    image_messages.append(
+                        {"type": "image_url", "image_url": {"url": base64_image}}
+                    )
+
+            if not image_messages:
+                logger.warning("No images could be loaded for Vision processing")
+                return self._create_empty_content()
+
+            # Create prompt for Vision API
+            prompt = f"""
+            Analyze these meeting minutes pages and extract structured information. The meeting title is: "{meeting_title}"
+
+            Please provide a comprehensive analysis in the following JSON format:
+            {{
+                "summary": "Brief 100-200 word summary of the meeting",
+                "detailed_summary": "Detailed 300-500 word summary with key points and outcomes",
+                "categories": ["list", "of", "relevant", "categories"],
+                "keywords": ["focused", "keywords", "list"],
+                "voting_records": [
+                    {{
+                        "agenda_item": "Item description",
+                        "council_member": "Member name",
+                        "vote": "yes/no/abstain/absent",
+                        "outcome": "passed/failed/tabled"
+                    }}
+                ],
+                "vote_statistics": {{
+                    "total_agenda_items": 0,
+                    "total_votes": 0,
+                    "items_passed": 0,
+                    "items_failed": 0,
+                    "unanimous_votes": 0,
+                    "council_members_present": ["list", "of", "present", "members"],
+                    "council_members_absent": ["list", "of", "absent", "members"]
+                }}
+            }}
+
+            Focus on voting records, decisions made, and key discussion points.
+            """
+
+            # Prepare messages for Vision API
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are an expert at analyzing city council meeting documents. Provide accurate, structured information from the meeting minutes images.",
+                },
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}] + image_messages,
+                },
+            ]
+
+            # Call OpenAI Vision API
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=messages,
+                max_tokens=2000,
+                temperature=0.1,
+            )
+
+            result = json.loads(response.choices[0].message.content)
+
+            # Parse voting records
+            voting_records = []
+            for vote_data in result.get("voting_records", []):
+                try:
+                    voting_records.append(VotingRecord(**vote_data))
+                except Exception as e:
+                    logger.warning(f"Could not parse voting record: {e}")
+
+            return ProcessedMeetingContent(
+                summary=result.get("summary", ""),
+                detailed_summary=result.get("detailed_summary", ""),
+                categories=result.get("categories", []),
+                keywords=result.get("keywords", []),
+                agenda_items=result.get("agenda_items", []),
+                impact_assessment=result.get("impact_assessment", ""),
+                key_decisions=result.get("key_decisions", []),
+                public_comments=result.get("public_comments", []),
+                voting_records=voting_records,
+                vote_statistics=result.get("vote_statistics", {}),
+                image_paths=image_paths,
+            )
+
+        except Exception as e:
+            logger.error(f"Error in Vision processing: {e}")
+            return self._create_empty_content()
+
+    def _process_with_text(
+        self, text_content: str, meeting_title: str
+    ) -> ProcessedMeetingContent:
+        """Process meeting using text extraction (fallback method)"""
+        try:
+            (
+                categories,
+                keywords,
+                summary,
+                detailed_summary,
+                voting_records,
+                vote_statistics,
+            ) = self.categorize_content_with_ai(text_content)
+
+            return ProcessedMeetingContent(
+                summary=summary,
+                detailed_summary=detailed_summary,
+                categories=categories,
+                keywords=keywords,
+                agenda_items=self._extract_agenda_items(text_content),
+                impact_assessment=self._generate_impact_assessment(
+                    text_content, categories
+                ),
+                key_decisions=self._extract_key_decisions(text_content),
+                public_comments=self._extract_public_comments(text_content),
+                voting_records=voting_records,
+                vote_statistics=vote_statistics,
+                image_paths=[],
+            )
+        except Exception as e:
+            logger.error(f"Error in text processing: {e}")
+            return self._create_empty_content()
+
+    def _create_empty_content(self) -> ProcessedMeetingContent:
+        """Create empty ProcessedMeetingContent for error cases"""
+        return ProcessedMeetingContent(
+            summary="Unable to process meeting content",
+            detailed_summary="",
+            categories=[],
+            keywords=[],
+            agenda_items=[],
+            impact_assessment="Unable to assess impact",
+            key_decisions=[],
+            public_comments=[],
+            voting_records=[],
+            vote_statistics={},
+            image_paths=[],
+        )
