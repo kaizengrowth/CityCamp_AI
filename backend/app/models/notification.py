@@ -102,7 +102,7 @@ class NotificationTemplate(Base):
 
 
 class NotificationPreference(Base):
-    __tablename__ = "notification_preferences"
+    __tablename__ = "legacy_notification_preferences"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
