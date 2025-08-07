@@ -104,7 +104,7 @@ build_and_push_images() {
 
     # Build and push backend image
     print_status "Building backend image..."
-    docker build -t "$ecr_backend_uri:latest" ./backend
+    docker buildx build --platform linux/amd64 -t "$ecr_backend_uri:latest" ./backend
     docker push "$ecr_backend_uri:latest"
 
     # Build and push frontend image

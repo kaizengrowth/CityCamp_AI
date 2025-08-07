@@ -559,61 +559,21 @@ Be natural, conversational, and as helpful as possible in encouraging civic part
 
             logger.info(f"Calling OpenAI GPT-4 API with {len(messages)} messages...")
 
-            # Get response from OpenAI with function calling
+            # Get response from OpenAI without function calling (faster responses)
             response = self.client.chat.completions.create(
                 model="gpt-4.1",  # Latest GPT-4.1 model with enhanced capabilities
                 messages=messages,
                 max_tokens=800,  # Increased for more comprehensive responses
                 temperature=0.7,
-                functions=self.get_function_definitions(),
-                function_call="auto",
+                # functions=self.get_function_definitions(),  # Disabled until RAG database is populated
+                # function_call="auto",  # Disabled for faster responses
             )
 
             message = response.choices[0].message
 
-            # Check if the model wants to call a function
-            if message.function_call:
-                function_name = message.function_call.name
-                function_args = json.loads(message.function_call.arguments)
-
-                logger.info(f"AI requested function call: {function_name}")
-
-                # Execute the function
-                function_result = await self.process_function_call(
-                    function_name, function_args
-                )
-
-                # Add function result to conversation and get final response
-                # Add function call message
-                function_call_message: Dict[str, Any] = {
-                    "role": "assistant",
-                    "content": None,
-                    "function_call": {
-                        "name": function_name,
-                        "arguments": message.function_call.arguments,
-                    },
-                }
-                messages.append(function_call_message)  # type: ignore
-
-                messages.append(
-                    {
-                        "role": "function",
-                        "name": function_name,
-                        "content": function_result,
-                    }
-                )
-
-                # Get final response with function result
-                final_response = self.client.chat.completions.create(
-                    model="gpt-4-turbo-preview",
-                    messages=messages,
-                    max_tokens=300,  # Reduced from 1000 to encourage shorter responses
-                    temperature=0.7,
-                )
-
-                ai_response = final_response.choices[0].message.content.strip()
-            else:
-                ai_response = message.content.strip()
+            # Function calling disabled for faster responses
+            # When RAG database is populated, re-enable function calling above
+            ai_response = message.content.strip()
 
             logger.info(f"Generated AI response: {ai_response[:100]}...")
             return ai_response
