@@ -19,6 +19,8 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 
 > **🌐 Deployed Demo**: [https://d1s9nkkr0t3pmn.cloudfront.net](https://d1s9nkkr0t3pmn.cloudfront.net)
 
+![CivicSpark AI Homepage](homepage.png)
+
 ## 🌟 Features
 
 ### 🤖 **AI-Powered Civic Assistant**
