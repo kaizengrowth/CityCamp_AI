@@ -160,9 +160,7 @@ Once the scraper is working locally:
 - `app/api/v1/endpoints/scraper.py`: API endpoints
 
 ### PDF Import (pdfplumber)
-- `scripts/import_meeting_minutes.py`: PDF text extraction
 - `backend/extract_minutes_content.py`: Alternative PDF processor
-- `scripts/import_meetings_to_aws_rds.py`: AWS-specific importer
 
 ### Data Models
 - `app/models/meeting.py`: Database models
