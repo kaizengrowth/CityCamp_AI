@@ -200,3 +200,5 @@ celerybeat.pid
 
 # mkdocs documentation
 /site
+.env.development
+.env.local
