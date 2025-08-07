@@ -4,6 +4,8 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
 import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
+
+import { ImageCarousel } from '../components/ImageCarousel';
 import { PDFViewer } from '../components/PDFViewer';
 
 // Extended Meeting interface with additional properties
@@ -24,6 +26,7 @@ interface Meeting extends BaseMeeting {
     items_failed: number;
     unanimous_votes: number;
   };
+  image_paths?: string[];  // Add image_paths field
 }
 
 export const MeetingsPage: React.FC = () => {
@@ -496,9 +499,7 @@ export const MeetingsPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-brand-dark-blue">City Council Meetings</h1>
-        <div className="text-sm text-gray-600">
-          Displaying {filteredMeetings.length} meetings with content (most recent first)
-        </div>
+
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -887,18 +888,18 @@ export const MeetingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Meeting Document PDF Viewer */}
-                {selectedMeeting.minutes_url && (
+                {/* PDF Viewer - show PDF directly from GitHub */}
+                {selectedMeeting.minutes_url ? (
                   <div className="p-6 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📄 Meeting Document</h3>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <PDFViewer
-                        pdfUrl={`/api/v1/meetings/${selectedMeeting.id}/pdf`}
-                        meetingTitle={selectedMeeting.title}
-                      />
-                    </div>
+                    <PDFViewer pdfUrl={selectedMeeting.minutes_url} meetingTitle={selectedMeeting.title} />
                   </div>
-                )}
+                ) : selectedMeeting.image_paths && selectedMeeting.image_paths.length > 0 ? (
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-brand-dark-blue mb-4">📸 Meeting Document Pages</h3>
+                    <ImageCarousel images={selectedMeeting.image_paths} />
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (

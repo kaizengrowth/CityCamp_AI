@@ -27,6 +27,7 @@ export interface Meeting {
   created_at: string;
   updated_at?: string;
   agenda_items?: AgendaItem[];
+  image_paths?: string[];
 }
 
 // Sample data for demo purposes
@@ -44,6 +45,10 @@ export const SAMPLE_MEETINGS: Meeting[] = [
     topics: ["budget", "zoning", "public_safety"],
     keywords: ["ordinance", "budget", "council"],
     created_at: new Date().toISOString(),
+    image_paths: [
+      "https://raw.githubusercontent.com/kaizengrowth/CityCamp_AI/main/backend/storage/meeting-images/2025/01/15/25_74_1_25_74_1_2025_01_15_4PM_Minutes_4PM/25_74_1_25_74_1_2025_01_15_4PM_2025-01-15_page01.png",
+      "https://raw.githubusercontent.com/kaizengrowth/CityCamp_AI/main/backend/storage/meeting-images/2025/01/15/25_74_1_25_74_1_2025_01_15_4PM_Minutes_4PM/25_74_1_25_74_1_2025_01_15_4PM_2025-01-15_page02.png"
+    ],
     summary: `TULSA CITY COUNCIL MEETING MINUTES
 January 15, 2025
 

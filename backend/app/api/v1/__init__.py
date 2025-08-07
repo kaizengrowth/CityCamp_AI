@@ -5,6 +5,7 @@ from .endpoints import (
     campaigns,
     chatbot,
     documents,
+    meeting_images,
     meetings,
     organizations,
     representatives,
@@ -17,16 +18,19 @@ api_router = APIRouter()
 # Include existing endpoint routers
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(meetings.router, prefix="/meetings", tags=["meetings"])
+api_router.include_router(
+    meeting_images.router, prefix="/meeting-images", tags=["meeting-images"]
+)
 api_router.include_router(scraper.router, prefix="/scraper", tags=["scraper"])
 api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
 api_router.include_router(
     subscriptions.router, prefix="/subscriptions", tags=["subscriptions"]
 )
 api_router.include_router(
-    representatives.router, prefix="/representatives", tags=["representatives"]
+    organizations.router, prefix="/organizations", tags=["organizations"]
 )
 api_router.include_router(
-    organizations.router, prefix="/organizations", tags=["organizations"]
+    representatives.router, prefix="/representatives", tags=["representatives"]
 )
 api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns"])
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
