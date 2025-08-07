@@ -174,10 +174,12 @@ meetings_export.csv
 *_export.csv
 *_export.json
 
-# Large Storage Files
-# Keep PDFs (needed for meetings) but exclude large image files
+# Large Storage Files (images should be in S3/CDN, not git)
 backend/storage/meeting-images/
 frontend/public/meeting-images/
+
+# Keep PDFs as they're needed for meetings functionality
+# backend/storage/pdfs/ - KEEP THESE
 
 # PEP 582
 __pypackages__/
