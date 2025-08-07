@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { openPdfInNewTab } from '../utils/pdfUtils';
 
 // Set up PDF.js worker - use local file from public directory
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
@@ -81,14 +82,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
             </button>
           </div>
           <div className="flex items-center space-x-2">
-            <a
-              href={fullPdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => openPdfInNewTab(fullPdfUrl)}
               className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded hover:bg-green-200 transition-colors"
             >
               Open in New Tab →
-            </a>
+            </button>
           </div>
         </div>
 
@@ -119,14 +118,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
             <div className="absolute inset-0 flex items-center justify-center bg-red-50 z-10">
               <div className="text-center p-4">
                 <p className="text-red-700 mb-3">{error}</p>
-                <a
-                  href={fullPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => openPdfInNewTab(fullPdfUrl)}
                   className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
                 >
                   Open in New Tab →
-                </a>
+                </button>
               </div>
             </div>
           )}
@@ -161,14 +158,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
           </button>
         </div>
         <div className="flex items-center space-x-2">
-          <a
-            href={fullPdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => openPdfInNewTab(fullPdfUrl)}
             className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded hover:bg-green-200 transition-colors"
           >
             Open in New Tab →
-          </a>
+          </button>
         </div>
       </div>
 
@@ -203,14 +198,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
                 >
                   Retry Loading
                 </button>
-                <a
-                  href={fullPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => openPdfInNewTab(fullPdfUrl)}
                   className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
                 >
                   Open in New Tab →
-                </a>
+                </button>
               </div>
             </div>
           </div>

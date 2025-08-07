@@ -30,6 +30,7 @@ from datetime import datetime
 from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.subscription import TopicSubscription
+from app.models.notification_preferences import NotificationPreferences
 from app.services.notification_service import NotificationService
 
 # Configure logging
@@ -97,12 +98,20 @@ async def test_notification(email: str, test_message: str = None):
     notification_service = NotificationService(settings)
 
     with SessionLocal() as db:
-        # Find subscription by email
+        # Find subscription by email in new notification preferences table
         subscription = (
-            db.query(TopicSubscription)
-            .filter(TopicSubscription.email == email, TopicSubscription.is_active == True)
+            db.query(NotificationPreferences)
+            .filter(NotificationPreferences.email == email, NotificationPreferences.is_active == True)
             .first()
         )
+
+        # Fallback to legacy table if not found in new table
+        if not subscription:
+            subscription = (
+                db.query(TopicSubscription)
+                .filter(TopicSubscription.email == email, TopicSubscription.is_active == True)
+                .first()
+            )
 
         if not subscription:
             print(f"❌ No active subscription found for email: {email}")
@@ -133,22 +142,50 @@ def show_stats():
     print("📊 Subscription Statistics:")
 
     with SessionLocal() as db:
-        total = db.query(TopicSubscription).count()
-        active = db.query(TopicSubscription).filter(TopicSubscription.is_active == True).count()
-        confirmed = db.query(TopicSubscription).filter(
+        # Get stats from new notification preferences table
+        new_total = db.query(NotificationPreferences).count()
+        new_active = db.query(NotificationPreferences).filter(NotificationPreferences.is_active == True).count()
+        new_verified = db.query(NotificationPreferences).filter(
+            NotificationPreferences.is_active == True,
+            NotificationPreferences.email_verified == True
+        ).count()
+        new_sms_enabled = db.query(NotificationPreferences).filter(
+            NotificationPreferences.is_active == True,
+            NotificationPreferences.sms_notifications == True,
+            NotificationPreferences.phone_number.isnot(None)
+        ).count()
+
+        # Get stats from legacy table for comparison
+        legacy_total = db.query(TopicSubscription).count()
+        legacy_active = db.query(TopicSubscription).filter(TopicSubscription.is_active == True).count()
+        legacy_confirmed = db.query(TopicSubscription).filter(
             TopicSubscription.is_active == True,
             TopicSubscription.confirmed == True
         ).count()
-        sms_enabled = db.query(TopicSubscription).filter(
+        legacy_sms_enabled = db.query(TopicSubscription).filter(
             TopicSubscription.is_active == True,
             TopicSubscription.sms_notifications == True,
             TopicSubscription.phone_number.isnot(None)
         ).count()
 
+        # Combined totals
+        total = new_total + legacy_total
+        active = new_active + legacy_active
+        confirmed = new_verified + legacy_confirmed
+        sms_enabled = new_sms_enabled + legacy_sms_enabled
+
         print(f"   Total subscriptions: {total}")
+        print(f"     - New system: {new_total}")
+        print(f"     - Legacy system: {legacy_total}")
         print(f"   Active subscriptions: {active}")
-        print(f"   Confirmed subscriptions: {confirmed}")
+        print(f"     - New system: {new_active}")
+        print(f"     - Legacy system: {legacy_active}")
+        print(f"   Verified/Confirmed subscriptions: {confirmed}")
+        print(f"     - New system (verified): {new_verified}")
+        print(f"     - Legacy system (confirmed): {legacy_confirmed}")
         print(f"   SMS-enabled subscriptions: {sms_enabled}")
+        print(f"     - New system: {new_sms_enabled}")
+        print(f"     - Legacy system: {legacy_sms_enabled}")
 
         if active > 0:
             print(f"\n📈 Engagement:")

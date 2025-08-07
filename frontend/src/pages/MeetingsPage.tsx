@@ -7,6 +7,7 @@ import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, get
 
 import { ImageCarousel } from '../components/ImageCarousel';
 import { PDFViewer } from '../components/PDFViewer';
+import { createOpenInNewTabHandler } from '../utils/pdfUtils';
 
 // Extended Meeting interface with additional properties
 interface Meeting extends BaseMeeting {
@@ -95,18 +96,18 @@ export const MeetingsPage: React.FC = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-      const response = await apiRequest<{meetings: Meeting[], total: number, skip: number, limit: number}>(
+      const response = await apiRequest<{items: Meeting[], total: number, skip: number, limit: number}>(
         `${API_ENDPOINTS.meetings}?limit=100&skip=0`, // Fetch up to 100 meetings
         { signal: controller.signal }
       );
 
       clearTimeout(timeoutId);
-      console.log('API response received:', response.meetings.length, 'meetings');
+      console.log('API response received:', response.items.length, 'meetings');
 
       // Only update if we got valid data
-      if (response.meetings && Array.isArray(response.meetings)) {
+      if (response.items && Array.isArray(response.items)) {
         // Sort meetings chronologically from most recent to farthest back
-        const sortedMeetings = response.meetings.sort((a, b) =>
+        const sortedMeetings = response.items.sort((a, b) =>
           new Date(b.meeting_date).getTime() - new Date(a.meeting_date).getTime()
         );
 
@@ -785,15 +786,12 @@ export const MeetingsPage: React.FC = () => {
 
                   {meeting.agenda_url && (
                     <div className="mt-3">
-                      <a
-                        href={meeting.agenda_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        className="text-primary-600 hover:text-primary-800 text-sm font-medium underline"
+                        onClick={createOpenInNewTabHandler(meeting.agenda_url)}
                       >
                         View Agenda →
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
