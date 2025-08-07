@@ -173,3 +173,28 @@ meetings_export.json
 meetings_export.csv
 *_export.csv
 *_export.json
+
+# Large Storage Files
+# Keep PDFs (needed for meetings) but exclude large image files
+backend/storage/meeting-images/
+frontend/public/meeting-images/
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
