@@ -8,6 +8,7 @@ from app.core.config import Settings
 from app.core.database import get_db
 from app.models.meeting import Meeting
 from app.models.subscription import MeetingTopic, TopicSubscription
+from app.services.base import BaseService
 from app.services.twilio_service import TwilioService
 from sqlalchemy import Text, and_, cast, or_
 from sqlalchemy.orm import Session
@@ -15,12 +16,19 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 
-class NotificationService:
+class NotificationService(BaseService):
     """Service for managing meeting notifications to subscribers"""
 
-    def __init__(self, settings: Settings):
-        self.settings = settings
-        self.twilio_service = TwilioService(settings)
+    def __init__(
+        self, db: Session, settings: Settings, twilio_service: TwilioService = None
+    ):
+        self.twilio_service = twilio_service
+        super().__init__(db, settings)
+
+    def _setup(self):
+        """Initialize notification service dependencies"""
+        if self.twilio_service is None:
+            self.twilio_service = TwilioService(self.db, self.settings)
 
     async def check_and_send_meeting_notifications(self, db: Session) -> dict:
         """
