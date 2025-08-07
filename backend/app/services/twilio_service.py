@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 
 from app.core.config import Settings
@@ -6,6 +7,8 @@ from app.services.base import BaseService
 from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioException
 from twilio.rest import Client
+
+logger = logging.getLogger(__name__)
 
 
 class TwilioService(BaseService):
