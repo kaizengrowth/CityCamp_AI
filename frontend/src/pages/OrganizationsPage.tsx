@@ -392,14 +392,6 @@ export const OrganizationsPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="space-y-6 text-center">
         <h1 className="text-3xl font-bold text-brand-dark-blue">Community Organizations</h1>
-        <div className="text-sm text-gray-600">
-          Discover {filteredOrganizations.length} active community organizations in Tulsa
-          {usingBackupData && (
-            <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-              ⚠️ Using backup data (API unavailable)
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Search and Filter Controls */}
