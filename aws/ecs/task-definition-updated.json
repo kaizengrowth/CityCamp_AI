@@ -62,6 +62,10 @@
         {
           "name": "SMTP_PASSWORD",
           "valueFrom": "arn:aws:ssm:us-east-1:538569249671:parameter/citycamp-ai/smtp-password"
+        },
+        {
+          "name": "GEOCODIO_API_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-1:538569249671:parameter/citycamp-ai/GEOCODIO_API_KEY"
         }
       ],
       "logConfiguration": {
