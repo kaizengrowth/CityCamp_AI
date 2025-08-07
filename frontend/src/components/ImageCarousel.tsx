@@ -55,7 +55,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, title = "M
         {/* Main Image Display */}
         <div className="relative h-96 flex items-center justify-center">
           <img
-            src={`/api/v1/meeting-images/${images[currentIndex]}`}
+            src={images[currentIndex]}
             alt={`Page ${currentIndex + 1}`}
             className="max-h-full max-w-full object-contain shadow-lg"
             onError={(e) => {
@@ -106,7 +106,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, title = "M
                   aria-label={`Go to page ${index + 1}`}
                 >
                   <img
-                    src={`/api/v1/meeting-images/${image}`}
+                    src={image}
                     alt={`Page ${index + 1} thumbnail`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
