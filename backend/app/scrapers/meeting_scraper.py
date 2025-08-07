@@ -22,7 +22,7 @@ class MeetingScraper:
         self.db = db
         self.tgov_scraper = TGOVScraper(db)
         settings = get_settings()
-        self.notification_service = NotificationService(settings)
+        self.notification_service = NotificationService(db, settings)
 
     async def run_full_scrape(self, days_ahead: int = 30) -> Dict[str, int]:
         """
@@ -138,12 +138,14 @@ class MeetingScraper:
     async def _send_meeting_notifications(self, meeting: Meeting):
         """Send notifications for new meetings"""
         try:
-            # Get users who should be notified about this meeting
-            interested_users = await self._get_interested_users(meeting)
+            # Get notification preferences for users who should be notified about this meeting
+            interested_preferences = (
+                await self._get_interested_notification_preferences(meeting)
+            )
 
-            for user in interested_users:
+            for preferences in interested_preferences:
                 await self.notification_service.create_meeting_notification(
-                    user_id=user.id,
+                    user_id=preferences.user_id,
                     meeting_id=meeting.id,
                     notification_type="meeting_alert",
                     title=f"New Meeting: {meeting.title}",
@@ -151,8 +153,8 @@ class MeetingScraper:
                         f"A new meeting has been scheduled for "
                         f"{meeting.meeting_date.strftime('%B %d, %Y at %I:%M %p')}"
                     ),
-                    send_email=user.email_notifications,
-                    send_sms=user.sms_notifications,
+                    send_email=preferences.email_notifications,
+                    send_sms=preferences.sms_notifications,
                 )
 
         except Exception as e:
@@ -160,21 +162,29 @@ class MeetingScraper:
                 f"Error sending notifications for meeting {meeting.id}: {str(e)}"
             )
 
-    async def _get_interested_users(self, meeting: Meeting) -> List:
-        """Get users who should be notified about this meeting"""
+    async def _get_interested_notification_preferences(self, meeting: Meeting) -> List:
+        """Get notification preferences for users who should be notified about this meeting"""
+        from app.models.notification_preferences import NotificationPreferences
         from app.models.user import User
 
-        # Get all users who have notifications enabled
-        # You could make this more sophisticated by matching user interests
+        # Get all active notification preferences with email notifications enabled
+        # Join with users to ensure user is still active
+        # You could make this more sophisticated by matching interested_topics
         # to meeting topics/types
 
-        users = (
-            self.db.query(User)
-            .filter(User.is_active.is_(True), User.email_notifications.is_(True))
+        preferences = (
+            self.db.query(NotificationPreferences)
+            .join(User, NotificationPreferences.user_id == User.id)
+            .filter(
+                User.is_active.is_(True),
+                NotificationPreferences.is_active.is_(True),
+                NotificationPreferences.email_notifications.is_(True),
+                NotificationPreferences.email_verified.is_(True),
+            )
             .all()
         )
 
-        return users
+        return preferences
 
     async def get_scraping_stats(self) -> Dict[str, int]:
         """Get statistics about scraped data"""

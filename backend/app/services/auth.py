@@ -71,7 +71,6 @@ def create_user(db: Session, user: UserCreate) -> User:
         full_name=user.full_name,
         phone_number=user.phone_number,
         hashed_password=hashed_password,
-        interests=user.interests,
         zip_code=user.zip_code,
         council_district=user.council_district,
     )
