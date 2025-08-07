@@ -2,12 +2,22 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
-from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.database import create_tables
-from fastapi import FastAPI
+from app.core.exceptions import (
+    CityCampException,
+    citycamp_exception_handler,
+    general_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
+)
+from app.schemas.base import HealthCheckResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+
+from app.api.v1 import api_router
 
 # Configure logging
 logging.basicConfig(
@@ -67,30 +77,30 @@ app.add_middleware(
 )
 
 
-# Global exception handler
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    logger.error(f"Global exception handler caught: {exc}", exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+# Exception handlers
+app.add_exception_handler(CityCampException, citycamp_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 
 # Health check endpoint
-@app.get("/health")
+@app.get("/health", response_model=HealthCheckResponse)
 async def health_check():
     """
     Health check endpoint
     """
-    return {
-        "status": "healthy",
-        "service": settings.project_name,
-        "version": settings.project_version,
-        "environment": settings.environment,
-        "openai_configured": settings.is_openai_configured,
-        "features": {
+    return HealthCheckResponse(
+        status="healthy",
+        service=settings.project_name,
+        version=settings.project_version,
+        environment=settings.environment,
+        features={
             "chatbot": settings.is_openai_configured,
             "database": True,  # If we reach here, database is likely working
+            "openai_configured": settings.is_openai_configured,
         },
-    }
+    )
 
 
 # Include API routes
