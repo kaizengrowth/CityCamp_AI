@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "backend",
-      "image": "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest",
+      "image": "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:amd64-working",
       "portMappings": [
         {
           "containerPort": 8000,
