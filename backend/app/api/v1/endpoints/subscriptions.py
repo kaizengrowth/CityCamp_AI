@@ -4,7 +4,12 @@ from typing import List
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.models.notification_preferences import NotificationPreferences
 from app.models.subscription import MeetingTopic, TopicSubscription
+from app.schemas.notification_preferences import (
+    NotificationPreferencesCreate,
+    NotificationPreferencesResponse,
+)
 from app.schemas.subscription import (
     MeetingTopicCreate,
     MeetingTopicResponse,
@@ -40,20 +45,32 @@ async def create_topic_subscription(
 ):
     """Create a new topic-based notification subscription"""
 
-    # Check if email already exists
+    # Check if email already exists in new notification preferences table
     existing = (
+        db.query(NotificationPreferences)
+        .filter(NotificationPreferences.email == subscription_data.email)
+        .first()
+    )
+
+    # Also check legacy table for backward compatibility during migration
+    legacy_existing = (
         db.query(TopicSubscription)
         .filter(TopicSubscription.email == subscription_data.email)
         .first()
     )
 
-    if existing:
-        if existing.is_active:
+    if existing or legacy_existing:
+        if existing and existing.is_active:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email address is already subscribed. Use the update endpoint to modify preferences.",
             )
-        else:
+        elif legacy_existing and legacy_existing.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email address is already subscribed. Use the update endpoint to modify preferences.",
+            )
+        elif existing and not existing.is_active:
             # Reactivate existing subscription
             for field, value in subscription_data.model_dump().items():
                 if hasattr(existing, field):
@@ -67,11 +84,13 @@ async def create_topic_subscription(
     # Generate verification token
     verification_token = secrets.token_urlsafe(32)
 
-    # Create new subscription
-    new_subscription = TopicSubscription(
+    # Create new subscription using NotificationPreferences model
+    new_subscription = NotificationPreferences(
         **subscription_data.model_dump(),
         email_verification_token=verification_token,
-        confirmed=False,  # Will be confirmed via email/SMS
+        email_verified=False,  # Will be confirmed via email/SMS
+        phone_verified=False,
+        source="signup_form",
     )
 
     db.add(new_subscription)
@@ -92,6 +111,68 @@ async def create_topic_subscription(
     #     await send_verification_sms(new_subscription.phone_number, verification_token)
 
     return new_subscription
+
+
+@router.post("/preferences", response_model=NotificationPreferencesResponse)
+async def create_notification_preferences(
+    preferences_data: NotificationPreferencesCreate, db: Session = Depends(get_db)
+):
+    """Create new notification preferences (recommended endpoint)"""
+
+    # Check if email already exists
+    existing = (
+        db.query(NotificationPreferences)
+        .filter(NotificationPreferences.email == preferences_data.email)
+        .first()
+    )
+
+    if existing:
+        if existing.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email address is already subscribed. Use the update endpoint to modify preferences.",
+            )
+        else:
+            # Reactivate existing subscription
+            for field, value in preferences_data.model_dump().items():
+                if hasattr(existing, field):
+                    setattr(existing, field, value)
+            existing.is_active = True
+            existing.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(existing)
+            return existing
+
+    # Generate verification token
+    verification_token = secrets.token_urlsafe(32)
+
+    # Create new notification preferences
+    new_preferences = NotificationPreferences(
+        **preferences_data.model_dump(),
+        email_verification_token=verification_token,
+        email_verified=False,  # Will be confirmed via email/SMS
+        phone_verified=False,
+        source="preferences_signup",
+    )
+
+    db.add(new_preferences)
+    db.commit()
+    db.refresh(new_preferences)
+
+    # Update subscriber counts for topics
+    for topic_name in preferences_data.interested_topics:
+        topic = db.query(MeetingTopic).filter(MeetingTopic.name == topic_name).first()
+        if topic:
+            topic.subscriber_count += 1
+
+    db.commit()
+
+    # TODO: Send verification email/SMS here
+    # await send_verification_email(new_preferences.email, verification_token)
+    # if new_preferences.phone_number:
+    #     await send_verification_sms(new_preferences.phone_number, verification_token)
+
+    return new_preferences
 
 
 @router.put("/update/{subscription_id}", response_model=TopicSubscriptionResponse)

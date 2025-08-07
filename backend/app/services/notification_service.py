@@ -7,6 +7,7 @@ from typing import List, Optional, Set
 from app.core.config import Settings
 from app.core.database import get_db
 from app.models.meeting import Meeting
+from app.models.notification_preferences import NotificationPreferences
 from app.models.subscription import MeetingTopic, TopicSubscription
 from app.services.base import BaseService
 from app.services.twilio_service import TwilioService
@@ -178,16 +179,20 @@ class NotificationService(BaseService):
 
     def _find_interested_subscribers(
         self, db: Session, meeting: Meeting
-    ) -> List[TopicSubscription]:
+    ) -> List[NotificationPreferences]:
         """
         Find subscribers interested in a specific meeting based on topics and meeting type
         """
         # Get subscribers who are:
-        # 1. Active and confirmed
+        # 1. Active and email/phone verified
         # 2. Interested in the meeting type OR have topics that match the meeting
 
-        query = db.query(TopicSubscription).filter(
-            TopicSubscription.is_active == True, TopicSubscription.confirmed == True
+        query = db.query(NotificationPreferences).filter(
+            NotificationPreferences.is_active == True,
+            or_(
+                NotificationPreferences.email_verified == True,
+                NotificationPreferences.phone_verified == True,
+            ),
         )
 
         # Build interest filters
@@ -196,7 +201,7 @@ class NotificationService(BaseService):
         # Filter by meeting type
         if meeting.meeting_type:
             interest_filters.append(
-                cast(TopicSubscription.meeting_types, Text).op("::jsonb @>")(
+                cast(NotificationPreferences.meeting_types, Text).op("::jsonb @>")(
                     json.dumps([meeting.meeting_type])
                 )
             )
@@ -205,9 +210,9 @@ class NotificationService(BaseService):
         if meeting.topics:
             for topic in meeting.topics:
                 interest_filters.append(
-                    cast(TopicSubscription.interested_topics, Text).op("::jsonb @>")(
-                        json.dumps([topic])
-                    )
+                    cast(NotificationPreferences.interested_topics, Text).op(
+                        "::jsonb @>"
+                    )(json.dumps([topic]))
                 )
 
         if interest_filters:
@@ -216,7 +221,7 @@ class NotificationService(BaseService):
         return query.all()
 
     def _get_matched_topics(
-        self, meeting: Meeting, subscription: TopicSubscription
+        self, meeting: Meeting, subscription: NotificationPreferences
     ) -> List[str]:
         """
         Get the topics from the meeting that match the subscriber's interests
