@@ -89,7 +89,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => openPdfInNewTab(fullPdfUrl)}
+              onClick={() => {
+                // Show immediate feedback for Safari users
+                if (isSafari()) {
+                  console.log('Safari user clicked Open in New Tab from iframe view');
+                }
+                openPdfInNewTab(fullPdfUrl);
+              }}
               className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded hover:bg-green-200 transition-colors"
             >
               Open in New Tab →
@@ -125,7 +131,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
               <div className="text-center p-4">
                 <p className="text-red-700 mb-3">{error}</p>
                 <button
-                  onClick={() => openPdfInNewTab(fullPdfUrl)}
+                  onClick={() => {
+                    // Show immediate feedback for Safari users
+                    if (isSafari()) {
+                      console.log('Safari user clicked Open in New Tab from error state');
+                    }
+                    openPdfInNewTab(fullPdfUrl);
+                  }}
                   className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
                 >
                   Open in New Tab →
@@ -165,7 +177,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openPdfInNewTab(fullPdfUrl)}
+            onClick={() => {
+              // Show immediate feedback for Safari users
+              if (isSafari()) {
+                console.log('Safari user clicked Open in New Tab');
+              }
+              openPdfInNewTab(fullPdfUrl);
+            }}
             className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded hover:bg-green-200 transition-colors"
           >
             Open in New Tab →
@@ -210,7 +228,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, meetingTitle: _mee
                   Retry Loading
                 </button>
                 <button
-                  onClick={() => openPdfInNewTab(fullPdfUrl)}
+                  onClick={() => {
+                    // Show immediate feedback for Safari users
+                    if (isSafari()) {
+                      console.log('Safari user clicked Open in New Tab from error overlay');
+                    }
+                    openPdfInNewTab(fullPdfUrl);
+                  }}
                   className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
                 >
                   Open in New Tab →
