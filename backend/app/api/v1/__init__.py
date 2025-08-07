@@ -18,7 +18,9 @@ api_router = APIRouter()
 # Include existing endpoint routers
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(meetings.router, prefix="/meetings", tags=["meetings"])
-api_router.include_router(meeting_images.router, tags=["meeting-images"])
+api_router.include_router(
+    meeting_images.router, prefix="/meeting-images", tags=["meeting-images"]
+)
 api_router.include_router(scraper.router, prefix="/scraper", tags=["scraper"])
 api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
 api_router.include_router(

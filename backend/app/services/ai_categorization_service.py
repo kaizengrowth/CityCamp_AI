@@ -1007,7 +1007,10 @@ class AICategorization:
     def _get_image_paths_from_disk(
         self, meeting_date: datetime.datetime, pdf_filename: str
     ) -> List[str]:
-        """Constructs and returns image paths from local storage based on date and filename."""
+        """Get image URLs using the MeetingImageService (S3 in production, local API in dev)."""
+        from app.core.config import settings
+        from app.services.s3_service import MeetingImageService
+
         # Standardize filename for folder name
         folder_name = self._standardize_filename_for_path(pdf_filename)
 
@@ -1019,13 +1022,13 @@ class AICategorization:
         base_dir = Path("backend/storage/meeting-images")
         meeting_dir = base_dir / str(year) / f"{month:02d}" / f"{day:02d}" / folder_name
 
-        image_paths = []
-        if meeting_dir.exists() and meeting_dir.is_dir():
-            for img_file in sorted(meeting_dir.glob("*.png")):
-                # Construct the URL path for frontend access
-                relative_path = f"/api/v1/meeting-images/{year}/{month:02d}/{day:02d}/{folder_name}/{img_file.name}"
-                image_paths.append(relative_path)
-        return image_paths
+        # Use MeetingImageService to get appropriate URLs
+        image_service = MeetingImageService(settings)
+        meeting_date_str = f"{year}-{month:02d}-{day:02d}"
+
+        return image_service.get_image_urls(
+            meeting_date_str, folder_name, str(meeting_dir)
+        )
 
     def _load_image_as_base64(self, image_path: str) -> str:
         """Load an image from disk and convert to base64 for OpenAI Vision"""
