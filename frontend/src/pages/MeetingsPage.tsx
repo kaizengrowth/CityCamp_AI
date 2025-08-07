@@ -7,6 +7,7 @@ import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, get
 
 import { ImageCarousel } from '../components/ImageCarousel';
 import { PDFViewer } from '../components/PDFViewer';
+import { createOpenInNewTabHandler } from '../utils/pdfUtils';
 
 // Extended Meeting interface with additional properties
 interface Meeting extends BaseMeeting {
@@ -785,15 +786,12 @@ export const MeetingsPage: React.FC = () => {
 
                   {meeting.agenda_url && (
                     <div className="mt-3">
-                      <a
-                        href={meeting.agenda_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        className="text-primary-600 hover:text-primary-800 text-sm font-medium underline"
+                        onClick={createOpenInNewTabHandler(meeting.agenda_url)}
                       >
                         View Agenda →
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
