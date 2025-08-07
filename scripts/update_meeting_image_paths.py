@@ -130,11 +130,13 @@ def update_meeting_image_paths(dry_run: bool = True):
             if not image_files:
                 continue
 
-            # Create relative paths from the images base directory
+            # Create API URLs for the images
             relative_paths = []
             for image_file in image_files:
                 relative_path = str(image_file.relative_to(images_base_dir))
-                relative_paths.append(relative_path)
+                # Convert to API URL format
+                api_url = f"/api/v1/meeting-images/{relative_path}"
+                relative_paths.append(api_url)
 
             logger.info(f"Meeting {meeting.id} ({meeting_date.date()} {meeting_time}): {len(relative_paths)} images")
 
