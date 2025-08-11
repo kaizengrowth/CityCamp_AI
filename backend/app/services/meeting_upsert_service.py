@@ -55,6 +55,7 @@ class MeetingUpsertService:
                     keywords=processed_content.keywords,
                     summary=processed_content.summary,
                     detailed_summary=processed_content.detailed_summary,
+                    key_decisions=processed_content.key_decisions,
                     voting_records=[
                         vote.__dict__ for vote in processed_content.voting_records
                     ],
@@ -74,6 +75,7 @@ class MeetingUpsertService:
                 meeting.keywords = processed_content.keywords
                 meeting.summary = processed_content.summary
                 meeting.detailed_summary = processed_content.detailed_summary
+                meeting.key_decisions = processed_content.key_decisions
                 meeting.voting_records = [
                     vote.__dict__ for vote in processed_content.voting_records
                 ]
