@@ -34,6 +34,8 @@ echo "✅ Virtual environment active: $(which python)"
 # Set environment variables
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/backend"
 export NODE_ENV=development
+# Point backend to Docker Postgres (dev)
+export DATABASE_URL="postgresql://user:password@localhost:5435/citycamp_db"
 
 # Create .env if it doesn't exist
 if [[ ! -f "backend/.env" ]]; then

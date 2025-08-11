@@ -40,10 +40,12 @@ services:
       - SECRET_KEY=your-secret-key-for-development
       - ENVIRONMENT=development
       - DEBUG=True
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - "8002:8000"
     volumes:
       - ./backend:/app
+      - ./data:/app/data
       - /app/venv
     depends_on:
       - postgres
