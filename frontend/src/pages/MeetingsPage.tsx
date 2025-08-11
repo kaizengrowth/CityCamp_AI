@@ -13,12 +13,11 @@ import { createOpenInNewTabHandler } from '../utils/pdfUtils';
 interface Meeting extends BaseMeeting {
   detailed_summary?: string;
   voting_records?: Array<{
-    item_title: string;
-    vote_result: string;
-    votes: Array<{
-      member: string;
-      vote: string;
-    }>;
+    item_title?: string;
+    agenda_item?: string;
+    vote_result?: string;
+    votes?: Array<{ member: string; vote: string }>;
+    outcome?: string;
   }>;
   document_type?: 'agenda' | 'minutes';
   vote_statistics?: {
@@ -28,6 +27,7 @@ interface Meeting extends BaseMeeting {
     unanimous_votes: number;
   };
   image_paths?: string[];  // Add image_paths field
+  key_decisions?: string[];
 }
 
 export const MeetingsPage: React.FC = () => {
@@ -181,6 +181,13 @@ export const MeetingsPage: React.FC = () => {
 
       const meeting = response.meeting;
       meeting.agenda_items = response.agenda_items || [];
+      // Prefer backend proxy URL for PDFs to avoid CORS and path issues
+      if (response.pdf_url) {
+        (meeting as any).minutes_url = response.pdf_url;
+      } else if (meeting.minutes_url && !meeting.minutes_url.startsWith('http') && !meeting.minutes_url.startsWith('/')) {
+        // Local relative path from backend; use meetings proxy endpoint
+        (meeting as any).minutes_url = `/api/v1/meetings/${meeting.id}/pdf`;
+      }
 
       console.log('Meeting fetched successfully:', meeting.title);
       setSelectedMeeting(meeting);
@@ -840,13 +847,15 @@ export const MeetingsPage: React.FC = () => {
                 )}
 
                 {/* AI-Extracted Keywords */}
-                {selectedMeeting.keywords && selectedMeeting.keywords.length > 0 && (
+                {selectedMeeting.keywords && selectedMeeting.keywords.filter(kw => !/(council(or)?|chair|vice|member|bengel|wright|lakin|decter|cue|mclane|gilbert|fogel|bellis|patrick)/i.test(String(kw))).length > 0 && (
                   <div className="p-6 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">
                       🔤 AI-Extracted Keywords
                     </h3>
                     <div className="flex flex-wrap gap-1">
-                      {selectedMeeting.keywords.map((keyword, index) => (
+                      {selectedMeeting.keywords
+                          .filter(kw => !/(council(or)?|chair|vice|member|bengel|wright|lakin|decter|cue|mclane|gilbert|fogel|bellis|patrick)/i.test(String(kw)))
+                          .map((keyword, index) => (
                         <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-xs">
                           {keyword}
                         </span>
@@ -857,13 +866,19 @@ export const MeetingsPage: React.FC = () => {
 
                 {/* Meeting Statistics */}
                 <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-brand-dark-blue mb-4">Meeting Statistics</h3>
+                  <h3 className="text-lg font-medium text-brand-dark-blue mb-4">Meeting Decisions</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">
-                        {selectedMeeting.agenda_items?.length || 0}
+                        {/* Decisions Approved count: prefer vote_statistics.items_passed, fallback to voting_records inferred */}
+                        {(() => {
+                          const stats = selectedMeeting.vote_statistics;
+                          if (stats && typeof stats.items_passed === 'number') return stats.items_passed;
+                          const votes = (selectedMeeting.voting_records || []).filter(v => (v.vote_result || v.outcome || '').toLowerCase() === 'passed' || (v.vote_result || v.outcome || '').toLowerCase() === 'approved');
+                          return votes.length;
+                        })()}
                       </div>
-                      <div className="text-sm text-gray-600">Agenda Items</div>
+                      <div className="text-sm text-gray-600">Decisions Approved</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">
@@ -873,17 +888,44 @@ export const MeetingsPage: React.FC = () => {
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {selectedMeeting.keywords?.length || 0}
+                        {(selectedMeeting.keywords || []).filter(kw => !/(council(or)?|chair|vice|member|bengel|wright|lakin|decter|cue|mclane|gilbert|fogel|bellis|patrick)/i.test(String(kw))).length}
                       </div>
-                      <div className="text-sm text-gray-600">Keywords</div>
+                      <div className="text-sm text-gray-600">Keywords (topics only)</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-orange-600">
-                        {selectedMeeting.agenda_items?.filter(item => item.vote_result && item.vote_result !== 'none').length || 0}
+                        {(() => {
+                          const stats = selectedMeeting.vote_statistics;
+                          if (stats && typeof stats.total_votes === 'number') return stats.total_votes;
+                          const votesTaken = (selectedMeeting.voting_records || []).filter(v => (v.vote_result || v.outcome)).length;
+                          return votesTaken;
+                        })()}
                       </div>
                       <div className="text-sm text-gray-600">Votes Taken</div>
                     </div>
                   </div>
+
+                  {/* Simple approvals chart */}
+                  {(() => {
+                    const stats = selectedMeeting.vote_statistics || { items_passed: 0, items_failed: 0 } as any;
+                    const passed = Number(stats.items_passed || 0);
+                    const failed = Number(stats.items_failed || 0);
+                    const total = Math.max(passed + failed, 1);
+                    const passPct = Math.round((passed / total) * 100);
+                    const failPct = 100 - passPct;
+                    return (
+                      <div className="mt-4">
+                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <span>Approvals: {passed}</span>
+                          <span>Rejections: {failed}</span>
+                        </div>
+                        <div className="w-full h-3 bg-gray-200 rounded overflow-hidden">
+                          <div className="h-3 bg-green-500" style={{ width: `${passPct}%` }} />
+                          <div className="h-3 bg-red-400" style={{ width: `${failPct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* PDF Viewer - show PDF directly from GitHub */}

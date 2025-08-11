@@ -43,6 +43,7 @@ class Meeting(Base):
     keywords = Column(JSON, default=list)  # AI-extracted keywords
     summary = Column(Text, nullable=True)  # AI-generated summary
     detailed_summary = Column(Text, nullable=True)  # Enhanced structured summary
+    key_decisions = Column(JSON, default=list)  # List of key decisions extracted
 
     # Voting information
     voting_records = Column(JSON, default=list)  # List of all votes taken

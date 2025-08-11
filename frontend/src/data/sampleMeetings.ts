@@ -28,6 +28,22 @@ export interface Meeting {
   updated_at?: string;
   agenda_items?: AgendaItem[];
   image_paths?: string[];
+  // Enhanced fields supported by backend
+  detailed_summary?: string;
+  voting_records?: Array<{
+    item_title?: string;
+    agenda_item?: string;
+    vote_result?: string;
+    votes?: Array<{ member: string; vote: string }>;
+    outcome?: string;
+  }>;
+  vote_statistics?: {
+    total_votes: number;
+    items_passed: number;
+    items_failed: number;
+    unanimous_votes: number;
+  };
+  key_decisions?: string[];
 }
 
 // Sample data for demo purposes
