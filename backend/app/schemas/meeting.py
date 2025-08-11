@@ -23,6 +23,7 @@ class MeetingResponse(BaseModel):
     keywords: List[str] = []
     summary: Optional[str]
     detailed_summary: Optional[str] = None
+    key_decisions: List[str] = []
     voting_records: Optional[List[Dict[str, Any]]] = []
     vote_statistics: Optional[Dict[str, Any]] = None
     image_paths: List[str] = []

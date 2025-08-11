@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
@@ -17,7 +18,8 @@ from app.schemas.meeting import (
 )
 from app.services.ai_categorization_service import AICategorization
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import Text, cast
 from sqlalchemy.orm import Session
@@ -76,9 +78,99 @@ async def list_meetings(
     # Apply pagination
     meetings = query.offset(pagination.skip).limit(pagination.limit).all()
 
-    return StandardListResponse[MeetingResponse].create(
-        items=meetings, total=total, skip=pagination.skip, limit=pagination.limit
+    # Ensure statistics fields exist for UI (compute from voting_records or agenda_items if missing)
+    for m in meetings:
+        try:
+            if not m.vote_statistics:
+                votes = m.voting_records or []
+                total_votes = len(votes)
+                items_passed = sum(
+                    1
+                    for v in votes
+                    if str(v.get("vote_result") or v.get("outcome") or "").lower()
+                    in ["passed", "approved"]
+                )
+                items_failed = sum(
+                    1
+                    for v in votes
+                    if str(v.get("vote_result") or v.get("outcome") or "").lower()
+                    in ["failed", "denied"]
+                )
+
+                # If no voting_records, derive from agenda_items relation if loaded via lazy relationship
+                if total_votes == 0 and hasattr(m, "agenda_items") and m.agenda_items:
+                    items_passed = sum(
+                        1
+                        for ai in m.agenda_items
+                        if (ai.vote_result or "").lower() in ["passed", "approved"]
+                    )
+                    items_failed = sum(
+                        1
+                        for ai in m.agenda_items
+                        if (ai.vote_result or "").lower() in ["failed", "denied"]
+                    )
+                    total_votes = items_passed + items_failed
+
+                unanimous_votes = 0  # Unknown without per-member breakdown
+                m.vote_statistics = {
+                    "total_votes": total_votes,
+                    "items_passed": items_passed,
+                    "items_failed": items_failed,
+                    "unanimous_votes": unanimous_votes,
+                }
+        except Exception as e:
+            # Keep as-is if format unexpected
+            logger.debug(f"Meeting vote stats parse skipped: {e}")
+
+    # Convert SQLAlchemy models to Pydantic models to ensure proper serialization
+    meeting_responses = []
+    for m in meetings:
+        try:
+            meeting_data = {
+                "id": m.id,
+                "title": m.title or "",
+                "description": m.description,
+                "meeting_type": m.meeting_type or "",
+                "meeting_date": m.meeting_date,
+                "location": m.location,
+                "meeting_url": m.meeting_url,
+                "agenda_url": m.agenda_url,
+                "minutes_url": m.minutes_url,
+                "status": m.status or "scheduled",
+                "external_id": m.external_id,
+                "source": m.source or "",
+                "topics": m.topics or [],
+                "keywords": [
+                    kw
+                    for kw in (m.keywords or [])
+                    if not re.search(
+                        r"\b(council(or)?|chair|vice|member|bengel|wright|lakin|decter|cue|mclane|gilbert|fogel|bellis|patrick)\b",
+                        str(kw),
+                        flags=re.IGNORECASE,
+                    )
+                ],
+                "summary": m.summary,
+                "detailed_summary": getattr(m, "detailed_summary", None),
+                "key_decisions": getattr(m, "key_decisions", []) or [],
+                "voting_records": m.voting_records or [],
+                "vote_statistics": m.vote_statistics or {},
+                "image_paths": m.image_paths or [],
+                "created_at": m.created_at,
+                "updated_at": m.updated_at,  # Can be None
+            }
+            meeting_responses.append(MeetingResponse(**meeting_data))
+        except Exception as e:
+            logger.error(f"Error serializing meeting {m.id}: {e}")
+            # Skip problematic meetings rather than failing the entire request
+            continue
+
+    payload = StandardListResponse[MeetingResponse].create(
+        items=meeting_responses,
+        total=total,
+        skip=pagination.skip,
+        limit=pagination.limit,
     )
+    return JSONResponse(content=jsonable_encoder(payload))
 
 
 @router.get("/{meeting_id}", response_model=MeetingDetailResponse)
@@ -100,6 +192,45 @@ async def get_meeting_detail(meeting_id: int, db: Session = Depends(get_db)):
     agenda_items = (
         db.query(AgendaItem).filter(AgendaItem.meeting_id == meeting_id).all()
     )
+
+    # Populate missing statistics and key_decisions from available data
+    if not meeting.vote_statistics:
+        votes = meeting.voting_records or []
+        total_votes = len(votes)
+        items_passed = sum(
+            1
+            for v in votes
+            if str(v.get("vote_result") or v.get("outcome") or "").lower() == "passed"
+        )
+        items_failed = sum(
+            1
+            for v in votes
+            if str(v.get("vote_result") or v.get("outcome") or "").lower() == "failed"
+        )
+        unanimous_votes = 0
+        meeting.vote_statistics = {
+            "total_votes": total_votes,
+            "items_passed": items_passed,
+            "items_failed": items_failed,
+            "unanimous_votes": unanimous_votes,
+        }
+
+    # key_decisions fallback from agenda_items or voting records if missing
+    if not getattr(meeting, "key_decisions", None):
+        derived: List[str] = []
+        for item in agenda_items:
+            if item.vote_result and item.vote_result.lower() in ["passed", "approved"]:
+                derived.append(f"Approved: {item.title}")
+            elif item.vote_result and item.vote_result.lower() in ["failed", "denied"]:
+                derived.append(f"Denied: {item.title}")
+        if not derived and (meeting.voting_records or []):
+            for v in meeting.voting_records:
+                outcome = str(v.get("vote_result") or v.get("outcome") or "").lower()
+                if outcome in ["passed", "approved"]:
+                    derived.append(f"Approved: {v.get('agenda_item') or 'Item'}")
+                elif outcome in ["failed", "denied"]:
+                    derived.append(f"Denied: {v.get('agenda_item') or 'Item'}")
+        meeting.key_decisions = derived
 
     # Get category details
     categories = []
