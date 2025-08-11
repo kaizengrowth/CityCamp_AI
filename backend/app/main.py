@@ -1,6 +1,8 @@
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from app.core.config import settings
 from app.core.database import create_tables
@@ -18,6 +20,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from app.api.v1 import api_router
+
+
+# Custom JSON encoder for datetime objects
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 # Configure logging
 logging.basicConfig(

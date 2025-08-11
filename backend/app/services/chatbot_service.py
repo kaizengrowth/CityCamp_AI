@@ -527,18 +527,16 @@ Be natural, conversational, and as helpful as possible in encouraging civic part
 
             system_prompt = self.get_system_prompt()
 
-            # Get context from local database
-            meeting_context = self._get_context_from_recent_meetings()
-            campaign_context = self._get_context_from_campaigns()
+            # Skip database context queries for faster responses
+            # TODO: Re-enable when database performance is optimized
+            # meeting_context = self._get_context_from_recent_meetings()
+            # campaign_context = self._get_context_from_campaigns()
 
             # Build messages for OpenAI
             messages = [
                 {
                     "role": "system",
-                    "content": (
-                        f"{system_prompt}\n\nCurrent local context:\n"
-                        f"{meeting_context}\n{campaign_context}"
-                    ),
+                    "content": system_prompt,
                 }
             ]
 
@@ -559,20 +557,38 @@ Be natural, conversational, and as helpful as possible in encouraging civic part
 
             logger.info(f"Calling OpenAI GPT-4 API with {len(messages)} messages...")
 
-            # Get response from OpenAI without function calling (faster responses)
-            response = self.client.chat.completions.create(
-                model="gpt-4.1",  # Latest GPT-4.1 model with enhanced capabilities
-                messages=messages,
-                max_tokens=800,  # Increased for more comprehensive responses
-                temperature=0.7,
-                # functions=self.get_function_definitions(),  # Disabled until RAG database is populated
-                # function_call="auto",  # Disabled for faster responses
-            )
+            # Enable function-calling RAG only when configured
+            if self.settings.enable_rag:
+                response = self.client.chat.completions.create(
+                    model="gpt-4.1",
+                    messages=messages,
+                    max_tokens=800,
+                    temperature=0.7,
+                    functions=self.get_function_definitions(),
+                    function_call="auto",
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model="gpt-4.1",
+                    messages=messages,
+                    max_tokens=800,
+                    temperature=0.7,
+                )
 
             message = response.choices[0].message
 
-            # Function calling disabled for faster responses
-            # When RAG database is populated, re-enable function calling above
+            # If the model requested a function, execute it (RAG path)
+            if self.settings.enable_rag and getattr(message, "function_call", None):
+                try:
+                    fn_name = message.function_call.name
+                    args_json = message.function_call.arguments or "{}"
+                    args = json.loads(args_json)
+                    tool_result = await self.process_function_call(fn_name, args)
+                    return tool_result
+                except Exception as e:
+                    logger.error(f"Function call handling failed: {e}")
+
+            # Fall back to normal assistant content
             ai_response = message.content.strip()
 
             logger.info(f"Generated AI response: {ai_response[:100]}...")

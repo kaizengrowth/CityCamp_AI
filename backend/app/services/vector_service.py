@@ -68,11 +68,19 @@ class ChromaVectorStore(VectorStore):
 
     def __init__(self, collection_name: str = "tulsa_documents"):
         self.collection_name = collection_name
-        self.client = chromadb.Client(
-            ChromaSettings(
-                persist_directory="./data/chroma_db", anonymized_telemetry=False
+        # Use persistent client so data survives process restarts
+        persist_dir = "./data/chroma_db"
+        try:
+            self.client = chromadb.PersistentClient(path=persist_dir)
+        except Exception:
+            # Fallback for older chromadb versions
+            self.client = chromadb.Client(
+                ChromaSettings(
+                    chroma_db_impl="duckdb+parquet",
+                    persist_directory=persist_dir,
+                    anonymized_telemetry=False,
+                )
             )
-        )
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             metadata={"description": "Tulsa civic documents for RAG"},
@@ -91,6 +99,11 @@ class ChromaVectorStore(VectorStore):
             self.collection.add(
                 embeddings=embeddings, documents=documents, metadatas=metadata, ids=ids
             )
+            # Ensure data is flushed to disk for other processes (e.g., API container)
+            try:
+                self.client.persist()
+            except Exception as e:
+                logger.debug(f"Chroma persist skipped: {e}")
             return True
         except Exception as e:
             logger.error(f"Error adding vectors to ChromaDB: {e}")
