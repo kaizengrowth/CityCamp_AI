@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,6 +26,7 @@ from sqlalchemy import Text, cast
 from sqlalchemy.orm import Session
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=StandardListResponse[MeetingResponse])
