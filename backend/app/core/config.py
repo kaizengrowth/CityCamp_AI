@@ -60,6 +60,9 @@ class Settings(BaseSettings):
         "http://localhost:3005",
     ]
 
+    # RAG
+    enable_rag: bool = False
+
     # Project info
     project_name: str = "CityCamp AI"
     project_description: str = "Tulsa Civic Engagement Platform"
