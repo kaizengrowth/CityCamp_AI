@@ -20,7 +20,9 @@ echo "📦 PYTHONPATH configured"
 
 # Set environment variables
 export NODE_ENV=development
-export DATABASE_URL="postgresql://citycamp_user:CityCamp2005%21@citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com:5432/postgres"
+# Use local database for development
+export DATABASE_URL="postgresql://user:password@localhost:5435/citycamp_db"
+export REDIS_URL="redis://localhost:6382/0"
 
 echo ""
 echo "✅ Development environment ready!"
