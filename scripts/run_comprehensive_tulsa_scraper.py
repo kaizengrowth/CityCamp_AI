@@ -12,6 +12,10 @@ import argparse
 # Add the backend directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
+# Load environment variables from backend/.env
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent.parent / "backend" / ".env")
+
 from app.scrapers.tulsa_archive_scraper import TulsaArchiveScraper
 from app.core.database import SessionLocal
 from app.services.ai_categorization_service import AICategorization
@@ -44,6 +48,8 @@ async def run_comprehensive_scraper(
         import os
         os.environ['DATABASE_URL'] = aws_db_url
         print("🔗 Using AWS RDS database")
+    else:
+        print("🔗 Using local database configuration")
 
     db = SessionLocal()
 
