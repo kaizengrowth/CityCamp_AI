@@ -8,8 +8,13 @@ from pathlib import Path
 # Add the backend directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
+# Load environment variables from backend/.env
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent.parent / "backend" / ".env")
+
 from app.core.config import Settings
 from app.core.database import SessionLocal, engine
+from sqlalchemy import text
 
 def test_db_connection():
     """Test database connection"""
@@ -39,8 +44,8 @@ def test_db_connection():
         db = SessionLocal()
         print("✅ Database connection successful!")
 
-        # Test query
-        result = db.execute("SELECT 1 as test;")
+        # Test query - use text() for SQLAlchemy 2.0 compatibility
+        result = db.execute(text("SELECT 1 as test;"))
         print(f"✅ Test query successful: {result.fetchone()}")
 
         db.close()
