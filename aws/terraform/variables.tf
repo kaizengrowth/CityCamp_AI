@@ -10,6 +10,26 @@ variable "aws_account_id" {
   default     = "538569249671"
 }
 
+variable "instance_type" {
+  description = "EC2 instance type for the simple deployment"
+  type        = string
+  default     = "t3.medium"
+
+  validation {
+    condition = contains([
+      "t3.small", "t3.medium", "t3.large", "t3.xlarge",
+      "m5.large", "m5.xlarge", "m6i.large", "m6i.xlarge"
+    ], var.instance_type)
+    error_message = "Instance type must be one of: t3.small, t3.medium, t3.large, t3.xlarge, m5.large, m5.xlarge, m6i.large, m6i.xlarge."
+  }
+}
+
+variable "ec2_key_name" {
+  description = "EC2 Key Pair name for SSH access"
+  type        = string
+  default     = null
+}
+
 variable "project_name" {
   description = "Name of the project"
   type        = string
