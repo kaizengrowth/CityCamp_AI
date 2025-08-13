@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "citycamp-ai-terraform-state-us-east-2"
+    bucket         = "citycamp-ai-terraform-state"
     key            = "terraform.tfstate"
-    region         = "us-east-2"
+    region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "citycamp-ai-terraform-locks-us-east-2"
+    dynamodb_table = "citycamp-ai-terraform-locks"
   }
 }

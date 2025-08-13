@@ -12,6 +12,12 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Provider for ACM certificates (CloudFront requires certificates in us-east-1)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 # VPC and Networking
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
@@ -193,7 +199,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_ssm_policy" {
           "ssm:GetParametersByPath"
         ]
         Resource = [
-          "arn:aws:ssm:${var.aws_region}:*:parameter/citycamp-ai/*"
+          "arn:aws:ssm:us-east-1:*:parameter/citycamp-ai/*"
         ]
       }
     ]
@@ -480,11 +486,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   ]
 
   viewer_certificate {
-    # TODO: Update ACM certificate ARN for us-east-2 region
-    # acm_certificate_arn      = var.acm_certificate_arn
-    cloudfront_default_certificate = true
-    # ssl_support_method       = "sni-only"
-    # minimum_protocol_version = "TLSv1.2_2021"
+    # NOTE: ACM certificate for CloudFront must be in us-east-1 region
+    acm_certificate_arn            = aws_acm_certificate_validation.frontend.certificate_arn
+    cloudfront_default_certificate = false
+    ssl_support_method             = "sni-only"
+    minimum_protocol_version       = "TLSv1.2_2021"
   }
 
   tags = var.common_tags
@@ -503,6 +509,86 @@ resource "random_string" "bucket_suffix" {
   upper   = false
 }
 
+# ACM Certificate for CloudFront (must be in us-east-1 for CloudFront)
+resource "aws_acm_certificate" "frontend" {
+  provider          = aws.us_east_1
+  domain_name       = "tulsai.city"
+  validation_method = "DNS"
+
+  subject_alternative_names = [
+    "www.tulsai.city"
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = var.common_tags
+}
+
+# Route53 records for ACM certificate validation
+resource "aws_route53_record" "frontend_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.frontend.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.main.zone_id
+}
+
+# ACM certificate validation
+resource "aws_acm_certificate_validation" "frontend" {
+  provider        = aws.us_east_1
+  certificate_arn = aws_acm_certificate.frontend.arn
+  validation_record_fqdns = [
+    for record in aws_route53_record.frontend_validation : record.fqdn
+  ]
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+# Data source for Route53 hosted zone
+data "aws_route53_zone" "main" {
+  name         = "tulsai.city"
+  private_zone = false
+}
+
+# Route53 A record for apex domain
+resource "aws_route53_record" "frontend_apex" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "tulsai.city"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# Route53 A record for www subdomain
+resource "aws_route53_record" "frontend_www" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "www.tulsai.city"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "main" {
   family                   = "${var.project_name}-task"
@@ -516,7 +602,7 @@ resource "aws_ecs_task_definition" "main" {
   container_definitions = jsonencode([
     {
       name  = "${var.project_name}-backend"
-      image = "538569249671.dkr.ecr.${var.aws_region}.amazonaws.com/citycamp-ai-backend:latest"
+      image = "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest"
 
       portMappings = [
         {
@@ -666,4 +752,20 @@ output "alb_target_group_arn" {
 output "s3_bucket_name" {
   description = "The name of the S3 bucket for frontend"
   value       = aws_s3_bucket.frontend.bucket
+}
+
+output "acm_certificate_arn" {
+  description = "The ARN of the ACM certificate"
+  value       = aws_acm_certificate.frontend.arn
+}
+
+output "domain_validation_records" {
+  description = "Domain validation DNS records for ACM certificate"
+  value = {
+    for dvo in aws_acm_certificate.frontend.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+    }
+  }
 }
