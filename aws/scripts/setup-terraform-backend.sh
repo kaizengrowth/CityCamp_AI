@@ -8,9 +8,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-BUCKET_NAME="citycamp-ai-terraform-state"
-DYNAMODB_TABLE="citycamp-ai-terraform-locks"
-AWS_REGION="us-east-1"
+BUCKET_NAME="citycamp-ai-terraform-state-us-east-2"
+DYNAMODB_TABLE="citycamp-ai-terraform-locks-us-east-2"
+AWS_REGION="us-east-2"
 
 echo -e "${YELLOW}Setting up Terraform backend resources...${NC}"
 

@@ -193,7 +193,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_ssm_policy" {
           "ssm:GetParametersByPath"
         ]
         Resource = [
-          "arn:aws:ssm:us-east-1:*:parameter/citycamp-ai/*"
+          "arn:aws:ssm:${var.aws_region}:*:parameter/citycamp-ai/*"
         ]
       }
     ]
@@ -480,9 +480,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   ]
 
   viewer_certificate {
-    acm_certificate_arn      = "arn:aws:acm:us-east-1:538569249671:certificate/92809c5b-b9f5-45e8-b6dd-e318ae7c614d"
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    # TODO: Update ACM certificate ARN for us-east-2 region
+    # acm_certificate_arn      = var.acm_certificate_arn
+    cloudfront_default_certificate = true
+    # ssl_support_method       = "sni-only"
+    # minimum_protocol_version = "TLSv1.2_2021"
   }
 
   tags = var.common_tags
@@ -514,7 +516,7 @@ resource "aws_ecs_task_definition" "main" {
   container_definitions = jsonencode([
     {
       name  = "${var.project_name}-backend"
-      image = "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest"
+      image = "538569249671.dkr.ecr.${var.aws_region}.amazonaws.com/citycamp-ai-backend:latest"
 
       portMappings = [
         {

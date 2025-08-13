@@ -5,7 +5,7 @@
 
 set -e
 
-AWS_REGION="us-east-1"
+AWS_REGION="us-east-2"
 PARAMETER_PREFIX="/citycamp-ai"
 
 echo "🔧 Setting up SSM parameters for CityCamp AI..."

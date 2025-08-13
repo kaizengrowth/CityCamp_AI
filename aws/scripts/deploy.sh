@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_NAME="citycamp-ai"
-AWS_REGION="us-east-1"
+AWS_REGION="us-east-2"
 ECR_REPOSITORY_BACKEND="${PROJECT_NAME}-backend"
 ECR_REPOSITORY_FRONTEND="${PROJECT_NAME}-frontend"
 
