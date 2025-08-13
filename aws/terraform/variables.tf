@@ -4,29 +4,6 @@ variable "aws_region" {
   default     = "us-east-2"
 }
 
-variable "aws_account_id" {
-  description = "AWS account ID"
-  type        = string
-  default     = "538569249671"
-}
-
-variable "instance_type" {
-  description = "EC2 instance type for the simple deployment"
-  type        = string
-  default     = "t3.medium"
-
-  validation {
-    condition     = contains(["t3.small", "t3.medium", "t3.large", "t3.xlarge", "m5.large", "m5.xlarge", "m6i.large", "m6i.xlarge"], var.instance_type)
-    error_message = "Instance type must be one of: t3.small, t3.medium, t3.large, t3.xlarge, m5.large, m5.xlarge, m6i.large, m6i.xlarge."
-  }
-}
-
-variable "ec2_key_name" {
-  description = "EC2 Key Pair name for SSH access"
-  type        = string
-  default     = null
-}
-
 variable "project_name" {
   description = "Name of the project"
   type        = string
@@ -57,56 +34,20 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.101.0/24", "10.0.102.0/24"]
 }
 
-variable "db_instance_class" {
-  description = "RDS instance class"
+variable "ec2_instance_type" {
+  description = "EC2 instance type"
   type        = string
-  default     = "db.t3.micro"
+  default     = "t3.medium"
 }
 
-variable "db_allocated_storage" {
-  description = "RDS allocated storage in GB"
-  type        = number
-  default     = 20
-}
-
-variable "db_max_allocated_storage" {
-  description = "RDS maximum allocated storage in GB"
-  type        = number
-  default     = 100
-}
-
-variable "db_name" {
-  description = "RDS database name"
+variable "key_pair_name" {
+  description = "Name of the AWS key pair for EC2 access"
   type        = string
-  default     = "citycamp_db"
+  default     = ""
 }
 
-variable "db_username" {
-  description = "RDS database username"
-  type        = string
-  default     = "citycamp_user"
-}
-
-variable "db_password" {
-  description = "RDS database password"
-  type        = string
-  sensitive   = true
-}
-
-variable "db_backup_retention_period" {
-  description = "RDS backup retention period in days"
-  type        = number
-  default     = 7
-}
-
-variable "redis_node_type" {
-  description = "ElastiCache Redis node type"
-  type        = string
-  default     = "cache.t3.micro"
-}
-
-variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for CloudFront"
+variable "ssl_certificate_arn" {
+  description = "ARN of the SSL certificate for HTTPS listener"
   type        = string
   default     = ""
 }
