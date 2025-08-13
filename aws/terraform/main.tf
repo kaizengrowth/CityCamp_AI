@@ -5,6 +5,18 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
+  }
+
+  backend "s3" {
+    bucket         = "citycamp-ai-terraform-state-us-east-2"
+    key            = "terraform.tfstate"
+    region         = "us-east-2"
+    encrypt        = true
+    dynamodb_table = "citycamp-ai-terraform-locks-us-east-2"
   }
 }
 
@@ -12,9 +24,31 @@ provider "aws" {
   region = var.aws_region
 }
 
-# VPC and Networking
+# Data source for Route 53 hosted zone
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
+}
+
+# Data source for the latest Amazon Linux 2 AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# VPC Module - matches production vpc-001c522138d5a9493
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
 
   name = "${var.project_name}-vpc"
@@ -24,370 +58,58 @@ module "vpc" {
   private_subnets = var.private_subnet_cidrs
   public_subnets  = var.public_subnet_cidrs
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway = false
+  single_nat_gateway = false
   enable_vpn_gateway = false
 
   tags = var.common_tags
 }
 
-# Security group for VPC Interface Endpoints (allow HTTPS from ECS tasks)
-resource "aws_security_group" "vpc_endpoints" {
-  name_prefix = "${var.project_name}-vpce-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_tasks.id]
-    description     = "Allow HTTPS from ECS tasks to interface endpoints"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# ACM Certificate for SSL (created in us-east-2 for ALB use)
+resource "aws_acm_certificate" "main" {
+  domain_name = var.domain_name
+  subject_alternative_names = [
+    "www.${var.domain_name}",
+    "api.${var.domain_name}"
+  ]
+  validation_method = "DNS"
 
   tags = var.common_tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
-# Gateway endpoint for S3 (keeps S3 traffic inside AWS, avoids NAT)
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = module.vpc.vpc_id
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-
-  route_table_ids = module.vpc.private_route_table_ids
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-s3"
-  })
-}
-
-# Interface endpoints for common services used by ECS tasks
-# ECR API
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ecr-api"
-  })
-}
-
-# ECR DKR (image layer pulls)
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ecr-dkr"
-  })
-}
-
-# CloudWatch Logs
-resource "aws_vpc_endpoint" "logs" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.logs"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-logs"
-  })
-}
-
-# Systems Manager (for future use / metadata access without NAT)
-resource "aws_vpc_endpoint" "ssm" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ssm"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ssm"
-  })
-}
-
-# Secrets Manager
-resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-secretsmanager"
-  })
-}
-
-# STS (token exchange within VPC)
-resource "aws_vpc_endpoint" "sts" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.sts"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-sts"
-  })
-}
-
-# RDS PostgreSQL
-resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = module.vpc.private_subnets
-
-  tags = var.common_tags
-}
-
-# Public subnet group for RDS external access
-resource "aws_db_subnet_group" "public" {
-  name       = "${var.project_name}-db-public-subnet-group"
-  subnet_ids = module.vpc.public_subnets
-
-  tags = var.common_tags
-}
-
-resource "aws_security_group" "rds" {
-  name_prefix = "${var.project_name}-rds-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_tasks.id]
+# Route 53 records for DNS validation
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
   }
 
-  # Allow access from your current IP for database management
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = ["99.167.223.242/32"]
-    description = "Allow access from development IP"
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.main.zone_id
+}
+
+# ACM Certificate validation
+resource "aws_acm_certificate_validation" "main" {
+  certificate_arn         = aws_acm_certificate.main.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+
+  timeouts {
+    create = "10m"
   }
-
-  tags = var.common_tags
 }
 
-resource "aws_db_instance" "main" {
-  identifier = "${var.project_name}-db"
-
-  engine         = "postgres"
-  engine_version = "15.12"
-  instance_class = var.db_instance_class
-
-  allocated_storage     = var.db_allocated_storage
-  max_allocated_storage = var.db_max_allocated_storage
-  storage_encrypted     = true
-
-  db_name  = var.db_name
-  username = var.db_username
-  password = var.db_password
-
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  db_subnet_group_name   = aws_db_subnet_group.public.name
-  publicly_accessible    = true
-
-  backup_retention_period = var.db_backup_retention_period
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "sun:04:00-sun:05:00"
-
-  skip_final_snapshot = false
-  final_snapshot_identifier = "${var.project_name}-db-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-
-  tags = var.common_tags
-}
-
-# ElastiCache Redis
-resource "aws_elasticache_subnet_group" "main" {
-  name       = "${var.project_name}-redis-subnet-group"
-  subnet_ids = module.vpc.private_subnets
-}
-
-resource "aws_security_group" "redis" {
-  name_prefix = "${var.project_name}-redis-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port       = 6379
-    to_port         = 6379
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_tasks.id]
-  }
-
-  tags = var.common_tags
-}
-
-resource "aws_elasticache_cluster" "main" {
-  cluster_id           = "${var.project_name}-redis"
-  engine               = "redis"
-  node_type            = var.redis_node_type
-  num_cache_nodes      = 1
-  parameter_group_name = "default.redis7"
-  port                 = 6379
-  security_group_ids   = [aws_security_group.redis.id]
-  subnet_group_name    = aws_elasticache_subnet_group.main.name
-
-  tags = var.common_tags
-}
-
-# CloudWatch Log Group for ECS
-resource "aws_cloudwatch_log_group" "ecs_backend" {
-  name              = "/ecs/citycamp-ai-backend"
-  retention_in_days = 30
-
-  tags = var.common_tags
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "${var.project_name}-cluster"
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-
-  tags = var.common_tags
-}
-
-# ECS Task Execution Role
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.project_name}-ecs-task-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# Additional policy for SSM parameter access
-resource "aws_iam_role_policy" "ecs_task_execution_ssm_policy" {
-  name = "${var.project_name}-ecs-task-execution-ssm-policy"
-  role = aws_iam_role.ecs_task_execution_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameters",
-          "ssm:GetParameter",
-          "ssm:GetParametersByPath"
-        ]
-        Resource = [
-          "arn:aws:ssm:us-east-1:*:parameter/citycamp-ai/*"
-        ]
-      }
-    ]
-  })
-}
-
-# ECS Task Role
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.project_name}-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-# ECS Security Group
-resource "aws_security_group" "ecs_tasks" {
-  name_prefix = "${var.project_name}-ecs-tasks-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port       = 8000
-    to_port         = 8000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.common_tags
-}
-
-# Application Load Balancer
-resource "aws_security_group" "alb" {
-  name_prefix = "${var.project_name}-alb-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.common_tags
-}
-
+# Application Load Balancer - matches production citycamp-ai-alb
 resource "aws_lb" "main" {
   name               = "${var.project_name}-alb"
   internal           = false
@@ -400,12 +122,86 @@ resource "aws_lb" "main" {
   tags = var.common_tags
 }
 
-resource "aws_lb_target_group" "main" {
-  name        = "${var.project_name}-tg-ip"
-  port        = 8000
-  protocol    = "HTTP"
-  target_type = "ip"
+# Security Group for ALB
+resource "aws_security_group" "alb" {
+  name_prefix = "${var.project_name}-alb-"
   vpc_id      = module.vpc.vpc_id
+
+  # HTTP from internet
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP from internet"
+  }
+
+  # HTTPS from internet
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS from internet"
+  }
+
+  # All outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.common_tags
+}
+
+# Security group for EC2 instance
+resource "aws_security_group" "ec2_simple" {
+  name_prefix = "${var.project_name}-ec2-simple-"
+  vpc_id      = module.vpc.vpc_id
+
+  # HTTP access
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS access
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Backend API port (for ALB health checks)
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  # All outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.common_tags
+}
+
+# ALB Target Group - matches production citycamp-ai-simple-tg
+resource "aws_lb_target_group" "main" {
+  name     = "${var.project_name}-simple-tg"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = module.vpc.vpc_id
 
   health_check {
     enabled             = true
@@ -422,311 +218,203 @@ resource "aws_lb_target_group" "main" {
   tags = var.common_tags
 }
 
-resource "aws_lb_listener" "main" {
+# ALB HTTP Listener - redirects to HTTPS (matches production)
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
-    forward {
-      target_group {
-        arn = aws_lb_target_group.main.arn
-      }
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
     }
   }
+}
+
+# ALB HTTPS Listener - forwards to target group (matches production)
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_acm_certificate_validation.main.certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.main.arn
+  }
+}
+
+# Route 53 A records pointing to ALB
+resource "aws_route53_record" "main" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = var.domain_name
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "www" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "www.${var.domain_name}"
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "api" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "api.${var.domain_name}"
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+# IAM role for EC2 instance
+resource "aws_iam_role" "ec2_simple_role" {
+  name = "${var.project_name}-ec2-simple-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
 
   tags = var.common_tags
 }
 
-# S3 Bucket for Frontend
-resource "aws_s3_bucket" "frontend" {
-  bucket = "${var.project_name}-frontend-${random_string.bucket_suffix.result}"
-
-  tags = var.common_tags
-}
-
-resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket_policy" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+# IAM policy for SSM access
+resource "aws_iam_role_policy" "ec2_simple_ssm_policy" {
+  name = "${var.project_name}-ec2-simple-ssm-policy"
+  role = aws_iam_role.ec2_simple_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontAccess"
-        Effect    = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.frontend.arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.frontend.arn
-          }
-        }
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/citycamp-ai/*"
+        ]
       }
     ]
   })
 }
 
-# CloudFront Origin Access Control (OAC)
-resource "aws_cloudfront_origin_access_control" "frontend" {
-  name                              = "${var.project_name}-frontend-oac"
-  description                       = "OAC for ${var.project_name} frontend S3 bucket"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
+# Attach CloudWatch agent policy
+resource "aws_iam_role_policy_attachment" "ec2_simple_cloudwatch" {
+  role       = aws_iam_role.ec2_simple_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# CloudFront Distribution
-resource "aws_cloudfront_distribution" "frontend" {
-  # S3 Origin for static frontend files
-  origin {
-    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.frontend.bucket}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
-  }
+# Attach SSM managed instance policy
+resource "aws_iam_role_policy_attachment" "ec2_simple_ssm" {
+  role       = aws_iam_role.ec2_simple_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
 
-  # ALB Origin for API requests
-  origin {
-    domain_name = aws_lb.main.dns_name
-    origin_id   = "ALB-${var.project_name}-backend"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-
-  # Default behavior for frontend static files
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.bucket}"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-  }
-
-  # Cache behavior for API requests
-  ordered_cache_behavior {
-    path_pattern     = "/api/*"
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = "ALB-${var.project_name}-backend"
-
-    forwarded_values {
-      query_string = true
-      headers      = ["Authorization", "Content-Type", "Accept"]
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
-  }
-
-  # Cache behavior for health check
-  ordered_cache_behavior {
-    path_pattern     = "/health"
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = "ALB-${var.project_name}-backend"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
-  }
-
-  # Handle SPA routing
-  custom_error_response {
-    error_code         = 404
-    response_code      = "200"
-    response_page_path = "/index.html"
-  }
-
-  custom_error_response {
-    error_code         = 403
-    response_code      = "200"
-    response_page_path = "/index.html"
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  aliases = [
-    "tulsai.city",
-    "www.tulsai.city"
-  ]
-
-  viewer_certificate {
-    acm_certificate_arn      = "arn:aws:acm:us-east-1:538569249671:certificate/92809c5b-b9f5-45e8-b6dd-e318ae7c614d"
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-  }
+# Instance profile
+resource "aws_iam_instance_profile" "ec2_simple_profile" {
+  name = "${var.project_name}-ec2-simple-profile"
+  role = aws_iam_role.ec2_simple_role.name
 
   tags = var.common_tags
 }
 
-# Keep the old OAI temporarily to avoid dependency issues
-# We'll remove this after the CloudFront distribution is updated
-resource "aws_cloudfront_origin_access_identity" "frontend" {
-  comment = "OAI for ${var.project_name} frontend"
+# User data script to set up Docker and the application
+locals {
+  user_data = base64encode(templatefile("${path.module}/user_data.tpl", {
+    aws_region     = var.aws_region
+    project_name   = var.project_name
+    repository_url = var.repository_url
+  }))
 }
 
-# Random string for bucket naming
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
+# EC2 instance
+resource "aws_instance" "simple" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = var.instance_type
+  key_name               = var.ec2_key_name
+  vpc_security_group_ids = [aws_security_group.ec2_simple.id]
+  subnet_id              = module.vpc.public_subnets[0]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_simple_profile.name
 
-# ECS Task Definition
-resource "aws_ecs_task_definition" "main" {
-  family                   = "${var.project_name}-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "512"
-  memory                   = "1024"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_role.arn
+  user_data = local.user_data
 
-  container_definitions = jsonencode([
-    {
-      name  = "${var.project_name}-backend"
-      image = "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest"
-
-      portMappings = [
-        {
-          containerPort = 8000
-          protocol      = "tcp"
-        }
-      ]
-
-      environment = [
-        {
-          name  = "ENVIRONMENT"
-          value = "production"
-        }
-      ]
-
-      secrets = [
-        {
-          name      = "DATABASE_URL"
-          valueFrom = "/citycamp-ai/database-url"
-        },
-        {
-          name      = "REDIS_URL"
-          valueFrom = "/citycamp-ai/redis-url"
-        },
-        {
-          name      = "SECRET_KEY"
-          valueFrom = "/citycamp-ai/secret-key"
-        },
-        {
-          name      = "OPENAI_API_KEY"
-          valueFrom = "/citycamp-ai/openai-api-key"
-        },
-        {
-          name      = "TWILIO_ACCOUNT_SID"
-          valueFrom = "/citycamp-ai/twilio-account-sid"
-        },
-        {
-          name      = "TWILIO_AUTH_TOKEN"
-          valueFrom = "/citycamp-ai/twilio-auth-token"
-        },
-        {
-          name      = "TWILIO_PHONE_NUMBER"
-          valueFrom = "/citycamp-ai/twilio-phone-number"
-        },
-        {
-          name      = "SMTP_USERNAME"
-          valueFrom = "/citycamp-ai/smtp-username"
-        },
-        {
-          name      = "SMTP_PASSWORD"
-          valueFrom = "/citycamp-ai/smtp-password"
-        }
-      ]
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs_backend.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
-
-      essential = true
-    }
-  ])
-
-  tags = var.common_tags
-}
-
-# ECS Service
-resource "aws_ecs_service" "main" {
-  name            = "${var.project_name}-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.main.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    security_groups  = [aws_security_group.ecs_tasks.id]
-    subnets          = module.vpc.public_subnets
-    assign_public_ip = true
+  # Root volume
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = 20
+    encrypted             = true
+    delete_on_termination = true
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.main.arn
-    container_name   = "${var.project_name}-backend"
-    container_port   = 8000
+  # Additional EBS volume for data persistence
+  ebs_block_device {
+    device_name           = "/dev/sdf"
+    volume_type           = "gp3"
+    volume_size           = 20
+    encrypted             = true
+    delete_on_termination = false
   }
 
-  depends_on = [aws_lb_listener.main]
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-simple-instance"
+  })
 
-  tags = var.common_tags
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Elastic IP for the instance
+resource "aws_eip" "simple" {
+  instance = aws_instance.simple.id
+  domain   = "vpc"
+
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-simple-eip"
+  })
+
+  depends_on = [aws_instance.simple]
+}
+
+# Target group attachment
+resource "aws_lb_target_group_attachment" "simple" {
+  target_group_arn = aws_lb_target_group.main.arn
+  target_id        = aws_instance.simple.id
+  port             = 8000
 }
 
 # Outputs
@@ -735,24 +423,39 @@ output "alb_dns_name" {
   value       = aws_lb.main.dns_name
 }
 
-output "cloudfront_domain_name" {
-  description = "The domain name of the CloudFront distribution"
-  value       = aws_cloudfront_distribution.frontend.domain_name
+output "alb_zone_id" {
+  description = "The hosted zone ID of the load balancer"
+  value       = aws_lb.main.zone_id
 }
 
-output "rds_endpoint" {
-  description = "The RDS instance endpoint"
-  value       = aws_db_instance.main.endpoint
+output "alb_target_group_arn" {
+  description = "ARN of the ALB target group"
+  value       = aws_lb_target_group.main.arn
 }
 
-output "redis_endpoint" {
-  description = "The ElastiCache Redis endpoint"
-  value       = aws_elasticache_cluster.main.cache_nodes.0.address
+output "ec2_public_ip" {
+  description = "Public IP of the EC2 instance"
+  value       = aws_eip.simple.public_ip
 }
 
-output "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
-  value       = aws_ecs_cluster.main.name
+output "ec2_instance_id" {
+  description = "ID of the EC2 instance"
+  value       = aws_instance.simple.id
+}
+
+output "ssl_certificate_arn" {
+  description = "ARN of the SSL certificate"
+  value       = aws_acm_certificate.main.arn
+}
+
+output "application_urls" {
+  description = "Application URLs with SSL certificates"
+  value = {
+    main_site = "https://${var.domain_name}"
+    www_site  = "https://www.${var.domain_name}"
+    api       = "https://api.${var.domain_name}"
+  }
+  sensitive = true
 }
 
 output "vpc_id" {
@@ -760,27 +463,12 @@ output "vpc_id" {
   value       = module.vpc.vpc_id
 }
 
-output "private_subnets" {
-  description = "List of private subnet IDs"
-  value       = module.vpc.private_subnets
-}
-
 output "public_subnets" {
   description = "List of public subnet IDs"
   value       = module.vpc.public_subnets
 }
 
-output "ecs_security_group_id" {
-  description = "The ID of the ECS security group"
-  value       = aws_security_group.ecs_tasks.id
-}
-
-output "alb_target_group_arn" {
-  description = "The ARN of the ALB target group"
-  value       = aws_lb_target_group.main.arn
-}
-
-output "s3_bucket_name" {
-  description = "The name of the S3 bucket for frontend"
-  value       = aws_s3_bucket.frontend.bucket
+output "private_subnets" {
+  description = "List of private subnet IDs"
+  value       = module.vpc.private_subnets
 }

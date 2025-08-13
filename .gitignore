@@ -205,3 +205,4 @@ celerybeat.pid
 backend/storage/docs/
 backend/storage/pdfs/
 data/
+.env

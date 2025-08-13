@@ -1,19 +1,19 @@
-name: Deploy to AWS
+name: Deploy to EC2
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    paths:
+      - 'aws/terraform/**'
+      - '.github/workflows/deploy-ec2.yml'
+      - 'backend/**'
+      - 'frontend/**'
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY_BACKEND: citycamp-ai-backend
-  ECR_REPOSITORY_FRONTEND: citycamp-ai-frontend
-  ECS_SERVICE: citycamp-ai-backend
-  ECS_CLUSTER: citycamp-ai-cluster
-  S3_BUCKET: citycamp-ai-frontend-ru8nls0c
-  CLOUDFRONT_DISTRIBUTION_ID: E18KZSTFG2SA46
+  AWS_REGION: us-east-2
+  EC2_INSTANCE_ID: i-064bae777595abb88
 
 jobs:
   test:
@@ -99,8 +99,58 @@ jobs:
         flags: backend
         name: backend-coverage
 
-  build-and-deploy:
-    name: Build and Deploy
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+    environment: AWS
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ~1.9.0
+
+    - name: Terraform Format Check
+      run: |
+        cd aws/terraform
+        terraform fmt -check
+
+    - name: Terraform Init
+      run: |
+        cd aws/terraform
+        terraform init
+
+    - name: Terraform Validate
+      run: |
+        cd aws/terraform
+        terraform validate
+
+    - name: Terraform Plan
+      env:
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
+      run: |
+        cd aws/terraform
+        terraform plan -no-color -input=false
+
+  terraform-apply:
+    name: Terraform Apply
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -117,76 +167,123 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ~1.9.0
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Terraform Init
+      run: |
+        cd aws/terraform
+        terraform init
 
-    - name: Build, tag, and push backend image to Amazon ECR
+    - name: Terraform Plan
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
       run: |
-        # Build and push backend image
-        docker build -f backend/Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
-        docker build -f backend/Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest ./backend
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
+        cd aws/terraform
+        terraform plan -input=false -out=tfplan
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
+    - name: Terraform Apply
+      env:
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
+      run: |
+        cd aws/terraform
+        terraform apply -auto-approve tfplan
+
+  deploy-to-ec2:
+    name: Deploy Application to EC2
+    runs-on: ubuntu-latest
+    needs: [test, terraform-apply]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: AWS
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-    - name: Build frontend
+    - name: Deploy to EC2 via SSM
       run: |
-        cd frontend
-        npm ci
-        npm run build
+        COMMAND_ID=$(aws ssm send-command \
+          --region ${{ env.AWS_REGION }} \
+          --instance-ids ${{ env.EC2_INSTANCE_ID }} \
+          --document-name "AWS-RunShellScript" \
+          --comment "GitHub Actions Deployment" \
+          --parameters 'commands=[
+            "#!/bin/bash",
+            "set -e",
+            "cd /opt/citycamp-ai",
+            "sudo docker stop $(sudo docker ps -aq) || true",
+            "sudo docker rm $(sudo docker ps -aq) || true",
+            "rm -rf CityCamp_AI || true",
+            "git clone https://github.com/${{ github.repository }}.git CityCamp_AI",
+            "cd CityCamp_AI",
+            "git checkout ${{ github.sha }}",
+            "cd backend",
+            "sudo docker build -t citycamp-backend:${{ github.sha }} .",
+            "sudo docker run -d -p 8000:8000 --name citycamp_backend --restart unless-stopped citycamp-backend:${{ github.sha }}",
+            "sleep 10",
+            "curl http://localhost:8000/health || echo Backend starting...",
+            "echo Deployment completed at $(date)"
+          ]' \
+          --query 'Command.CommandId' \
+          --output text)
 
-    - name: Deploy frontend to S3
+        echo "Deployment command sent. Command ID: $COMMAND_ID"
+
+        # Wait for deployment to complete
+        for i in {1..12}; do
+          sleep 10
+          STATUS=$(aws ssm get-command-invocation \
+            --region ${{ env.AWS_REGION }} \
+            --command-id $COMMAND_ID \
+            --instance-id ${{ env.EC2_INSTANCE_ID }} \
+            --query 'Status' \
+            --output text 2>/dev/null)
+
+          echo "Deployment status: $STATUS"
+
+          if [ "$STATUS" = "Success" ]; then
+            echo "✅ Deployment completed successfully!"
+            break
+          elif [ "$STATUS" = "Failed" ]; then
+            echo "❌ Deployment failed!"
+            aws ssm get-command-invocation \
+              --region ${{ env.AWS_REGION }} \
+              --command-id $COMMAND_ID \
+              --instance-id ${{ env.EC2_INSTANCE_ID }} \
+              --query 'StandardErrorContent' \
+              --output text
+            exit 1
+          fi
+        done
+
+    - name: Test deployment
       run: |
-        aws s3 sync frontend/dist/ s3://${{ env.S3_BUCKET }} --delete
-
-        # Set correct content types
-        aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.html" --content-type "text/html" --metadata-directive REPLACE
-        aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.css" --content-type "text/css" --metadata-directive REPLACE
-        aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.js" --content-type "application/javascript" --metadata-directive REPLACE
-        aws s3 cp s3://${{ env.S3_BUCKET }} s3://${{ env.S3_BUCKET }} --recursive --exclude "*" --include "*.json" --content-type "application/json" --metadata-directive REPLACE
-
-    - name: Invalidate CloudFront
-      run: |
-        aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
-
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: aws/ecs/task-definition.json
-        container-name: backend
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
-
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+        # Test the application endpoints
+        sleep 30  # Give app time to fully start
+        curl -f http://localhost/health || echo "Health check failed"
 
     - name: Notify deployment success
       if: success()
       run: |
-        echo "🚀 Deployment successful!"
-        echo "Frontend: https://d1s9nkkr0t3pmn.cloudfront.net"
-        echo "Backend: ECS service updated with image ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}"
+        echo "🚀 EC2 Deployment successful!"
+        echo "Check your domain configuration for frontend and API access"
+        echo "Health endpoint should be accessible at your configured domain/health"
 
     - name: Notify deployment failure
       if: failure()
       run: |
-        echo "❌ Deployment failed!"
+        echo "❌ EC2 Deployment failed!"
         echo "Check the logs above for details."

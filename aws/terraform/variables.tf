@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "project_name" {
@@ -19,7 +19,7 @@ variable "vpc_cidr" {
 variable "availability_zones" {
   description = "Availability zones"
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["us-east-2a", "us-east-2b"]
 }
 
 variable "private_subnet_cidrs" {
@@ -34,52 +34,54 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.101.0/24", "10.0.102.0/24"]
 }
 
-variable "db_instance_class" {
-  description = "RDS instance class"
+variable "ec2_instance_type" {
+  description = "EC2 instance type"
   type        = string
-  default     = "db.t3.micro"
+  default     = "t3.medium"
 }
 
-variable "db_allocated_storage" {
-  description = "RDS allocated storage in GB"
-  type        = number
-  default     = 20
-}
-
-variable "db_max_allocated_storage" {
-  description = "RDS maximum allocated storage in GB"
-  type        = number
-  default     = 100
-}
-
-variable "db_name" {
-  description = "RDS database name"
+variable "key_pair_name" {
+  description = "Name of the AWS key pair for EC2 access"
   type        = string
-  default     = "citycamp_db"
+  default     = ""
 }
 
-variable "db_username" {
-  description = "RDS database username"
+variable "domain_name" {
+  description = "Primary domain name"
   type        = string
-  default     = "citycamp_user"
-}
-
-variable "db_password" {
-  description = "RDS database password"
-  type        = string
+  default     = "example.com"
   sensitive   = true
 }
 
-variable "db_backup_retention_period" {
-  description = "RDS backup retention period in days"
-  type        = number
-  default     = 7
+variable "aws_account_id" {
+  description = "AWS account ID"
+  type        = string
+  default     = "123456789012"
+  sensitive   = true
 }
 
-variable "redis_node_type" {
-  description = "ElastiCache Redis node type"
+variable "instance_type" {
+  description = "EC2 instance type for the simple deployment"
   type        = string
-  default     = "cache.t3.micro"
+  default     = "t3.medium"
+
+  validation {
+    condition     = contains(["t3.small", "t3.medium", "t3.large", "t3.xlarge", "m5.large", "m5.xlarge", "m6i.large", "m6i.xlarge"], var.instance_type)
+    error_message = "Instance type must be one of: t3.small, t3.medium, t3.large, t3.xlarge, m5.large, m5.xlarge, m6i.large, m6i.xlarge."
+  }
+}
+
+variable "ec2_key_name" {
+  description = "EC2 Key Pair name for SSH access"
+  type        = string
+  default     = null
+}
+
+variable "repository_url" {
+  description = "Git repository URL for application code"
+  type        = string
+  default     = "https://github.com/kaizengrowth/CityCamp_AI.git"
+  sensitive   = true
 }
 
 variable "common_tags" {

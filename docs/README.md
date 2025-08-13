@@ -12,9 +12,6 @@ Welcome to the CityCamp AI documentation! This directory contains all project do
 
 ### 🔧 Setup & Configuration
 - **[ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)** - Environment variables and .env files guide
-- **[AWS_CLI_SETUP.md](AWS_CLI_SETUP.md)** - AWS CLI installation guide (avoid committing installers!)
-- **[GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)** - Complete CI/CD setup guide
-- **[aws-deployment-guide.md](aws-deployment-guide.md)** - AWS deployment options and guide
 
 ### 🐛 Troubleshooting
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
@@ -48,8 +45,7 @@ CityCamp_AI/
 3. **Having issues?**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ### For DevOps
-1. **AWS deployment**: [aws-deployment-guide.md](aws-deployment-guide.md)
-2. **CI/CD setup**: [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)
+1. **Infrastructure**: Check `aws/` directory for Terraform configurations
 
 ### For Testing
 1. **Test organization**: [../tests/README.md](../tests/README.md)
@@ -85,8 +81,8 @@ When adding new documentation:
 
 | Category | Purpose | Examples |
 |----------|---------|----------|
-| **Setup Guides** | Initial configuration | QUICKSTART.md, GITHUB_ACTIONS_SETUP.md |
-| **Deployment** | Production deployment | aws-deployment-guide.md |
+| **Setup Guides** | Initial configuration | QUICKSTART.md |
+| **Deployment** | Production deployment | Check `aws/` directory |
 | **Troubleshooting** | Problem solving | TROUBLESHOOTING.md |
 | **Testing** | Test documentation | SCRAPER_TEST_README.md |
 | **Architecture** | System design docs | (Add as needed) |
