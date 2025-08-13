@@ -110,6 +110,10 @@ jobs:
     needs: test
     if: github.event_name == 'pull_request'
     environment: AWS
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
 
     steps:
     - name: Checkout code
@@ -150,38 +154,25 @@ jobs:
       continue-on-error: true
 
     - name: Comment PR with Terraform Plan
+      if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
       with:
         script: |
-          const { execSync } = require('child_process');
+          const output = `#### Terraform Plan 📖
+
+          Terraform plan has been executed. Please check the workflow logs for details.
+
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
           try {
-            // Get plan output
-            const planOutput = execSync('cd aws/terraform && terraform show -no-color tfplan', { encoding: 'utf8' });
-
-            const output = `#### Terraform Plan 📖
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`terraform
-            ${planOutput}
-            \`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: output
             });
           } catch (error) {
-            console.error('Failed to show Terraform plan:', error.message);
-            if (error.stack) {
-              console.error(error.stack);
-            }
+            console.log('Error creating comment:', error.message);
           }
 
   terraform-apply:
