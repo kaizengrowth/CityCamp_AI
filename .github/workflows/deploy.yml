@@ -144,6 +144,7 @@ jobs:
       env:
         TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
         TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
       run: |
         cd aws/terraform
         terraform plan -no-color -input=false
@@ -180,6 +181,7 @@ jobs:
       env:
         TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
         TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
       run: |
         cd aws/terraform
         terraform plan -input=false -out=tfplan
@@ -188,6 +190,7 @@ jobs:
       env:
         TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
         TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+        TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
       run: |
         cd aws/terraform
         terraform apply -auto-approve tfplan

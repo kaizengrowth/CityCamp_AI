@@ -222,13 +222,49 @@ TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER
 GEOCODIO_API_KEY=$GEOCODIO_API_KEY
 EOF
 
-# Clone the application code (you'll need to update this with your repo)
+# Clone the application code (parameterized repo URL, supports authenticated cloning)
 echo "Cloning application code..."
-git clone https://github.com/kaizengrowth/CityCamp_AI.git temp_repo || true
+
+# Get repository URL from SSM Parameter Store or environment variable
+REPO_URL=$(get_ssm_param "/citycamp-ai/repository-url")
+REPO_URL="${REPO_URL:-$REPOSITORY_URL}"
+
+# Set default repository URL if not provided (fallback)
+if [ -z "$REPO_URL" ]; then
+    echo "WARNING: REPO_URL not set in SSM or environment. Using default public repository."
+    REPO_URL="https://github.com/kaizengrowth/CityCamp_AI.git"
+fi
+
+echo "Repository URL: $REPO_URL"
+
+# Get optional Git token for authenticated cloning
+GIT_TOKEN=$(get_ssm_param "/citycamp-ai/git-token")
+GIT_TOKEN="${GIT_TOKEN:-$GIT_TOKEN}"
+
+if [ -n "$GIT_TOKEN" ]; then
+    echo "Using authenticated clone with token"
+    # Authenticated HTTPS clone (inject token into URL)
+    AUTH_REPO_URL=$(echo "$REPO_URL" | sed -E "s#https://#https://$GIT_TOKEN@#")
+    git clone "$AUTH_REPO_URL" temp_repo || {
+        echo "ERROR: Authenticated clone failed. Aborting deployment."
+        exit 1
+    }
+else
+    echo "Using public clone (no authentication token)"
+    git clone "$REPO_URL" temp_repo || {
+        echo "ERROR: Repository clone failed. Aborting deployment."
+        exit 1
+    }
+fi
+
 if [ -d "temp_repo/backend" ]; then
     cp -r temp_repo/backend ./
     cp -r temp_repo/frontend ./
     rm -rf temp_repo
+    echo "✅ Application code cloned successfully"
+else
+    echo "❌ ERROR: Repository structure invalid - missing backend directory"
+    exit 1
 fi
 
 # Install Node.js for frontend building

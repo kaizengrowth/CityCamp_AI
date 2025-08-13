@@ -343,8 +343,9 @@ resource "aws_iam_instance_profile" "ec2_simple_profile" {
 # User data script to set up Docker and the application
 locals {
   user_data = base64encode(templatefile("${path.module}/user_data.tpl", {
-    aws_region   = var.aws_region
-    project_name = var.project_name
+    aws_region     = var.aws_region
+    project_name   = var.project_name
+    repository_url = var.repository_url
   }))
 }
 

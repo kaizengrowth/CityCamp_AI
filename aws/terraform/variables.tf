@@ -77,6 +77,13 @@ variable "ec2_key_name" {
   default     = null
 }
 
+variable "repository_url" {
+  description = "Git repository URL for application code"
+  type        = string
+  default     = "https://github.com/kaizengrowth/CityCamp_AI.git"
+  sensitive   = true
+}
+
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)

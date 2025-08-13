@@ -35,6 +35,44 @@ cd /opt/citycamp-ai
 mkdir -p /data/postgres /data/redis /data/app-data
 chown -R 999:999 /data/postgres /data/redis
 
+# Clone application code (parameterized and secure)
+echo "Cloning application code..."
+
+# Get repository URL from SSM Parameter Store
+REPO_URL=$(get_ssm_param "/citycamp-ai/repository-url")
+REPO_URL="$${REPO_URL:-${repository_url}}"
+
+echo "Repository URL: $$REPO_URL"
+
+# Get optional Git token for authenticated cloning
+GIT_TOKEN=$(get_ssm_param "/citycamp-ai/git-token")
+
+if [ -n "$$GIT_TOKEN" ]; then
+    echo "Using authenticated clone with token"
+    # Authenticated HTTPS clone (inject token into URL)
+    AUTH_REPO_URL=$$(echo "$$REPO_URL" | sed -E "s#https://#https://$$GIT_TOKEN@#")
+    git clone "$$AUTH_REPO_URL" temp_repo || {
+        echo "ERROR: Authenticated clone failed. Aborting deployment."
+        exit 1
+    }
+else
+    echo "Using public clone (no authentication token)"
+    git clone "$$REPO_URL" temp_repo || {
+        echo "ERROR: Repository clone failed. Aborting deployment."
+        exit 1
+    }
+fi
+
+if [ -d "temp_repo/backend" ]; then
+    cp -r temp_repo/backend ./
+    [ -d "temp_repo/frontend" ] && cp -r temp_repo/frontend ./
+    rm -rf temp_repo
+    echo "✅ Application code cloned successfully"
+else
+    echo "❌ ERROR: Repository structure invalid - missing backend directory"
+    exit 1
+fi
+
 # Function to get SSM parameter
 get_ssm_param() {
     local param_name="$1"
@@ -85,7 +123,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
 
-  # Simple backend for health checks
+  # CityCamp AI Backend (using cloned application code)
   backend:
     image: python:3.11-slim
     container_name: citycamp-backend
@@ -100,27 +138,17 @@ services:
       - "8000:8000"
     volumes:
       - /opt/citycamp-ai/backend:/app
+      - /data/app-data:/app/data
     depends_on:
       - postgres
       - redis
     restart: unless-stopped
     command: >
       bash -c "
-        echo 'Backend container starting...' &&
-        pip install fastapi uvicorn sqlalchemy psycopg2-binary redis &&
-        python -c \"
-from fastapi import FastAPI
-app = FastAPI()
-
-@app.get('/health')
-def health():
-    return {'status': 'ok', 'message': 'CityCamp AI Backend Running', 'region': '${aws_region}'}
-
-@app.get('/')
-def root():
-    return {'message': 'CityCamp AI API', 'status': 'operational', 'region': '${aws_region}'}
-        \" > main.py &&
-        python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+        echo 'CityCamp AI Backend starting in ${aws_region}...' &&
+        pip install -r requirements.txt &&
+        python -m alembic upgrade head &&
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
   # Nginx reverse proxy
