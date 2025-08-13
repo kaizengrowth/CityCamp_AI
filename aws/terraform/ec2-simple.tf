@@ -37,13 +37,13 @@ resource "aws_security_group" "ec2_simple" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # SSH access (for management)
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Consider restricting this to your IP
-  }
+  # SSH access removed for security - use AWS Systems Manager Session Manager instead
+  # ingress {
+  #   from_port   = 22
+  #   to_port     = 22
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]  # SECURITY RISK - removed
+  # }
 
   # Backend API port (for ALB health checks)
   ingress {
