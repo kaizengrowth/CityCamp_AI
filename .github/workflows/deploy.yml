@@ -41,13 +41,24 @@ jobs:
             git checkout ${{ github.ref_name }}
           fi
 
-          # Set up production secrets (no infrastructure changes)
+          # Set up production secrets with secure permissions
           echo "🔐 Setting up application secrets..."
           mkdir -p secrets
+
+          # Create secret files with restrictive permissions
           echo '${{ secrets.DATABASE_URL }}' > secrets/database_url
           echo '${{ secrets.SECRET_KEY }}' > secrets/secret_key
           echo '${{ secrets.OPENAI_API_KEY }}' > secrets/openai_api_key
           echo '${{ secrets.GEOCODIO_API_KEY }}' > secrets/geocodio_api_key
+
+          # Set secure file permissions (owner read/write only)
+          chmod 600 secrets/database_url
+          chmod 600 secrets/secret_key
+          chmod 600 secrets/openai_api_key
+          chmod 600 secrets/geocodio_api_key
+
+          # Set directory permissions (owner read/write/execute only)
+          chmod 700 secrets
 
           # Stop existing containers
           echo "🛑 Stopping existing containers..."
@@ -60,7 +71,7 @@ jobs:
 
           echo "🚀 Starting backend service..."
           docker run -d --name citycamp-backend -p 8000:8000 \
-            -v $(pwd)/secrets:/app/secrets \
+            -v $(pwd)/secrets:/app/secrets:ro \
             --restart unless-stopped \
             citycamp-ai-backend
 
@@ -75,3 +86,4 @@ jobs:
 
           echo "✅ Deployment completed successfully!"
           echo "🌐 Application is running at http://localhost:8000"
+          echo "🔒 Secrets are secured with 600 permissions"
