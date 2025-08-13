@@ -141,6 +141,9 @@ jobs:
         terraform validate
 
     - name: Terraform Plan
+      env:
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
       run: |
         cd aws/terraform
         terraform plan -no-color -input=false
@@ -174,11 +177,17 @@ jobs:
         terraform init
 
     - name: Terraform Plan
+      env:
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
       run: |
         cd aws/terraform
         terraform plan -input=false -out=tfplan
 
     - name: Terraform Apply
+      env:
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
       run: |
         cd aws/terraform
         terraform apply -auto-approve tfplan
@@ -261,15 +270,14 @@ jobs:
       run: |
         # Test the application endpoints
         sleep 30  # Give app time to fully start
-        curl -f http://3.130.228.109/health || echo "Health check failed"
+        curl -f http://localhost/health || echo "Health check failed"
 
     - name: Notify deployment success
       if: success()
       run: |
         echo "🚀 EC2 Deployment successful!"
-        echo "Frontend: http://www.tulsai.city"
-        echo "API: http://api.tulsai.city"
-        echo "Health: http://api.tulsai.city/health"
+        echo "Check your domain configuration for frontend and API access"
+        echo "Health endpoint should be accessible at your configured domain/health"
 
     - name: Notify deployment failure
       if: failure()

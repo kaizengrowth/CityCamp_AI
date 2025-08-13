@@ -94,8 +94,8 @@ services:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql://citycamp_user:$${DATABASE_PASSWORD}@postgres:5432/citycamp_db
       - REDIS_URL=redis://redis:6379/0
-              - SECRET_KEY=$${SECRET_KEY}
-        - OPENAI_API_KEY=$${OPENAI_API_KEY}
+      - SECRET_KEY=$${SECRET_KEY}
+      - OPENAI_API_KEY=$${OPENAI_API_KEY}
     ports:
       - "8000:8000"
     volumes:
