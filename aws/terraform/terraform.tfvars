@@ -11,4 +11,4 @@ db_password = "your-secure-database-password"
 
 # Optional: Override defaults
 # db_instance_class = "db.t3.small"
-# redis_node_type = "cache.t3.small" db_password = "REDACTED_PASSWORD"
+# redis_node_type = "cache.t3.small"

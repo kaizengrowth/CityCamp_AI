@@ -84,7 +84,7 @@ services:
     environment:
       POSTGRES_DB: citycamp_db
       POSTGRES_USER: citycamp_user
-             POSTGRES_PASSWORD: $DATABASE_PASSWORD
+      POSTGRES_PASSWORD: $DATABASE_PASSWORD
     volumes:
       - /data/postgres:/var/lib/postgresql/data
     ports:

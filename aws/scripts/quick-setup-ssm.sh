@@ -10,13 +10,19 @@ PARAMETER_PREFIX="/citycamp-ai"
 
 echo "🚀 Quick setup of essential SSM parameters for CityCamp AI..."
 
+# Check for required environment variables
+if [ -z "$CITYCAMP_DB_PASSWORD" ]; then
+    echo "❌ Error: CITYCAMP_DB_PASSWORD environment variable is required"
+    echo "Set it with: export CITYCAMP_DB_PASSWORD='your-secure-password'"
+    exit 1
+fi
+
 # Actual endpoints from Terraform output
 RDS_ENDPOINT="citycamp-ai-db.c8lywk6yg0um.us-east-1.rds.amazonaws.com"
 REDIS_ENDPOINT="citycamp-ai-redis.2gtiq7.0001.use1.cache.amazonaws.com"
-DB_PASSWORD="REDACTED_PASSWORD"
 
 # Construct connection URLs
-DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@${RDS_ENDPOINT}/citycamp_db"
+DATABASE_URL="postgresql://postgres:${CITYCAMP_DB_PASSWORD}@${RDS_ENDPOINT}/citycamp_db"
 REDIS_URL="redis://${REDIS_ENDPOINT}:6379/0"
 
 echo "Creating essential parameters..."

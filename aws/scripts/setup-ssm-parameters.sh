@@ -28,6 +28,13 @@ create_parameter() {
         --no-cli-pager
 }
 
+# Check for required environment variables
+if [ -z "$CITYCAMP_DB_PASSWORD" ]; then
+    echo "❌ Error: CITYCAMP_DB_PASSWORD environment variable is required"
+    echo "Set it with: export CITYCAMP_DB_PASSWORD='your-secure-password'"
+    exit 1
+fi
+
 # Database URL - construct from Terraform outputs
 echo "📊 Getting database information from Terraform..."
 cd "$(dirname "$0")/../terraform"
@@ -36,13 +43,12 @@ cd "$(dirname "$0")/../terraform"
 DB_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null || echo "your-rds-endpoint.region.rds.amazonaws.com")
 DB_NAME=$(terraform output -raw db_name 2>/dev/null || echo "citycamp_db")
 DB_USERNAME=$(terraform output -raw db_username 2>/dev/null || echo "postgres")
-DB_PASSWORD="REDACTED_PASSWORD"  # From terraform.tfvars
 
 # Get Redis endpoint from Terraform state
 REDIS_ENDPOINT=$(terraform output -raw redis_endpoint 2>/dev/null || echo "your-redis-cluster.cache.amazonaws.com")
 
 # Construct connection strings
-DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_ENDPOINT}:5432/${DB_NAME}"
+DATABASE_URL="postgresql://${DB_USERNAME}:${CITYCAMP_DB_PASSWORD}@${DB_ENDPOINT}:5432/${DB_NAME}"
 REDIS_URL="redis://${REDIS_ENDPOINT}:6379/0"
 
 echo "🔐 Creating SSM parameters..."
