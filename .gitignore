@@ -206,3 +206,10 @@ backend/storage/docs/
 backend/storage/pdfs/
 data/
 .env
+
+# Temporary deployment files
+aws/terraform-output-*.txt
+aws/route53-dns-update*.json
+aws/terraform/tfplan*
+simple_backend.py
+aws/terraform/user_data_*.sh
