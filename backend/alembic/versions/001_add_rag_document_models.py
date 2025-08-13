@@ -1,7 +1,7 @@
 """Add RAG document models
 
 Revision ID: 001
-Revises:
+Revises: 000
 Create Date: 2025-01-28 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "001"
-down_revision = None
+down_revision = "000"  # Now depends on users table migration
 branch_labels = None
 depends_on = None
 

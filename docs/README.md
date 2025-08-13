@@ -1,92 +1,82 @@
 # CityCamp AI Documentation
 
-Welcome to the CityCamp AI documentation! This directory contains all project documentation organized by topic.
+Welcome to the CityCamp AI documentation. This directory contains all project documentation organized by topic.
 
-**🆕 New**: The **Tulsa Archive Scraper** system can now scrape **ALL historical documents** (2020-2025) from the official City of Tulsa Council Archive, supporting **16 different meeting types** including Regular Council, committees, and task forces. See [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md) for complete details.
+The Tulsa Archive Scraper system can scrape all historical documents (2020-2025) from the official City of Tulsa Council Archive, supporting 16 different meeting types including Regular Council, committees, and task forces. See [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md) for complete details.
 
-## 📚 Documentation Index
+## Documentation Index
 
-### 🚀 Getting Started
-- **[README.md](README.md)** - Main project overview and quick start guide
+### Getting Started
 - **[QUICKSTART.md](QUICKSTART.md)** - Fast setup for local development
 
-### 🔧 Setup & Configuration
+### Setup & Configuration
 - **[ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)** - Environment variables and .env files guide
 
-### 🐛 Troubleshooting
+### Troubleshooting
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 
-### 🧪 Testing & Development
-- **[SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)** - Scraper testing documentation
-- **[../tests/README.md](../tests/README.md)** - Test organization and running guide
+### Data Collection & Scraping
+- **[TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)** - Historical document scraping system
 
-### 🕸️ Data Collection & Scraping
-- **[TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)** - Comprehensive historical document scraping system
+### System Information
+- **[RAG_SYSTEM_README.md](RAG_SYSTEM_README.md)** - Retrieval Augmented Generation system
+- **[SECURITY_SETUP.md](SECURITY_SETUP.md)** - Security configuration
+- **[TWILIO_SETUP.md](TWILIO_SETUP.md)** - SMS notification setup
+- **[GEOJSON_DISTRICT_BOUNDARIES.md](GEOJSON_DISTRICT_BOUNDARIES.md)** - District mapping data
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 CityCamp_AI/
-├── docs/                  # 📚 All documentation (you are here!)
-├── tests/                 # 🧪 All test files
-│   ├── backend/          # Python/FastAPI tests
-│   └── frontend/         # React/TypeScript tests
-├── frontend/             # 🎨 React frontend application
-├── backend/              # ⚙️ Python FastAPI backend
-├── aws/                  # ☁️ AWS infrastructure code
-└── scripts/              # 🔧 Build and deployment scripts
+├── docs/                  # All documentation (you are here!)
+│   ├── README.md          # This file - documentation index
+│   ├── QUICKSTART.md      # Quick setup guide
+│   ├── ENVIRONMENT_SETUP.md # Environment configuration
+│   ├── TROUBLESHOOTING.md # Common issues and solutions
+│   └── screenshots/       # Application screenshots
+├── backend/              # FastAPI backend application
+├── frontend/             # React frontend application
+├── scripts/              # Utility scripts for development and deployment
+└── tests/               # Test files and documentation
 ```
 
-## 🎯 Quick Navigation
+## Core System Features
 
-### For Developers
-1. **First time setup**: [QUICKSTART.md](QUICKSTART.md)
-2. **Running tests**: [../tests/README.md](../tests/README.md)
-3. **Having issues?**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+### Backend (FastAPI + SQLAlchemy + PostgreSQL)
+- **RESTful API** - Complete CRUD operations for all resources
+- **Authentication** - JWT-based user authentication and authorization
+- **Database** - PostgreSQL with Alembic migrations
+- **AI Integration** - OpenAI GPT-4 for document processing and chatbot
+- **Document Processing** - PDF parsing and text extraction
+- **Web Scraping** - Automated meeting data collection
 
-### For DevOps
-1. **Infrastructure**: Check `aws/` directory for Terraform configurations
+### Frontend (React + TypeScript + Tailwind CSS)
+- **Modern UI** - Responsive design with Tailwind CSS
+- **Real-time Updates** - Live data updates for meetings and campaigns
+- **Interactive Maps** - District boundaries and representative mapping
+- **Document Viewer** - In-browser PDF viewing and highlighting
 
-### For Testing
-1. **Test organization**: [../tests/README.md](../tests/README.md)
-2. **Scraper testing**: [SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)
+### AI & Natural Language Processing
+- **Chatbot** - GPT-4 powered conversational interface
+- **RAG System** - Retrieval-Augmented Generation for document queries
+- **Content Categorization** - Automatic topic classification
+- **Semantic Search** - Vector-based document similarity search
 
-### For Data Collection
-1. **Historical scraping**: [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)
-2. **Meeting discovery**: [SCRAPER_TEST_README.md](SCRAPER_TEST_README.md)
+## Quick Navigation
 
-## 🔗 External Links
+- **Need to get started quickly?** → [QUICKSTART.md](QUICKSTART.md)
+- **Setting up environment variables?** → [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)
+- **Running into issues?** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Working with scrapers?** → [TULSA_ARCHIVE_SCRAPER_README.md](TULSA_ARCHIVE_SCRAPER_README.md)
+- **Setting up RAG system?** → [RAG_SYSTEM_README.md](RAG_SYSTEM_README.md)
 
-- **Live Application**: https://d1s9nkkr0t3pmn.cloudfront.net
-- **GitHub Repository**: [Your GitHub URL]
-- **AWS Console**: [Your AWS Console]
+## Support
 
-## 📝 Contributing to Documentation
-
-When adding new documentation:
-
-1. **Place files in the `docs/` directory**
-2. **Use descriptive filenames** (e.g., `feature-name-guide.md`)
-3. **Update this index** to include your new documentation
-4. **Follow the existing markdown style**
-
-### Documentation Standards
-
-- Use clear, descriptive headings
-- Include code examples where helpful
-- Add troubleshooting sections for complex topics
-- Keep documentation up-to-date with code changes
-
-## 🏷️ Documentation Categories
-
-| Category | Purpose | Examples |
-|----------|---------|----------|
-| **Setup Guides** | Initial configuration | QUICKSTART.md |
-| **Deployment** | Production deployment | Check `aws/` directory |
-| **Troubleshooting** | Problem solving | TROUBLESHOOTING.md |
-| **Testing** | Test documentation | SCRAPER_TEST_README.md |
-| **Architecture** | System design docs | (Add as needed) |
+For additional help or questions:
+1. Check the relevant documentation files above
+2. Review the troubleshooting guide
+3. Check the GitHub issues and discussions
 
 ---
 
-**Need help?** Check the [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide or create an issue in the GitHub repository.
+**Note**: This documentation is kept up-to-date with the latest system features and configuration requirements.

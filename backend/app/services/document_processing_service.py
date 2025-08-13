@@ -19,7 +19,7 @@ except ImportError:
 import pdfplumber
 
 # Document processing imports
-import PyPDF2
+import pypdf
 
 try:
     import tiktoken
@@ -121,9 +121,9 @@ class DocumentProcessor:
             logger.warning(f"PyMuPDF failed for {file_path}: {e}")
 
         try:
-            # Method 3: Fallback to PyPDF2
+            # Method 3: Fallback to pypdf
             with open(file_path, "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
                 pages = []
                 for page in pdf_reader.pages:
                     page_text = page.extract_text()
@@ -133,7 +133,7 @@ class DocumentProcessor:
                 if pages:
                     text = "\n\n".join(pages)
                     metadata["page_count"] = len(pdf_reader.pages)
-                    metadata["extraction_method"] = "pypdf2"
+                    metadata["extraction_method"] = "pypdf"
                     return text, metadata
 
         except Exception as e:

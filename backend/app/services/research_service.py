@@ -7,7 +7,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 import pdfplumber
-import PyPDF2
+import pypdf
 import requests
 from app.core.config import Settings
 from bs4 import BeautifulSoup
@@ -165,25 +165,28 @@ class ResearchService:
                 logger.warning(f"Failed to extract PDF content with pdfplumber: {e}")
                 # Continue to fallback method
 
-            # Fallback to PyPDF2
-            pdf_file.seek(0)
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            text = ""
+            # Fallback to pypdf
+            try:
+                pdf_reader = pypdf.PdfReader(pdf_file)
+                text = ""
 
-            for page_num in range(min(10, len(pdf_reader.pages))):
-                page = pdf_reader.pages[page_num]
-                text += page.extract_text() + "\n\n"
+                for page_num in range(min(10, len(pdf_reader.pages))):
+                    page = pdf_reader.pages[page_num]
+                    text += page.extract_text() + "\n\n"
 
-            if text.strip():
-                return {
-                    "type": "pdf",
-                    "url": url,
-                    "content": text[:3000] + "..." if len(text) > 3000 else text,
-                    "title": self._extract_title_from_url(url),
-                    "pages": len(pdf_reader.pages),
-                }
+                if text.strip():
+                    return {
+                        "type": "pdf",
+                        "url": url,
+                        "content": text[:3000] + "..." if len(text) > 3000 else text,
+                        "title": self._extract_title_from_url(url),
+                        "pages": len(pdf_reader.pages),
+                    }
 
-            return None
+                return None
+            except Exception as e:
+                logger.error(f"Error processing PDF with pypdf: {e}")
+                return None
 
         except Exception as e:
             logger.error(f"Error processing PDF: {e}")
