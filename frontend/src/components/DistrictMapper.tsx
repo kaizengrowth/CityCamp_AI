@@ -198,26 +198,42 @@ export const DistrictMapper: React.FC = () => {
               )}
 
               {/* Fallback Representatives */}
-              <div className="mt-4">
-                <h5 className="font-medium text-yellow-800 mb-2">Contact These Representatives:</h5>
-                <div className="grid gap-2">
-                  {result.representatives.map((rep, index) => (
-                    <div key={index} className="bg-white p-3 rounded border">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{rep.name}</p>
-                          <p className="text-sm text-gray-600">{rep.position}</p>
-                        </div>
-                        <div className="text-right text-sm">
-                          <a href={`mailto:${rep.email}`} className="text-blue-600 hover:text-blue-800">
-                            {rep.email}
-                          </a>
+              {result.representatives.length > 0 ? (
+                <div className="mt-4">
+                  <h5 className="font-medium text-yellow-800 mb-2">Contact These Representatives:</h5>
+                  <div className="grid gap-2">
+                    {result.representatives.map((rep, index) => (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{rep.name}</p>
+                            <p className="text-sm text-gray-600">{rep.position}</p>
+                          </div>
+                          <div className="text-right text-sm">
+                            <a href={`mailto:${rep.email}`} className="text-blue-600 hover:text-blue-800">
+                              {rep.email}
+                            </a>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-red-700 text-sm">
+                    <strong>No representatives found.</strong> This could mean:
+                  </p>
+                  <ul className="text-red-600 text-sm mt-2 space-y-1">
+                    <li>• The address is outside Tulsa city limits</li>
+                    <li>• The address format is not recognized</li>
+                    <li>• There was an error processing your request</li>
+                  </ul>
+                  <p className="text-red-600 text-sm mt-2">
+                    Please verify your address is within Tulsa city limits and try again.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
