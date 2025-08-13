@@ -62,13 +62,40 @@ ALB_DNS_NAME="${ALB_DNS_NAME:-citycamp-ai-alb-282921144.us-east-2.elb.amazonaws.
 echo "ALB DNS Name: $ALB_DNS_NAME"
 echo "Load Balancer IP: $(dig +short $ALB_DNS_NAME)"
 
-# Try to get EC2 IP from Terraform outputs or environment variable
+# Try to get EC2 IP through multiple methods (most reliable first)
 EC2_IP="${EC2_IP}"
+
+# Method 1: Get from Terraform outputs
 if [ -f "aws/terraform/terraform.tfstate" ] && command -v jq >/dev/null 2>&1 && [ -z "$EC2_IP" ]; then
     EC2_IP=$(jq -r '.outputs.ec2_public_ip.value // empty' aws/terraform/terraform.tfstate 2>/dev/null)
+    echo "EC2 IP from Terraform: ${EC2_IP:-'not found'}"
 fi
+
+# Method 2: Get EC2 DNS name and resolve it dynamically
+if [ -z "$EC2_IP" ] && [ -f "aws/terraform/terraform.tfstate" ] && command -v jq >/dev/null 2>&1; then
+    EC2_INSTANCE_ID=$(jq -r '.outputs.ec2_instance_id.value // empty' aws/terraform/terraform.tfstate 2>/dev/null)
+    if [ -n "$EC2_INSTANCE_ID" ] && command -v aws >/dev/null 2>&1; then
+        # Get EC2 public DNS name from AWS CLI
+        export PAGER=""
+        EC2_DNS_NAME=$(aws ec2 describe-instances --instance-ids "$EC2_INSTANCE_ID" --query 'Reservations[0].Instances[0].PublicDnsName' --output text 2>/dev/null)
+        if [ -n "$EC2_DNS_NAME" ] && [ "$EC2_DNS_NAME" != "None" ] && [ "$EC2_DNS_NAME" != "null" ]; then
+            echo "EC2 DNS Name: $EC2_DNS_NAME"
+            EC2_IP=$(dig +short "$EC2_DNS_NAME" | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n 1)
+            echo "EC2 IP from DNS lookup: ${EC2_IP:-'lookup failed'}"
+        fi
+    fi
+fi
+
+# Method 3: Try AWS CLI direct IP lookup (if EC2_INSTANCE_ID available)
+if [ -z "$EC2_IP" ] && [ -n "$EC2_INSTANCE_ID" ] && command -v aws >/dev/null 2>&1; then
+    export PAGER=""
+    EC2_IP=$(aws ec2 describe-instances --instance-ids "$EC2_INSTANCE_ID" --query 'Reservations[0].Instances[0].PublicIpAddress' --output text 2>/dev/null)
+    echo "EC2 IP from AWS CLI: ${EC2_IP:-'not found'}"
+fi
+
+# Method 4: Fallback to hardcoded IP (last resort)
 EC2_IP="${EC2_IP:-3.138.240.133}"
-echo "EC2 Instance IP: $EC2_IP"
+echo "Final EC2 Instance IP: $EC2_IP"
 echo ""
 
 echo "📋 REQUIRED DNS RECORDS FOR NAMECHEAP:"
