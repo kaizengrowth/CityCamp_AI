@@ -146,7 +146,7 @@ jobs:
       id: plan
       run: |
         cd aws/terraform
-        terraform plan -detailed-exitcode -no-color -out=tfplan
+        terraform plan -detailed-exitcode -no-color -input=false -out=tfplan
       continue-on-error: true
 
     - name: Comment PR with Terraform Plan
@@ -228,7 +228,7 @@ jobs:
       id: plan
       run: |
         cd aws/terraform
-        terraform plan -detailed-exitcode -no-color -out=tfplan
+        terraform plan -detailed-exitcode -no-color -input=false -out=tfplan
         echo "exitcode=$?" >> $GITHUB_OUTPUT
       continue-on-error: true
 
