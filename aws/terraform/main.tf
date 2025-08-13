@@ -199,7 +199,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_ssm_policy" {
           "ssm:GetParametersByPath"
         ]
         Resource = [
-          "arn:aws:ssm:us-east-1:*:parameter/citycamp-ai/*"
+          "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/citycamp-ai/*"
         ]
       }
     ]
@@ -602,7 +602,7 @@ resource "aws_ecs_task_definition" "main" {
   container_definitions = jsonencode([
     {
       name  = "${var.project_name}-backend"
-      image = "538569249671.dkr.ecr.us-east-1.amazonaws.com/citycamp-ai-backend:latest"
+      image = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/citycamp-ai-backend:latest"
 
       portMappings = [
         {
@@ -768,4 +768,14 @@ output "domain_validation_records" {
       record = dvo.resource_record_value
     }
   }
+}
+
+output "aws_account_id" {
+  description = "The AWS account ID being used"
+  value       = var.aws_account_id
+}
+
+output "ecr_repository_url" {
+  description = "The ECR repository URL for the backend image"
+  value       = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/citycamp-ai-backend"
 }
