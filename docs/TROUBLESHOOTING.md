@@ -1,6 +1,6 @@
 # CityCamp AI - Troubleshooting Guide
 
-## 🔧 Dependency Conflicts
+## Dependency Conflicts
 
 ### Problem
 You're seeing pip dependency resolver errors like:
@@ -43,7 +43,7 @@ cd backend
 pip install -r requirements.txt
 ```
 
-## 🐳 Docker Issues
+## Docker Issues
 
 ### Problem: Docker containers won't start
 
@@ -69,7 +69,7 @@ lsof -i :5432  # PostgreSQL
 # Kill processes or change ports in docker-compose.yml
 ```
 
-## 📊 Database Issues
+## Database Issues
 
 ### Problem: Database connection errors
 
@@ -101,7 +101,7 @@ alembic revision --autogenerate -m "Initial migration"
 alembic upgrade head
 ```
 
-## 🚀 Development Server Issues
+## Development Server Issues
 
 ### Problem: FastAPI server won't start
 
@@ -133,7 +133,7 @@ npm install
 npm run dev
 ```
 
-## 🔑 Environment Variables
+## Environment Variables
 
 ### Problem: Missing API keys
 
@@ -155,7 +155,7 @@ npm run dev
    TWILIO_AUTH_TOKEN=your-twilio-token
    ```
 
-## 🌐 Network Issues
+## Network Issues
 
 ### Problem: CORS errors
 
@@ -181,7 +181,7 @@ curl http://localhost:8000/health
 # Update frontend/vite.config.ts proxy settings
 ```
 
-## 🔍 Common Error Messages
+## Common Error Messages
 
 ### "ModuleNotFoundError: No module named 'app'"
 
@@ -218,7 +218,7 @@ docker-compose ps postgres
 DATABASE_URL=postgresql://user:password@localhost:5432/citycamp_db
 ```
 
-## 💡 Performance Issues
+## Performance Issues
 
 ### Problem: Slow API responses
 
@@ -241,7 +241,7 @@ export DEBUG=True
 #     mem_limit: 512m
 ```
 
-## 🛠️ Getting Help
+## Getting Help
 
 1. **Check logs:**
    ```bash
@@ -266,7 +266,7 @@ export DEBUG=True
    docker-compose exec postgres psql -U user -d citycamp_db
    ```
 
-## 🔄 Reset Everything
+## Reset Everything
 
 If all else fails, reset the entire project:
 ```bash

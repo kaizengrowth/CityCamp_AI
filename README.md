@@ -1,6 +1,8 @@
 # 🏛️ CivicSpark AI - Tulsa Civic Engagement Platform
 
-A comprehensive CivicTech platform connecting Tulsa residents with city government through AI-powered tools, automated notifications, and intelligent meeting analytics.
+CivicTech platform connecting Tulsa residents with city government through AI-powered tools, automated notifications, and intelligent meeting analytics.
+
+Built in consultation with the Tulsa City Auditor's Office, local Tulsa community organizations and City Council offices. Supported by Builders & Backers.
 
 ## 📊 Project Status & Info
 
@@ -23,28 +25,28 @@ A comprehensive CivicTech platform connecting Tulsa residents with city governme
 
 ## 🌟 Features
 
-### 🤖 **AI-Powered Civic Assistant**
+### **AI-Powered Civic Assistant**
 - Interactive chatbot with real-time city council knowledge
 - **RAG-Enhanced Responses**: Document-based answers using city budgets, legislation, and policies
 - Natural language queries about Tulsa government with contextual document search
 - Meeting summary generation and analysis
 
-### 📅 **Smart Meeting Notifications**
+### **Smart Meeting Notifications**
 - Automated alerts for city council meetings
 - Topic-based subscriptions (housing, transportation, etc.)
 - SMS and email delivery with AI-categorized content
 
-### 📊 **Intelligent Meeting Analytics**
+### **Intelligent Meeting Analytics**
 - AI categorization of 42+ civic topics
 - Automated agenda extraction and impact assessment
 - Searchable meeting minutes with keyword analysis
 
-### 💬 **Representative Communication**
+### **Representative Communication**
 - AI-powered email generation to contact officials
 - District-based representative lookup
 - Pre-built templates for common civic issues
 
-### 🗳️ **Community Engagement**
+### **Community Engagement**
 - Campaign tracking and petition management
 - Neighborhood-based organizing tools
 - User preference and notification management
@@ -84,7 +86,7 @@ python scripts/test_rag_system.py
 ## 🧪 **LLM-as-Judge Evaluation System**
 
 ### **🎯 Intelligent Chatbot Testing**
-Advanced evaluation framework using GPT-4 to assess chatbot response quality beyond traditional keyword matching.
+Evaluation framework using GPT-4 to assess chatbot response quality beyond traditional keyword matching with ROUGE or BERT scores.
 
 ### **🔧 Key Features**
 - **Smart Quality Assessment**: GPT-4 evaluates helpfulness, accuracy, and civic appropriateness
@@ -108,17 +110,6 @@ python scripts/llm_judge_evaluator.py
 
 # Performance benchmarking
 python scripts/run_eval.py --mode performance
-```
-
-### **📈 Sample Results**
-```
-LLM-AS-JUDGE EVALUATION SUMMARY
-Combined Score: 0.847/1.0 (Grade: B)
-Traditional Score: 0.789/1.0
-LLM Judge Score: 0.873/1.0
-Score Improvement: +0.084
-
-Grade Distribution: A: 2, B: 6, C: 2, D: 0, F: 0
 ```
 
 **📖 Full Documentation**: See [`docs/CHATBOT_EVALUATION_README.md`](docs/CHATBOT_EVALUATION_README.md)
@@ -420,39 +411,6 @@ graph TB
     CF --> CLOUDFRONT
 ```
 
-#### **🎯 Architectural Principles**
-
-- **Single Responsibility**: Each service has a focused, well-defined purpose
-- **Dependency Inversion**: High-level modules don't depend on low-level modules
-- **Interface Segregation**: Clients depend only on interfaces they use
-- **Open/Closed**: Open for extension, closed for modification
-- **DRY (Don't Repeat Yourself)**: Shared functionality in base classes
-- **Consistent Error Handling**: Standardized exception handling across all layers
-- **Type Safety**: Full TypeScript and Python type coverage
-
-#### **🔄 Recent Architectural Improvements**
-
-The codebase has been significantly refactored to improve maintainability and consistency:
-
-**✅ Standardization Improvements:**
-- **Unified Response Format**: All API endpoints now use `StandardListResponse` and `PaginationParams`
-- **Base Service Pattern**: All services inherit from `BaseService` with dependency injection
-- **Centralized Error Handling**: Custom exception classes with structured error responses
-- **Unified Notification System**: Consolidated user and subscription notification preferences
-
-**✅ Code Quality Improvements:**
-- **Reduced Duplication**: Eliminated ~200 lines of redundant code
-- **Better Type Safety**: Full type coverage with generic response types
-- **Improved Testability**: Dependency injection enables easier mocking
-- **Consistent Logging**: Standardized logging patterns across all services
-
-**✅ Database Improvements:**
-- **Unified Models**: `NotificationPreferences` model consolidates user notification settings
-- **Proper Migrations**: Alembic migrations preserve existing data during schema changes
-- **Better Relationships**: Cleaner model relationships with proper foreign keys
-
-See [`docs/ARCHITECTURE_IMPROVEMENTS.md`](docs/ARCHITECTURE_IMPROVEMENTS.md) for detailed implementation notes.
-
 ## 📁 Project Structure
 
 ```
@@ -585,10 +543,10 @@ python -m app.services.meeting_scraper  # Live meeting discovery
 ## 📊 System Status & Health
 
 ### **Performance Metrics**
-- 📈 **API Response Time**: < 500ms average
-- 📊 **Database**: 40+ meetings with full AI categorization
-- 🔄 **Uptime**: 99%+ availability
-- 💾 **Data**: AI-processed meeting minutes and agenda items
+- **API Response Time**: < 500ms average
+- **Database**: 40+ meetings with full AI categorization
+- **Uptime**: 99%+ availability
+- **Data**: AI-processed meeting minutes and agenda items
 
 ## 🧪 Testing
 
@@ -690,17 +648,17 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 ## 🔐 Security
 
 ### **Security Features**
-- 🛡️ **HTTPS**: All communication encrypted
-- 🔐 **Environment Variables**: Secrets management
-- 🏗️ **VPC**: Network isolation in AWS
-- 👤 **IAM**: Minimal permission roles
-- 🔍 **Security Scanning**: Automated vulnerability checks
+- **HTTPS**: All communication encrypted
+- **Environment Variables**: Secrets management
+- **VPC**: Network isolation in AWS
+- **IAM**: Minimal permission roles
+- **Security Scanning**: Automated vulnerability checks
 
 ### **Data Protection**
-- 📊 **Database Encryption**: At rest and in transit
-- 🔒 **API Authentication**: JWT tokens
-- 🛡️ **Input Validation**: XSS and injection prevention
-- 📋 **Audit Logs**: Comprehensive activity tracking
+- **Database Encryption**: At rest and in transit
+- **API Authentication**: JWT tokens
+- **Input Validation**: XSS and injection prevention
+- **Audit Logs**: Comprehensive activity tracking
 
 ## 📄 License
 
@@ -709,43 +667,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🆘 Support
 
 ### **Get Help**
-- 📚 **Documentation**: Check [`docs/`](docs/) directory
-- 🐛 **Issues**: Create GitHub issue with details
-- 💬 **Discussions**: Use GitHub Discussions for questions
-- 🛠️ **Emergency**: Run `./scripts/fix_production_api.sh` for production issues
+- **Documentation**: Check [`docs/`](docs/) directory
+- **Issues**: Create GitHub issue with details
+- **Discussions**: Use GitHub Discussions for questions
+- **Emergency**: Run `./scripts/fix_production_api.sh` for production issues
 
 ### **Contact**
-- 📧 **Email**: kaitlin.cort@owasp.org
-- 🐙 **GitHub**: [@kaizengrowth](https://github.com/kaizengrowth)
-
----
-
-## 📈 Recent Updates
-
-**RAG System & Evaluation Architecture Changes** (August 5, 2025):
-- ✅ **Implemented LLM-as-Judge evaluation system** using GPT-4 for intelligent response assessment
-- ✅ **Comprehensive RAG system** for document-based chatbot responses with vector search
-- ✅ Added advanced evaluation framework with traditional + LLM metrics comparison
-- ✅ Created document processing pipeline with multi-format support (PDF, DOCX, TXT)
-- ✅ Integrated RAG into existing chatbot with OpenAI function calling
-- ✅ Added complete document management API with upload/search endpoints
-- ✅ Built evaluation suite with multiple modes (quick, full, RAG, performance, LLM-judge)
-- ✅ Fixed production meeting details loading issues
-- ✅ Added comprehensive production troubleshooting scripts
-- ✅ Resolved security vulnerabilities (esbuild, dependencies)
-- ✅ Enhanced CI/CD pipeline with automated testing
-- ✅ Updated documentation and README files
-
-**Next Planned Features**:
-- 📄 **RAG System Expansion**: Upload city budgets, ordinances, and legislation
-- 🔍 **Advanced Document Search**: Semantic search across all city documents
-- 🧪 **Evaluation System Enhancement**: A/B testing, user satisfaction metrics, continuous monitoring
-- 🤖 **Multi-Judge Evaluation**: Compare GPT-4 vs Claude vs other LLMs as judges
-- 🔄 Enhanced meeting data scraping automation
-- 📱 Mobile app development
-- 🤖 Advanced AI categorization improvements
-- 📊 User analytics dashboard
-
----
-
-**Ready to get started?** Follow the [Quick Start Guide](docs/QUICKSTART.md) or run `./scripts/start-dev.sh`! 🚀
+kaitlin.cort@owasp.org
+# Deployment trigger Wed Aug 13 13:49:25 CDT 2025

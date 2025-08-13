@@ -2,43 +2,43 @@
 
 A comprehensive system for scraping, categorizing, and analyzing historical documents from the **official City of Tulsa Council Archive** at `https://www.cityoftulsa.org/apps/TulsaCouncilArchive`.
 
-## 🎯 Overview
+## Overview
 
 This system can automatically:
-- **🕸️ Scrape ALL historical documents** from 2020-2025
-- **🏷️ Categorize 16 different meeting types** (Regular Council, committees, task forces)
-- **📥 Download PDF documents** and extract text content
-- **🔍 Find embedded minutes** within Regular meeting agendas
-- **🤖 Process with AI** for enhanced summaries and voting analysis
-- **💾 Store in database** with comprehensive categorization
+- **Scrape ALL historical documents** from 2020-2025
+- **Categorize 16 different meeting types** (Regular Council, committees, task forces)
+- **Download PDF documents** and extract text content
+- **Find embedded minutes** within Regular meeting agendas
+- **Process with AI** for enhanced summaries and voting analysis
+- **Store in database** with comprehensive categorization
 
 ---
 
-## 📋 Meeting Types Supported
+## Meeting Types Supported
 
 ### Main Council & Committees
-- **🏛️ Regular Council** - Main city council meetings
-- **💰 Budget and Special Projects Committee** - Financial planning and budgets
-- **🚧 Public Works Committee** - Infrastructure and utilities
-- **🏙️ Urban And Economic Development Committee** - Planning and growth
+- **Regular Council** - Main city council meetings
+- **Budget and Special Projects Committee** - Financial planning and budgets
+- **Public Works Committee** - Infrastructure and utilities
+- **Urban And Economic Development Committee** - Planning and growth
 
 ### Task Forces & Special Committees (12 additional types)
-- **🌟 61st & Peoria Quality of Life Task Force**
-- **🏗️ Capital Improvement Program Task Force**
-- **🚊 Eastern Flyer Passenger Rail Task Force**
-- **🏠 HUD Grant Fund Allocation Committee**
-- **🍽️ Hunger and Food Taskforce Committee**
-- **🤝 Mayor-Council Retreat**
-- **🚔 Public Safety Task Force**
-- **🌊 River Infrastructure Task Force**
-- **💡 Street Lighting Task Force**
-- **🏪 Food Desert Task Force**
-- **🪶 Tribal Nations Relations Committee**
-- **🎒 Truancy Prevention Task Force**
+- **61st & Peoria Quality of Life Task Force**
+- **Capital Improvement Program Task Force**
+- **Eastern Flyer Passenger Rail Task Force**
+- **HUD Grant Fund Allocation Committee**
+- **Hunger and Food Taskforce Committee**
+- **Mayor-Council Retreat**
+- **Public Safety Task Force**
+- **River Infrastructure Task Force**
+- **Street Lighting Task Force**
+- **Food Desert Task Force**
+- **Tribal Nations Relations Committee**
+- **Truancy Prevention Task Force**
 
 ---
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 ### Required Dependencies
 ```bash
@@ -62,7 +62,7 @@ export OPENAI_API_KEY="your-openai-api-key"
 
 ---
 
-## 🚀 Scripts Overview
+## Scripts Overview
 
 ### 1. Production Scraper (`scripts/run_comprehensive_tulsa_scraper.py`)
 
@@ -220,7 +220,7 @@ python scripts/add_document_type_migration.py --aws-db-url "your-db-url"
 
 ---
 
-## 📊 Expected Data Collection Results
+## Expected Data Collection Results
 
 ### Typical Historical Scrape (2020-2025)
 - **📋 Total Meetings**: 500-1500+ meetings (depending on activity)
@@ -274,7 +274,7 @@ backend/storage/pdfs/
 
 ---
 
-## 🎛️ Frontend Integration
+## Frontend Integration
 
 ### Enhanced Filtering Options
 The scraper populates the frontend with enhanced filtering capabilities:
@@ -309,7 +309,7 @@ const filteredMeetings = meetings.filter(meeting => {
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -355,7 +355,7 @@ grep "ERROR" logs/scraper.log
 
 ---
 
-## 🎯 Performance Considerations
+## Performance Considerations
 
 ### Scraping Speed
 - **Rate Limiting**: 0.5 second delay between requests (respectful)
@@ -381,7 +381,7 @@ grep "ERROR" logs/scraper.log
 
 ---
 
-## 📈 Monitoring and Maintenance
+## Monitoring and Maintenance
 
 ### Regular Maintenance Tasks
 1. **Monthly Updates**: Run scraper monthly to get new documents
@@ -418,7 +418,7 @@ db.close()
 
 ---
 
-## 🏆 Success Metrics
+## Success Metrics
 
 A successful comprehensive scrape should achieve:
 - **📊 Coverage**: 500+ meetings across 6 years
@@ -430,7 +430,7 @@ A successful comprehensive scrape should achieve:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ### Adding New Meeting Types
 1. Update `meeting_type_mapping` in `TulsaArchiveScraper`
@@ -445,4 +445,4 @@ A successful comprehensive scrape should achieve:
 
 ---
 
-**🎉 The Tulsa Archive Scraper provides comprehensive access to the complete historical record of Tulsa City Council proceedings, with advanced categorization and AI-powered analysis capabilities!**
+**The Tulsa Archive Scraper provides comprehensive access to the complete historical record of Tulsa City Council proceedings, with advanced categorization and AI-powered analysis capabilities!**
