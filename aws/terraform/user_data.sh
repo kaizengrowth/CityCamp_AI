@@ -62,7 +62,11 @@ get_ssm_param() {
     aws ssm get-parameter --region us-east-2 --name "$1" --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo ""
 }
 
-# Get all parameters
+# Get all parameters and create secure secret files
+echo "Creating secure secret files for Docker..."
+mkdir -p /opt/citycamp-ai/secrets
+chmod 700 /opt/citycamp-ai/secrets
+
 DATABASE_PASSWORD=$(get_ssm_param "/citycamp-ai/database-password")
 SECRET_KEY=$(get_ssm_param "/citycamp-ai/secret-key")
 OPENAI_API_KEY=$(get_ssm_param "/citycamp-ai/openai-api-key")
@@ -73,9 +77,37 @@ TWILIO_AUTH_TOKEN=$(get_ssm_param "/citycamp-ai/twilio-auth-token")
 TWILIO_PHONE_NUMBER=$(get_ssm_param "/citycamp-ai/twilio-phone-number")
 GEOCODIO_API_KEY=$(get_ssm_param "/citycamp-ai/GEOCODIO_API_KEY")
 
-# Create docker-compose.yml
+# Create secret files with proper permissions
+echo "$DATABASE_PASSWORD" > /opt/citycamp-ai/secrets/db_password
+echo "$SECRET_KEY" > /opt/citycamp-ai/secrets/secret_key
+echo "$OPENAI_API_KEY" > /opt/citycamp-ai/secrets/openai_api_key
+echo "$SMTP_PASSWORD" > /opt/citycamp-ai/secrets/smtp_password
+echo "$TWILIO_AUTH_TOKEN" > /opt/citycamp-ai/secrets/twilio_auth_token
+echo "$GEOCODIO_API_KEY" > /opt/citycamp-ai/secrets/geocodio_api_key
+
+# Secure the secret files
+chmod 600 /opt/citycamp-ai/secrets/*
+chown root:root /opt/citycamp-ai/secrets/*
+
+echo "✅ Docker secrets created securely"
+
+# Create docker-compose.yml with Docker secrets for sensitive data
 cat > docker-compose.yml << 'EOF'
 version: '3.8'
+
+secrets:
+  db_password:
+    file: /opt/citycamp-ai/secrets/db_password
+  secret_key:
+    file: /opt/citycamp-ai/secrets/secret_key
+  openai_api_key:
+    file: /opt/citycamp-ai/secrets/openai_api_key
+  smtp_password:
+    file: /opt/citycamp-ai/secrets/smtp_password
+  twilio_auth_token:
+    file: /opt/citycamp-ai/secrets/twilio_auth_token
+  geocodio_api_key:
+    file: /opt/citycamp-ai/secrets/geocodio_api_key
 
 services:
   postgres:
@@ -84,7 +116,9 @@ services:
     environment:
       POSTGRES_DB: citycamp_db
       POSTGRES_USER: citycamp_user
-      POSTGRES_PASSWORD: $DATABASE_PASSWORD
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - /data/postgres:/var/lib/postgresql/data
     ports:
@@ -117,16 +151,18 @@ services:
     working_dir: /app
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://citycamp_user:$DATABASE_PASSWORD@postgres:5432/citycamp_db
+      - DATABASE_URL_TEMPLATE=postgresql://citycamp_user:DB_PASSWORD_PLACEHOLDER@postgres:5432/citycamp_db
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=$SECRET_KEY
-      - OPENAI_API_KEY=$OPENAI_API_KEY
       - SMTP_USERNAME=$SMTP_USERNAME
-      - SMTP_PASSWORD=$SMTP_PASSWORD
       - TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
-      - TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
       - TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER
-      - GEOCODIO_API_KEY=$GEOCODIO_API_KEY
+    secrets:
+      - db_password
+      - secret_key
+      - openai_api_key
+      - smtp_password
+      - twilio_auth_token
+      - geocodio_api_key
     ports:
       - "8000:8000"
     volumes:
@@ -140,8 +176,19 @@ services:
     restart: unless-stopped
     command: >
       bash -c "
+        echo 'Setting up secure environment from Docker secrets...' &&
+        export DATABASE_PASSWORD=\$$(cat /run/secrets/db_password) &&
+        export SECRET_KEY=\$$(cat /run/secrets/secret_key) &&
+        export OPENAI_API_KEY=\$$(cat /run/secrets/openai_api_key) &&
+        export SMTP_PASSWORD=\$$(cat /run/secrets/smtp_password) &&
+        export TWILIO_AUTH_TOKEN=\$$(cat /run/secrets/twilio_auth_token) &&
+        export GEOCODIO_API_KEY=\$$(cat /run/secrets/geocodio_api_key) &&
+        export DATABASE_URL=\$${DATABASE_URL_TEMPLATE/DB_PASSWORD_PLACEHOLDER/\$$DATABASE_PASSWORD} &&
+        echo 'Installing dependencies...' &&
         pip install -r requirements.txt &&
+        echo 'Running database migrations...' &&
         python -m alembic upgrade head &&
+        echo 'Starting CityCamp AI Backend...' &&
         python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
@@ -209,17 +256,12 @@ http {
 }
 EOF
 
-# Create environment file
+# Create environment file for non-sensitive configuration only
 cat > .env << EOF
-DATABASE_PASSWORD=$DATABASE_PASSWORD
-SECRET_KEY=$SECRET_KEY
-OPENAI_API_KEY=$OPENAI_API_KEY
 SMTP_USERNAME=$SMTP_USERNAME
-SMTP_PASSWORD=$SMTP_PASSWORD
 TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
 TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER
-GEOCODIO_API_KEY=$GEOCODIO_API_KEY
+# Sensitive data now managed via Docker secrets
 EOF
 
 # Clone the application code (parameterized repo URL, supports authenticated cloning)

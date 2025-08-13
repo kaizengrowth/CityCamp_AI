@@ -85,14 +85,36 @@ get_ssm_param() {
     fi
 }
 
-# Get configuration from SSM Parameter Store
+# Get configuration from SSM Parameter Store and create Docker secrets
 DATABASE_PASSWORD=$(get_ssm_param "/citycamp-ai/database-password")
 SECRET_KEY=$(get_ssm_param "/citycamp-ai/secret-key")
 OPENAI_API_KEY=$(get_ssm_param "/citycamp-ai/openai-api-key")
 
-# Create docker-compose.yml
+# Create secure secrets directory
+mkdir -p /opt/citycamp-ai/secrets
+chmod 700 /opt/citycamp-ai/secrets
+
+# Create secret files with proper permissions
+echo "$$DATABASE_PASSWORD" > /opt/citycamp-ai/secrets/db_password
+echo "$$SECRET_KEY" > /opt/citycamp-ai/secrets/secret_key
+echo "$$OPENAI_API_KEY" > /opt/citycamp-ai/secrets/openai_api_key
+
+# Secure the secret files
+chmod 600 /opt/citycamp-ai/secrets/*
+
+echo "✅ Docker secrets created securely"
+
+# Create docker-compose.yml with Docker secrets
 cat > docker-compose.yml << 'EOF'
 version: '3.8'
+
+secrets:
+  db_password:
+    file: /opt/citycamp-ai/secrets/db_password
+  secret_key:
+    file: /opt/citycamp-ai/secrets/secret_key
+  openai_api_key:
+    file: /opt/citycamp-ai/secrets/openai_api_key
 
 services:
   postgres:
@@ -101,7 +123,9 @@ services:
     environment:
       POSTGRES_DB: citycamp_db
       POSTGRES_USER: citycamp_user
-      POSTGRES_PASSWORD: $${DATABASE_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - /data/postgres:/var/lib/postgresql/data
     ports:
@@ -130,10 +154,12 @@ services:
     working_dir: /app
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://citycamp_user:$${DATABASE_PASSWORD}@postgres:5432/citycamp_db
+      - DATABASE_URL_TEMPLATE=postgresql://citycamp_user:DB_PASSWORD_PLACEHOLDER@postgres:5432/citycamp_db
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=$${SECRET_KEY}
-      - OPENAI_API_KEY=$${OPENAI_API_KEY}
+    secrets:
+      - db_password
+      - secret_key
+      - openai_api_key
     ports:
       - "8000:8000"
     volumes:
@@ -146,8 +172,16 @@ services:
     command: >
       bash -c "
         echo 'CityCamp AI Backend starting in ${aws_region}...' &&
+        echo 'Setting up secure environment from Docker secrets...' &&
+        export DATABASE_PASSWORD=\$$(cat /run/secrets/db_password) &&
+        export SECRET_KEY=\$$(cat /run/secrets/secret_key) &&
+        export OPENAI_API_KEY=\$$(cat /run/secrets/openai_api_key) &&
+        export DATABASE_URL=\$${DATABASE_URL_TEMPLATE/DB_PASSWORD_PLACEHOLDER/\$$DATABASE_PASSWORD} &&
+        echo 'Installing dependencies...' &&
         pip install -r requirements.txt &&
+        echo 'Running database migrations...' &&
         python -m alembic upgrade head &&
+        echo 'Starting CityCamp AI Backend...' &&
         python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
