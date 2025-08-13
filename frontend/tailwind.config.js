@@ -72,6 +72,7 @@ export default {
           'medium-blue': '#5086d3',  // Button color for CTAs
           'red': '#B10E1C',
           'yellow': '#E8A613',
+          'tan' : '#F8F1E0',
         },
       },
       fontFamily: {
