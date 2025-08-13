@@ -119,12 +119,12 @@ async def find_representatives(
 
         if not district_result["success"]:
             return {
-                "representatives": TULSA_REPRESENTATIVES[:3],  # Fallback to demo data
+                "representatives": [],  # Return empty list instead of fallback data
                 "address": address,
                 "district_info": {
                     "found": False,
                     "error": district_result["error"],
-                    "message": "Using default representatives. For accurate results, please verify your address is within Tulsa city limits.",
+                    "message": "Address not found within Tulsa city limits. Please verify your address and try again.",
                 },
             }
 
@@ -169,12 +169,12 @@ async def find_representatives(
 
         # Return fallback data on any error
         return {
-            "representatives": TULSA_REPRESENTATIVES[:3],
+            "representatives": [],  # Return empty list instead of fallback data
             "address": address,
             "district_info": {
                 "found": False,
                 "error": f"Service error: {str(e)}",
-                "message": "Using default representatives due to service error.",
+                "message": "Unable to determine district due to service error. Please try again later.",
             },
         }
 

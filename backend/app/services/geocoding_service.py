@@ -41,9 +41,9 @@ class GeocodingService:
             if coords:
                 return coords
 
-            # Only return default coordinates as last resort
-            logger.warning(f"Could not geocode address '{address}', using default Tulsa coordinates")
-            return (36.1539, -95.9928)  # Downtown Tulsa coordinates
+            # Return None if geocoding fails instead of default coordinates
+            logger.warning(f"Could not geocode address '{address}'")
+            return None
 
         except Exception as e:
             logger.error(f"Error geocoding address '{address}': {str(e)}")

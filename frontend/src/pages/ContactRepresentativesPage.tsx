@@ -20,27 +20,11 @@ interface EmailComposition {
 export const ContactRepresentativesPage: React.FC = () => {
   const [address, setAddress] = useState('');
   const [issue, setIssue] = useState('');
-  const [tone, setTone] = useState<'formal' | 'friendly' | 'urgent'>('friendly');
-  const [emailComposition, setEmailComposition] = useState<EmailComposition | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [tone, setTone] = useState<'formal' | 'friendly' | 'urgent'>('formal');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-
-  // Sample representatives data (would normally come from API)
-  const sampleRepresentatives: Representative[] = [
-    {
-      name: 'Monroe Nichols',
-      position: 'Mayor',
-      email: 'mayor@cityoftulsa.org',
-      phone: '(918) 596-7777'
-    },
-    {
-      name: 'Anthony Archie',
-      position: 'City Councilor - District 2',
-      email: 'dist2@tulsacouncil.org',
-      district: 'District 2'
-    }
-  ];
+  const [emailComposition, setEmailComposition] = useState<EmailComposition | null>(null);
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const handleAddressLookup = async () => {
     if (!address.trim()) {
@@ -71,14 +55,18 @@ export const ContactRepresentativesPage: React.FC = () => {
       if (response.district_info.found) {
         toast.success(`Found representatives for ${response.district_info.district}!`);
       } else {
-        toast.error(response.district_info.message || 'Using general representatives - consider verifying your address');
+        if (response.representatives.length === 0) {
+          toast.error('No representatives found for this address. Please verify your address is within Tulsa city limits.');
+        } else {
+          toast.error(response.district_info.message || 'Address lookup incomplete - please verify your address');
+        }
       }
 
     } catch (error) {
       console.error('Error finding representatives:', error);
-      toast.error('Unable to find representatives for this address. Using general contacts.');
-      // Fallback to sample data
-      setRepresentatives(sampleRepresentatives);
+      toast.error('Unable to find representatives for this address. Please try again.');
+      // Clear representatives instead of using fallback data
+      setRepresentatives([]);
     } finally {
       setLoading(false);
     }
