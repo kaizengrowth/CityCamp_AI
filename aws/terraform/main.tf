@@ -24,133 +24,14 @@ module "vpc" {
   private_subnets = var.private_subnet_cidrs
   public_subnets  = var.public_subnet_cidrs
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway = false
+  single_nat_gateway = false
   enable_vpn_gateway = false
 
   tags = var.common_tags
 }
 
-# Security group for VPC Interface Endpoints (allow HTTPS from ECS tasks)
-resource "aws_security_group" "vpc_endpoints" {
-  name_prefix = "${var.project_name}-vpce-"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_tasks.id]
-    description     = "Allow HTTPS from ECS tasks to interface endpoints"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.common_tags
-}
-
-# Gateway endpoint for S3 (keeps S3 traffic inside AWS, avoids NAT)
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = module.vpc.vpc_id
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-
-  route_table_ids = module.vpc.private_route_table_ids
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-s3"
-  })
-}
-
-# Interface endpoints for common services used by ECS tasks
-# ECR API
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ecr-api"
-  })
-}
-
-# ECR DKR (image layer pulls)
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ecr-dkr"
-  })
-}
-
-# CloudWatch Logs
-resource "aws_vpc_endpoint" "logs" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.logs"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-logs"
-  })
-}
-
-# Systems Manager (for future use / metadata access without NAT)
-resource "aws_vpc_endpoint" "ssm" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.ssm"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-ssm"
-  })
-}
-
-# Secrets Manager
-resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-secretsmanager"
-  })
-}
-
-# STS (token exchange within VPC)
-resource "aws_vpc_endpoint" "sts" {
-  vpc_id              = module.vpc.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.sts"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-  private_dns_enabled = true
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project_name}-vpce-sts"
-  })
-}
+# All VPC endpoints removed - using public AWS endpoints instead
 
 # RDS PostgreSQL
 resource "aws_db_subnet_group" "main" {
