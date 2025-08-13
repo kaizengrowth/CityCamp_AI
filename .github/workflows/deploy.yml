@@ -178,7 +178,10 @@ jobs:
               body: output
             });
           } catch (error) {
-            console.log('Error showing plan:', error);
+            console.error('Failed to show Terraform plan:', error.message);
+            if (error.stack) {
+              console.error(error.stack);
+            }
           }
 
   terraform-apply:
