@@ -3,6 +3,11 @@ name: Deploy CityCamp AI
 on:
   push:
     branches: [ main, feature/AI-engineering ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/deploy.yml'
+      - 'docker-compose*.yml'
   workflow_dispatch:
 
 jobs:
@@ -20,18 +25,24 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          echo "🚀 Starting deployment of CityCamp AI..."
           cd /home/ec2-user
 
-          # Clone or update repository
+          # Clone or update repository (no terraform needed)
           if [ -d "citycamp-ai" ]; then
+            echo "📥 Updating existing repository..."
             cd citycamp-ai
-            git pull origin ${{ github.ref_name }}
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
           else
-            git clone git@github.com:kalinr/CityCamp_AI.git citycamp-ai
+            echo "📥 Cloning repository..."
+            git clone git@github.com:kaizengrowth/CityCamp_AI.git citycamp-ai
             cd citycamp-ai
+            git checkout ${{ github.ref_name }}
           fi
 
-          # Set up production secrets
+          # Set up production secrets (no infrastructure changes)
+          echo "🔐 Setting up application secrets..."
           mkdir -p secrets
           echo '${{ secrets.DATABASE_URL }}' > secrets/database_url
           echo '${{ secrets.SECRET_KEY }}' > secrets/secret_key
@@ -39,16 +50,28 @@ jobs:
           echo '${{ secrets.GEOCODIO_API_KEY }}' > secrets/geocodio_api_key
 
           # Stop existing containers
-          docker stop citycamp-backend || true
-          docker rm citycamp-backend || true
+          echo "🛑 Stopping existing containers..."
+          docker stop citycamp-backend citycamp-frontend || true
+          docker rm citycamp-backend citycamp-frontend || true
 
-          # Build and run new container
+          # Build and run backend (application deployment only)
+          echo "🔨 Building backend application..."
           docker build -t citycamp-ai-backend ./backend/
+
+          echo "🚀 Starting backend service..."
           docker run -d --name citycamp-backend -p 8000:8000 \
             -v $(pwd)/secrets:/app/secrets \
-            -v $(pwd)/backend:/app \
+            --restart unless-stopped \
             citycamp-ai-backend
 
-          # Health check
+          # Health check (no infrastructure validation needed)
+          echo "🔍 Running health check..."
           sleep 30
-          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:8000/health || {
+            echo "❌ Health check failed, checking logs..."
+            docker logs citycamp-backend
+            exit 1
+          }
+
+          echo "✅ Deployment completed successfully!"
+          echo "🌐 Application is running at http://localhost:8000"
