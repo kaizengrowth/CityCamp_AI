@@ -10,17 +10,21 @@ variable "aws_account_id" {
   default     = "538569249671"
 }
 
+locals {
+  valid_instance_types = [
+    "t3.small", "t3.medium", "t3.large", "t3.xlarge",
+    "m5.large", "m5.xlarge", "m6i.large", "m6i.xlarge"
+  ]
+}
+
 variable "instance_type" {
   description = "EC2 instance type for the simple deployment"
   type        = string
   default     = "t3.medium"
 
   validation {
-    condition = contains([
-      "t3.small", "t3.medium", "t3.large", "t3.xlarge",
-      "m5.large", "m5.xlarge", "m6i.large", "m6i.xlarge"
-    ], var.instance_type)
-    error_message = "Instance type must be one of: t3.small, t3.medium, t3.large, t3.xlarge, m5.large, m5.xlarge, m6i.large, m6i.xlarge."
+    condition     = contains(local.valid_instance_types, var.instance_type)
+    error_message = "Instance type must be one of: ${join(", ", local.valid_instance_types)}."
   }
 }
 
