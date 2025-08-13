@@ -400,7 +400,7 @@ resource "aws_eip" "simple" {
 
 # Target group attachment
 resource "aws_lb_target_group_attachment" "simple" {
-  target_group_arn = aws_lb_target_group.main.arn
+    target_group_arn = aws_lb_target_group.main.arn
   target_id        = aws_instance.simple.id
   port             = 8000
 }
