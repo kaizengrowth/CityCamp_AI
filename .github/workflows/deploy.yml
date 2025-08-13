@@ -241,7 +241,7 @@ jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    needs: [test, terraform-apply]
+    needs: [test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: AWS
 
