@@ -1,5 +1,11 @@
 # Cost-effective EC2-based infrastructure for us-east-2
 
+# Data source for Route 53 hosted zone
+data "aws_route53_zone" "main" {
+  name         = "tulsai.city"
+  private_zone = false
+}
+
 # Data source for the latest Amazon Linux 2 AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -13,6 +19,90 @@ data "aws_ami" "amazon_linux" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+}
+
+# ACM Certificate for SSL (created in us-east-2 for ALB use)
+resource "aws_acm_certificate" "main" {
+  domain_name = "tulsai.city"
+  subject_alternative_names = [
+    "www.tulsai.city",
+    "api.tulsai.city"
+  ]
+  validation_method = "DNS"
+
+  tags = var.common_tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Route 53 records for DNS validation
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.main.zone_id
+}
+
+# Route 53 A records pointing to ALB
+resource "aws_route53_record" "main" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "tulsai.city"
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "www" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "www.tulsai.city"
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "api" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "api.tulsai.city"
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+# ACM Certificate validation
+resource "aws_acm_certificate_validation" "main" {
+  certificate_arn         = aws_acm_certificate.main.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+
+  timeouts {
+    create = "10m"
   }
 }
 
@@ -138,7 +228,7 @@ locals {
 # EC2 instance
 resource "aws_instance" "simple" {
   ami                    = data.aws_ami.amazon_linux.id
-  instance_type          = var.instance_type  # Configurable instance type
+  instance_type          = var.instance_type # Configurable instance type
   key_name               = var.ec2_key_name  # You'll need to specify this
   vpc_security_group_ids = [aws_security_group.ec2_simple.id]
   subnet_id              = module.vpc.public_subnets[0]
@@ -213,11 +303,32 @@ resource "aws_lb_target_group_attachment" "simple" {
   port             = 8000
 }
 
-# Update ALB listener to use the new target group
-resource "aws_lb_listener" "simple" {
+# HTTP ALB listener - redirect to HTTPS
+resource "aws_lb_listener" "simple_http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = var.common_tags
+}
+
+# HTTPS ALB listener with SSL certificate
+resource "aws_lb_listener" "simple_https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_acm_certificate_validation.main.certificate_arn
 
   default_action {
     type             = "forward"
@@ -236,4 +347,23 @@ output "ec2_public_ip" {
 output "ec2_instance_id" {
   description = "ID of the EC2 instance"
   value       = aws_instance.simple.id
+}
+
+output "ssl_certificate_arn" {
+  description = "ARN of the SSL certificate"
+  value       = aws_acm_certificate.main.arn
+}
+
+output "alb_https_endpoint" {
+  description = "HTTPS endpoint for the application"
+  value       = "https://${aws_lb.main.dns_name}"
+}
+
+output "application_urls" {
+  description = "Application URLs with SSL certificates"
+  value = {
+    main_site = "https://tulsai.city"
+    www_site  = "https://www.tulsai.city"
+    api       = "https://api.tulsai.city"
+  }
 }

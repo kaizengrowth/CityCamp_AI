@@ -506,7 +506,6 @@ CityCamp_AI/
 │   ├── RAG_SYSTEM_README.md # RAG architecture & usage guide
 │   ├── CHATBOT_EVALUATION_README.md # LLM-as-Judge evaluation guide
 │   ├── ARCHITECTURE_IMPROVEMENTS.md # Recent refactoring details
-│   ├── aws-deployment-guide.md
 │   ├── TROUBLESHOOTING.md   # Issue resolution
 │   └── API_DOCUMENTATION.md # API reference
 │
@@ -647,8 +646,7 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 - 🧪 **[Testing Guide](tests/README.md)** - Testing procedures
 
 ### **Deployment & Operations**
-- ☁️ **[AWS Deployment](docs/aws-deployment-guide.md)** - Production setup
-- 🔄 **[CI/CD Setup](docs/GITHUB_ACTIONS_SETUP.md)** - Automated workflows
+- ☁️ **AWS Deployment** - Check `aws/` directory for Terraform configurations
 - 🛡️ **[Security Guide](docs/TROUBLESHOOTING.md#security)** - Security best practices
 
 ### **API & Development**
