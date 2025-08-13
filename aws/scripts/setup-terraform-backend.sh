@@ -29,7 +29,7 @@ fi
 echo -e "${YELLOW}Creating S3 bucket for Terraform state...${NC}"
 
 # Create S3 bucket
-if aws s3 ls "s3://${BUCKET_NAME}" 2>&1 | grep -q 'NoSuchBucket'; then
+if ! aws s3 ls "s3://${BUCKET_NAME}" &>/dev/null; then
     aws s3 mb "s3://${BUCKET_NAME}" --region "${AWS_REGION}"
     echo -e "${GREEN}S3 bucket '${BUCKET_NAME}' created successfully.${NC}"
 else
