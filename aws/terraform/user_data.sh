@@ -117,16 +117,16 @@ services:
     working_dir: /app
     environment:
       - ENVIRONMENT=production
-             - DATABASE_URL=postgresql://citycamp_user:$DATABASE_PASSWORD@postgres:5432/citycamp_db
-       - REDIS_URL=redis://redis:6379/0
-       - SECRET_KEY=$SECRET_KEY
-       - OPENAI_API_KEY=$OPENAI_API_KEY
-       - SMTP_USERNAME=$SMTP_USERNAME
-       - SMTP_PASSWORD=$SMTP_PASSWORD
-       - TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
-       - TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
-       - TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER
-       - GEOCODIO_API_KEY=$GEOCODIO_API_KEY
+      - DATABASE_URL=postgresql://citycamp_user:$DATABASE_PASSWORD@postgres:5432/citycamp_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=$SECRET_KEY
+      - OPENAI_API_KEY=$OPENAI_API_KEY
+      - SMTP_USERNAME=$SMTP_USERNAME
+      - SMTP_PASSWORD=$SMTP_PASSWORD
+      - TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
+      - TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
+      - TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER
+      - GEOCODIO_API_KEY=$GEOCODIO_API_KEY
     ports:
       - "8000:8000"
     volumes:
