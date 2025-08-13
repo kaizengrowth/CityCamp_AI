@@ -21,7 +21,7 @@ We'll use a blue-green deployment approach:
 
 ### 1.1 Create us-east-2 Backend
 ```bash
-# Update backend script for us-east-2
+# Set up Terraform backend for us-east-2
 ./aws/scripts/setup-terraform-backend.sh
 ```
 
