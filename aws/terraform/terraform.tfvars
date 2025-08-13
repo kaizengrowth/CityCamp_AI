@@ -7,7 +7,7 @@ instance_type  = "t3.medium" # Options: t3.medium (~$30/mo), t3.large (~$60/mo),
 # ec2_key_name = "your-key-pair-name"  # Uncomment and set if you want SSH access
 
 # Database configuration
-db_password = "your-secure-database-password"
+# db_password = "set via environment variable TF_VAR_db_password"
 
 # Optional: Override defaults
 # db_instance_class = "db.t3.small"

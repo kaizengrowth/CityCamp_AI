@@ -231,11 +231,16 @@ if [ -d "temp_repo/backend" ]; then
     rm -rf temp_repo
 fi
 
+# Install Node.js for frontend building
+curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+yum install -y nodejs
+
 # Build frontend if it exists
 if [ -d "frontend" ]; then
     cd frontend
-    # You might need to install Node.js and build the frontend
-    # For now, we'll assume the dist folder is already built
+    # Install frontend dependencies and build
+    npm ci
+    npm run build
     cd ..
 fi
 
