@@ -9,6 +9,13 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}Updating SSM parameters with us-east-2 endpoints...${NC}"
 
+# Check for required environment variables
+if [ -z "$CITYCAMP_DB_PASSWORD" ]; then
+    echo -e "${RED}Error: CITYCAMP_DB_PASSWORD environment variable is required${NC}"
+    echo "Set it with: export CITYCAMP_DB_PASSWORD='your-secure-password'"
+    exit 1
+fi
+
 # Get the new endpoints from Terraform outputs
 cd aws/terraform
 
@@ -25,7 +32,7 @@ echo -e "${YELLOW}Updating database URL...${NC}"
 aws ssm put-parameter \
   --region us-east-2 \
   --name "/citycamp-ai/database-url" \
-  --value "postgresql://citycamp_user:REDACTED_PASSWORD@$RDS_ENDPOINT/citycamp_db" \
+  --value "postgresql://citycamp_user:${CITYCAMP_DB_PASSWORD}@$RDS_ENDPOINT/citycamp_db" \
   --type SecureString \
   --overwrite
 
