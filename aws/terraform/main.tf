@@ -48,7 +48,7 @@ data "aws_ami" "amazon_linux" {
 
 # VPC Module - matches production vpc-001c522138d5a9493
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
 
   name = "${var.project_name}-vpc"
@@ -412,7 +412,7 @@ resource "aws_eip" "simple" {
 
 # Target group attachment
 resource "aws_lb_target_group_attachment" "simple" {
-    target_group_arn = aws_lb_target_group.main.arn
+  target_group_arn = aws_lb_target_group.main.arn
   target_id        = aws_instance.simple.id
   port             = 8000
 }
