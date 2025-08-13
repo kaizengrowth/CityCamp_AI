@@ -1,6 +1,6 @@
 # Copy this file to terraform.tfvars and fill in your values
 
-aws_region = "us-east-1"
+aws_region   = "us-east-1"
 project_name = "citycamp-ai"
 
 # Database configuration
