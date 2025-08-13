@@ -28,7 +28,11 @@ jobs:
           echo "🚀 Starting deployment of CityCamp AI..."
           cd /home/ec2-user
 
-          # Clone or update repository (no terraform needed)
+          # Ensure Docker is running
+          sudo systemctl start docker || true
+          sudo systemctl enable docker || true
+
+          # Clone or update repository (public repo via HTTPS)
           if [ -d "citycamp-ai" ]; then
             echo "📥 Updating existing repository..."
             cd citycamp-ai
@@ -36,7 +40,7 @@ jobs:
             git reset --hard origin/${{ github.ref_name }}
           else
             echo "📥 Cloning repository..."
-            git clone git@github.com:kaizengrowth/CityCamp_AI.git citycamp-ai
+            git clone https://github.com/kaizengrowth/CityCamp_AI.git citycamp-ai
             cd citycamp-ai
             git checkout ${{ github.ref_name }}
           fi
@@ -60,30 +64,79 @@ jobs:
           # Set directory permissions (owner read/write/execute only)
           chmod 700 secrets
 
+          # Export env vars for container (values not echoed)
+          export DATABASE_URL="$(cat secrets/database_url)"
+          export SECRET_KEY="$(cat secrets/secret_key)"
+          export OPENAI_API_KEY="$(cat secrets/openai_api_key)"
+          export GEOCODIO_API_KEY="$(cat secrets/geocodio_api_key)"
+
           # Stop existing containers
           echo "🛑 Stopping existing containers..."
           docker stop citycamp-backend citycamp-frontend || true
           docker rm citycamp-backend citycamp-frontend || true
 
-          # Build and run backend (application deployment only)
+          # Build and run backend
           echo "🔨 Building backend application..."
-          docker build -t citycamp-ai-backend ./backend/
+          docker build -t citycamp-ai-backend -f ./backend/Dockerfile.prod ./backend/
 
           echo "🚀 Starting backend service..."
           docker run -d --name citycamp-backend -p 8000:8000 \
-            -v $(pwd)/secrets:/app/secrets:ro \
+            -e DATABASE_URL \
+            -e SECRET_KEY \
+            -e OPENAI_API_KEY \
+            -e GEOCODIO_API_KEY \
+            -e ENVIRONMENT=production \
+            -e DEBUG=False \
             --restart unless-stopped \
             citycamp-ai-backend
 
-          # Health check (no infrastructure validation needed)
-          echo "🔍 Running health check..."
+          # Build and run frontend
+          echo "🔨 Building frontend application..."
+          docker build -t citycamp-ai-frontend -f ./frontend/Dockerfile.prod ./frontend/
+
+          echo "🚀 Starting frontend service..."
+          docker run -d --name citycamp-frontend -p 80:80 \
+            --add-host=host.docker.internal:host-gateway \
+            --restart unless-stopped \
+            citycamp-ai-frontend
+
+          # Configure AWS security groups for ALB access
+          echo "🔧 Configuring security groups..."
+          INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+          REGION="us-east-2"
+          SG_ID=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --region "$REGION" --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' --output text)
+
+          # Ensure ALB can reach both ports
+          aws ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 80 --cidr 10.0.0.0/16 --region "$REGION" 2>/dev/null || true
+          aws ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 8000 --cidr 10.0.0.0/16 --region "$REGION" 2>/dev/null || true
+
+          # Update ALB target group to point to frontend (port 80)
+          echo "🎯 Updating ALB target group..."
+          TG_ARN="arn:aws:elasticloadbalancing:us-east-2:538569249671:targetgroup/citycamp-tg-v2/7f855a1316c0d078"
+          aws elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets Id="$INSTANCE_ID" --region "$REGION" 2>/dev/null || true
+          aws elbv2 register-targets --target-group-arn "$TG_ARN" --targets Id="$INSTANCE_ID",Port=80 --region "$REGION"
+          aws elbv2 modify-target-group --target-group-arn "$TG_ARN" --health-check-path "/" --region "$REGION"
+
+          # Health checks
+          echo "🔍 Running health checks..."
           sleep 30
+
+          # Check backend health
           curl -f http://localhost:8000/health || {
-            echo "❌ Health check failed, checking logs..."
+            echo "❌ Backend health check failed, checking logs..."
             docker logs citycamp-backend
             exit 1
           }
 
+          # Check frontend health
+          curl -f http://localhost:80 || {
+            echo "❌ Frontend health check failed, checking logs..."
+            docker logs citycamp-frontend
+            exit 1
+          }
+
           echo "✅ Deployment completed successfully!"
-          echo "🌐 Application is running at http://localhost:8000"
+          echo "🌐 Frontend is running at http://localhost:80"
+          echo "🔌 Backend API is running at http://localhost:8000"
           echo "🔒 Secrets are secured with 600 permissions"
+          echo "🎯 ALB configured to serve frontend on port 80"
