@@ -31,7 +31,7 @@ module "vpc" {
   tags = var.common_tags
 }
 
-# All VPC endpoints removed - using public AWS endpoints instead
+# Using public AWS endpoints - no VPC endpoints configured
 
 # RDS PostgreSQL
 resource "aws_db_subnet_group" "main" {
