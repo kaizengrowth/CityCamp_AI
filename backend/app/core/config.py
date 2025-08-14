@@ -1,9 +1,12 @@
 from typing import List, Optional
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", case_sensitive=False)
+
     # Database
     database_url: str = "postgresql://user:password@localhost/citycamp_db"
     database_host: str = "localhost"
@@ -29,48 +32,41 @@ class Settings(BaseSettings):
     google_cse_id: Optional[str] = None
 
     # AWS
+    aws_region: str = "us-east-1"
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
-    aws_region: str = "us-east-1"
-    aws_s3_bucket: Optional[str] = None
+
+    # Vector Database
+    pinecone_api_key: Optional[str] = None
+    pinecone_environment: Optional[str] = None
+    pinecone_index_name: str = "citycamp-ai"
 
     # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://localhost:6379"
 
     # Email
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 587
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
-
-    # City Data Sources
-    tulsa_city_council_api_url: Optional[str] = None
-    tulsa_city_council_api_key: Optional[str] = None
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_tls: bool = True
+    smtp_ssl: bool = False
 
     # Application
+    project_name: str = "CityCamp AI"
+    project_description: str = "CityCamp AI Backend API"
+    project_version: str = "1.0.0"
+    api_version: str = "v1"
     environment: str = "development"
     debug: bool = True
-    api_version: str = "v1"
-    cors_origins: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:3003",
-        "http://localhost:3004",
-        "http://localhost:3005",
-    ]
+    cors_origins: List[str] = ["*"]
 
-    # RAG
-    enable_rag: bool = False
-
-    # Project info
-    project_name: str = "CityCamp AI"
-    project_description: str = "Tulsa Civic Engagement Platform"
-    project_version: str = "1.0.0"
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    # RAG Configuration
+    enable_rag: bool = True
+    max_tokens: int = 4000
+    temperature: float = 0.7
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
 
     @property
     def is_openai_configured(self) -> bool:

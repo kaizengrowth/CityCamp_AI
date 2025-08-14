@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple, Union
 import fitz  # PyMuPDF for better PDF text extraction
 
 # PDF processing
-import PyPDF2
+import pypdf
 from app.core.config import settings
 from app.models.meeting import MeetingCategory
 
@@ -591,10 +591,10 @@ class AICategorization:
             pdf_document.close()
             return text
         except Exception as e:
-            logger.warning(f"PyMuPDF failed, falling back to PyPDF2: {str(e)}")
-            # Fallback to PyPDF2
+            logger.warning(f"PyMuPDF failed, falling back to pypdf: {str(e)}")
+            # Fallback to pypdf
             try:
-                pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
+                pdf_reader = pypdf.PdfReader(io.BytesIO(pdf_content))
                 text = ""
                 for page in pdf_reader.pages:
                     text += page.extract_text() + "\n"
