@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getEnvironmentConfig } from '../utils/environment';
 import { LoginModal } from '../components/auth/LoginModal';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Organization {
   id: number;
@@ -385,9 +386,10 @@ export const OrganizationsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-brand-dark-blue">Community Organizations</h1>
-      </div>
+      <PageHeader
+        title="Community Organizations"
+        description="Discover and connect with local groups working to improve life in Tulsa."
+      />
 
       {/* Search and Filter Controls */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">

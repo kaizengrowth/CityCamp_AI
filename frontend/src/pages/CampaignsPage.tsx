@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getEnvironmentConfig } from '../utils/environment';
 import { LoginModal } from '../components/auth/LoginModal';
+import { PageHeader } from '../components/PageHeader';
+
 
 interface Campaign {
   id: number;
@@ -272,17 +274,17 @@ export const CampaignsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-brand-dark-blue">Community Campaigns</h1>
-        <div className="text-sm text-gray-600">
-          Join active advocacy campaigns and make your voice heard in Tulsa
+    <div className="space-y-4 max-w-7xl mx-auto">
+      <PageHeader
+        title="Community Campaigns"
+        description="Join active advocacy campaigns and make your voice heard in Tulsa."
+      />
+      <div className="text-center">
           {usingBackupData && (
-            <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
               ⚠️ Using sample data (API unavailable)
             </div>
           )}
-        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -239,17 +239,23 @@ export const ChatbotWidget: React.FC = () => {
     <div className="fixed bottom-4 right-4 z-50">
       {/* Chat Widget */}
       {isOpen && (
-        <div className="mb-4 w-80 h-[32rem] bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
+        <div className="mb-4 w-100 h-[32rem] bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
           {/* Header */}
           <div className="bg-brand-dark-blue text-white p-4 rounded-t-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-2">
                 <div>
                   <h4 className="font-semibold text-white">CivicSpark Assistant</h4>
                   <p className="font-semibold text-xs text-brand-yellow">Ask me about Tulsa local government</p>
                 </div>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-white hover:text-brand-red transition-colors focus:outline-none"
+                aria-label="Close chat"
+              >
+                <span className="text-xl">✕</span>
+              </button>
             </div>
           </div>
 
@@ -320,16 +326,14 @@ export const ChatbotWidget: React.FC = () => {
       )}
 
       {/* Chat Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-brand-red border-4 border-brand-yellow text-white p-4 rounded-full shadow-lg transition-colors hover:bg-brand-red focus:outline-none"
-      >
-        {isOpen ? (
-          <span className="text-xl">✕</span>
-        ) : (
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="bg-brand-red border-4 border-brand-yellow text-white p-4 rounded-full shadow-lg transition-colors hover:bg-brand-red focus:outline-none"
+        >
           <span className="text-xl">💬</span>
-        )}
-      </button>
+        </button>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { Meeting as BaseMeeting, AgendaItem, SAMPLE_MEETINGS } from '../data/sampleMeetings';
 import toast from 'react-hot-toast';
 import { getEnvironmentConfig, getDevModeDisplayText, getApiRetryButtonText, getDevModeInfoMessage } from '../utils/environment';
+import { PageHeader } from '@/components/PageHeader';
 
 import { ImageCarousel } from '../components/ImageCarousel';
 import { PDFViewer } from '../components/PDFViewer';
@@ -504,10 +505,12 @@ export const MeetingsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      <PageHeader
+        title="City Council Meetings"
+        description="Review recent meetings to stay informed on decisions that shape your community."
+      />
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-brand-dark-blue">City Council Meetings</h1>
-
         <div className="flex justify-center gap-2 mt-2">
           {demoMode && (
             <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">

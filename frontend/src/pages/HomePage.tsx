@@ -158,8 +158,8 @@ export const HomePage: React.FC = () => {
 
       {/* Call to Action */}
       {!user && (
-        <div className="text-center bg-brand-yellow rounded-md p-12">
-          <h2 className="text-3xl font-bold mb-4 text-white">Ready to get involved?</h2>
+        <div className="text-center bg-brand-tan p-12">
+          <h2 className="text-3xl font-bold mb-4 text-brand-dark-blue">Ready to get involved?</h2>
           <p className="text-xl mb-8 opacity-90 text-brand-dark-blue">Join hundreds of Tulsa residents staying informed and engaged with their city government.</p>
           <Link
             to="/register"

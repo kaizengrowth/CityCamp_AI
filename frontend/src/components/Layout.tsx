@@ -32,7 +32,7 @@ export const Layout: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/" className="relative group flex items-center">
-              <button className="flex items-center space-x-2 sparkle-effect hover:text-black mb-4 relative">
+              <button className="flex items-center space-x-2 sparkle-effect hover:text-black relative">
                 <div className="w-12 h-8 bg-brand-yellow rounded-lg flex items-center justify-center hover:text-black">
                   <span className="text-white font-bold text-xs group-hover:text-black">TULSA</span>
                 </div>
@@ -198,7 +198,7 @@ export const Layout: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 flex-shrink-0">
+      <footer className="bg-white border-t border-gray-200 flex-shrink-0 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center">
             <span className="text-sm text-gray-600">
