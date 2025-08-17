@@ -8,9 +8,9 @@ class Settings(BaseSettings):
     model_config = ConfigDict(env_file=".env", case_sensitive=False)
 
     # Database
-    database_url: str = "postgresql://user:password@localhost/citycamp_db"
+    database_url: str = "postgresql://user:password@localhost:5435/citycamp_db"
     database_host: str = "localhost"
-    database_port: int = 5432
+    database_port: int = 5435
     database_name: str = "citycamp_db"
     database_user: str = "user"
     database_password: str = "password"
@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
+    aws_s3_bucket: str = "citycamp-assets"
 
     # Vector Database
     pinecone_api_key: Optional[str] = None
@@ -43,6 +44,10 @@ class Settings(BaseSettings):
 
     # Redis
     redis_url: str = "redis://localhost:6379"
+    
+    # City Data Sources
+    tulsa_city_council_api_url: str = "https://api.tulsacouncil.org"
+    tulsa_city_council_api_key: Optional[str] = None
 
     # Email
     smtp_username: Optional[str] = None
@@ -51,6 +56,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_tls: bool = True
     smtp_ssl: bool = False
+    from_email: Optional[str] = None
 
     # Application
     project_name: str = "CityCamp AI"
