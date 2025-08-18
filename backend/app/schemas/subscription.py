@@ -103,6 +103,8 @@ class MeetingTopicResponse(BaseModel):
     color: Optional[str]
     is_active: bool
     subscriber_count: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
