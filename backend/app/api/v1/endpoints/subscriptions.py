@@ -1,30 +1,33 @@
+import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import List
 
-from app.core.config import get_settings
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.models.notification_preferences import NotificationPreferences
+from app.core.config import get_settings
 from app.models.subscription import MeetingTopic, TopicSubscription
+from app.models.notification_preferences import NotificationPreferences
+from app.schemas.subscription import (
+    MeetingTopicResponse,
+    TopicSubscriptionCreate,
+    TopicSubscriptionResponse,
+    TopicSubscriptionUpdate,
+    SubscriptionConfirmRequest,
+    SubscriptionStatsResponse,
+    MeetingTopicCreate,
+)
 from app.schemas.notification_preferences import (
     NotificationPreferencesCreate,
     NotificationPreferencesResponse,
 )
-from app.schemas.subscription import (
-    MeetingTopicCreate,
-    MeetingTopicResponse,
-    SubscriptionConfirmRequest,
-    SubscriptionStatsResponse,
-    TopicSubscriptionCreate,
-    TopicSubscriptionResponse,
-    TopicSubscriptionUpdate,
-)
 from app.services.notification_service import NotificationService
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from app.services.email_service import EmailService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/topics", response_model=List[MeetingTopicResponse])
@@ -108,10 +111,22 @@ async def create_topic_subscription(
 
     db.commit()
 
-    # TODO: Send verification email/SMS here
-    # await send_verification_email(new_subscription.email, verification_token)
-    # if new_subscription.phone_number:
-    #     await send_verification_sms(new_subscription.phone_number, verification_token)
+    # Send verification email
+    try:
+        settings = get_settings()
+        email_service = EmailService(db, settings)
+        email_sent = email_service.send_verification_email(
+            new_subscription.email, 
+            verification_token, 
+            new_subscription.full_name
+        )
+        if email_sent:
+            logger.info(f"Verification email sent to {new_subscription.email}")
+        else:
+            logger.error(f"Failed to send verification email to {new_subscription.email}")
+    except Exception as e:
+        logger.error(f"Error sending verification email: {str(e)}")
+        # Don't fail the signup if email fails - user can request resend later
 
     return new_subscription
 
@@ -170,10 +185,22 @@ async def create_notification_preferences(
 
     db.commit()
 
-    # TODO: Send verification email/SMS here
-    # await send_verification_email(new_preferences.email, verification_token)
-    # if new_preferences.phone_number:
-    #     await send_verification_sms(new_preferences.phone_number, verification_token)
+    # Send verification email
+    try:
+        settings = get_settings()
+        email_service = EmailService(db, settings)
+        email_sent = email_service.send_verification_email(
+            new_preferences.email, 
+            verification_token, 
+            new_preferences.full_name
+        )
+        if email_sent:
+            logger.info(f"Verification email sent to {new_preferences.email}")
+        else:
+            logger.error(f"Failed to send verification email to {new_preferences.email}")
+    except Exception as e:
+        logger.error(f"Error sending verification email: {str(e)}")
+        # Don't fail the signup if email fails - user can request resend later
 
     return new_preferences
 
