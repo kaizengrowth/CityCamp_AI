@@ -46,9 +46,9 @@ async def init_topics():
     print("🏛️ Initializing default meeting topics...")
 
     settings = get_settings()
-    notification_service = NotificationService(settings)
 
     with SessionLocal() as db:
+        notification_service = NotificationService(db, settings)
         topics_created = await notification_service.initialize_default_topics(db)
 
         if topics_created > 0:
@@ -64,7 +64,6 @@ async def check_notifications():
     print("📬 Checking for upcoming meetings and sending notifications...")
 
     settings = get_settings()
-    notification_service = NotificationService(settings)
 
     # Check if Twilio is configured
     if not settings.twilio_account_sid or settings.twilio_account_sid.startswith("placeholder"):
@@ -72,6 +71,7 @@ async def check_notifications():
         print("   Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in your environment.")
 
     with SessionLocal() as db:
+        notification_service = NotificationService(db, settings)
         results = await notification_service.check_and_send_meeting_notifications(db)
 
         print(f"\n📊 Notification Results:")
@@ -95,9 +95,10 @@ async def test_notification(email: str, test_message: str = None):
     print(f"🧪 Sending test notification to: {email}")
 
     settings = get_settings()
-    notification_service = NotificationService(settings)
 
     with SessionLocal() as db:
+        notification_service = NotificationService(db, settings)
+        
         # Find subscription by email in new notification preferences table
         subscription = (
             db.query(NotificationPreferences)
