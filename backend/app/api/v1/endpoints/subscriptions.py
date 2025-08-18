@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 router = APIRouter()
 
 
-@router.get("/topics")
+@router.get("/topics", response_model=List[MeetingTopicResponse])
 async def get_available_topics(db: Session = Depends(get_db)):
     """Get all available meeting topics for subscription"""
     topics = (
@@ -37,26 +37,9 @@ async def get_available_topics(db: Session = Depends(get_db)):
         .all()
     )
     
-    # Convert SQLAlchemy models to response schemas to handle datetime serialization
-    from app.schemas.subscription import MeetingTopicResponse
-    
-    # Create simple response objects without datetime fields to avoid serialization issues
-    response_topics = []
-    for topic in topics:
-        response_topics.append({
-            "id": topic.id,
-            "name": topic.name,
-            "display_name": topic.display_name,
-            "description": topic.description,
-            "keywords": topic.keywords or [],
-            "category": topic.category,
-            "icon": topic.icon,
-            "color": topic.color,
-            "is_active": topic.is_active,
-            "subscriber_count": topic.subscriber_count
-        })
-    
-    return response_topics
+    # FastAPI will automatically serialize using response_model
+    # No need for manual conversion since we fixed the datetime fields
+    return topics
 
 
 @router.post("/signup", response_model=TopicSubscriptionResponse)

@@ -103,8 +103,8 @@ class MeetingTopicResponse(BaseModel):
     color: Optional[str]
     is_active: bool
     subscriber_count: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    # Removed created_at and updated_at to avoid datetime serialization issues
+    # Frontend doesn't need these fields for topic display
 
     class Config:
         from_attributes = True
