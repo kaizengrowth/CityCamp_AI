@@ -102,10 +102,19 @@ class MeetingTopicResponse(BaseModel):
     icon: Optional[str]
     color: Optional[str]
     is_active: bool
-    subscriber_count: int
+    subscriber_count: Optional[int] = 0  # Handle None values from database
+    created_at: Optional[str] = None  # Will be ISO string
+    updated_at: Optional[str] = None  # Will be ISO string
 
     class Config:
         from_attributes = True
+        
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def convert_datetime(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
 
 
 class MeetingTopicCreate(BaseModel):

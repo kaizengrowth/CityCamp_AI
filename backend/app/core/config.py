@@ -74,6 +74,16 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
 
+
+    
+
+    
+
+    
+
+    
+
+
     @property
     def is_openai_configured(self) -> bool:
         """Check if OpenAI API key is properly configured"""
