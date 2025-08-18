@@ -5,13 +5,9 @@
 
 // Get the base URL for API calls
 const getApiBaseUrl = (): string => {
-  // In production, use relative URLs (CloudFront routes /api/* to ALB)
-  if (process.env.NODE_ENV === 'production') {
-    return '';
-  }
-
-  // In development, use direct backend URL
-  return 'http://localhost:8000';
+  // In development and production, use relative URLs
+  // Vite proxy handles development, CloudFront handles production
+  return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

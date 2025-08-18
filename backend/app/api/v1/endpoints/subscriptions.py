@@ -36,6 +36,9 @@ async def get_available_topics(db: Session = Depends(get_db)):
         .order_by(MeetingTopic.category, MeetingTopic.display_name)
         .all()
     )
+    
+    # FastAPI will automatically serialize using response_model
+    # No need for manual conversion since we fixed the datetime fields
     return topics
 
 
