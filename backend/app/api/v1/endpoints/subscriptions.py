@@ -50,7 +50,8 @@ async def create_topic_subscription(
     subscription_data: TopicSubscriptionCreate, db: Session = Depends(get_db)
 ):
     """Create a new topic-based notification subscription"""
-
+    logger.info(f"Starting subscription signup for email: {subscription_data.email}")
+    
     # Check if email already exists in new notification preferences table
     existing = (
         db.query(NotificationPreferences)
@@ -91,6 +92,7 @@ async def create_topic_subscription(
     verification_token = secrets.token_urlsafe(32)
 
     # Create new subscription using NotificationPreferences model
+    logger.info(f"Creating NotificationPreferences for {subscription_data.email}")
     new_subscription = NotificationPreferences(
         **subscription_data.model_dump(),
         email_verification_token=verification_token,
@@ -99,9 +101,11 @@ async def create_topic_subscription(
         source="signup_form",
     )
 
+    logger.info(f"Adding subscription to database for {subscription_data.email}")
     db.add(new_subscription)
     db.commit()
     db.refresh(new_subscription)
+    logger.info(f"Database commit successful for {subscription_data.email}")
 
     # Update subscriber counts for topics
     for topic_name in subscription_data.interested_topics:
@@ -113,8 +117,10 @@ async def create_topic_subscription(
 
     # Send verification email
     try:
+        logger.info(f"Initializing EmailService for {subscription_data.email}")
         settings = get_settings()
         email_service = EmailService(db, settings)
+        logger.info(f"EmailService initialized successfully for {subscription_data.email}")
         email_sent = email_service.send_verification_email(
             new_subscription.email, 
             verification_token, 
@@ -128,6 +134,7 @@ async def create_topic_subscription(
         logger.error(f"Error sending verification email: {str(e)}")
         # Don't fail the signup if email fails - user can request resend later
 
+    logger.info(f"Subscription signup completed successfully for {new_subscription.email}")
     return new_subscription
 
 

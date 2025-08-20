@@ -20,8 +20,15 @@ class EmailService(BaseService):
         # Validate required SMTP configuration
         required_config = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password']
         if not self._validate_required_config(*required_config):
-            self.logger.error("Email service cannot be initialized - missing SMTP configuration")
+            self.logger.warning("Email service cannot be initialized - missing SMTP configuration. Emails will not be sent.")
+            self.smtp_configured = False
             return
+            
+        self.smtp_configured = True
+        
+        # Log configuration details (without sensitive info)
+        self.logger.info(f"SMTP Configuration: Host={self.settings.smtp_host}, Port={self.settings.smtp_port}, TLS={self.settings.smtp_tls}, SSL={self.settings.smtp_ssl}")
+        self.logger.info(f"From Email: {self.settings.from_email}")
             
         self.smtp_host = self.settings.smtp_host
         self.smtp_port = self.settings.smtp_port
@@ -56,6 +63,10 @@ class EmailService(BaseService):
         text_content: Optional[str] = None
     ) -> bool:
         """Send an email with both HTML and text content"""
+        if not hasattr(self, 'smtp_configured') or not self.smtp_configured:
+            self.logger.warning(f"Email service not configured - skipping email to {to_email}")
+            return False
+            
         try:
             # Create message
             msg = MIMEMultipart('alternative')

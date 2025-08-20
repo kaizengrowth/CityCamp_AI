@@ -31,33 +31,19 @@ class TopicSubscription(Base):
 
     # Subscription settings
     is_active = Column(Boolean, default=True)
-    confirmed = Column(Boolean, default=False)  # For email/SMS verification
+    email_verified = Column(Boolean, default=False)  # For email verification
+    phone_verified = Column(Boolean, default=False)  # For SMS verification
 
-    # Notification timing preferences
-    advance_notice_hours = Column(Integer, default=24)  # Hours before meeting
-    quiet_hours_start = Column(String, nullable=True)  # e.g., "22:00"
-    quiet_hours_end = Column(String, nullable=True)  # e.g., "08:00"
-    timezone = Column(String, default="America/Chicago")
-
-    # Frequency preferences
-    digest_mode = Column(
-        Boolean, default=False
-    )  # True = daily digest, False = immediate
-    max_notifications_per_day = Column(Integer, default=5)
+    # Note: Database schema doesn't include timing/frequency preferences
+    # These fields may need to be added to the database in future migrations
 
     # Verification tokens
     email_verification_token = Column(String, nullable=True)
     phone_verification_token = Column(String, nullable=True)
 
-    # Tracking
-    source = Column(String, default="signup_form")  # How they subscribed
-    last_notified = Column(DateTime(timezone=True), nullable=True)
-    total_notifications_sent = Column(Integer, default=0)
-
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    confirmed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class MeetingTopic(Base):

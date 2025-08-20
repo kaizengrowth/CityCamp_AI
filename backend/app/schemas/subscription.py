@@ -16,11 +16,6 @@ class TopicSubscriptionCreate(BaseModel):
     meeting_types: List[str] = []
     sms_notifications: bool = True
     email_notifications: bool = True
-    advance_notice_hours: int = 24
-    quiet_hours_start: Optional[str] = None
-    quiet_hours_end: Optional[str] = None
-    timezone: str = "America/Chicago"
-    digest_mode: bool = False
 
     @field_validator("phone_number")
     @classmethod
@@ -32,12 +27,7 @@ class TopicSubscriptionCreate(BaseModel):
                 raise ValueError("Phone number must be at least 10 digits")
         return v
 
-    @field_validator("advance_notice_hours")
-    @classmethod
-    def validate_advance_notice(cls, v):
-        if v < 1 or v > 168:  # 1 hour to 1 week
-            raise ValueError("Advance notice must be between 1 and 168 hours")
-        return v
+
 
 
 class TopicSubscriptionResponse(BaseModel):
@@ -54,16 +44,10 @@ class TopicSubscriptionResponse(BaseModel):
     sms_notifications: bool
     email_notifications: bool
     is_active: bool
-    confirmed: bool
-    advance_notice_hours: int
-    quiet_hours_start: Optional[str]
-    quiet_hours_end: Optional[str]
-    timezone: str
-    digest_mode: bool
-    total_notifications_sent: int
+    email_verified: bool
+    phone_verified: bool
     created_at: datetime
     updated_at: Optional[datetime]
-    confirmed_at: Optional[datetime]
 
     class Config:
         from_attributes = True
