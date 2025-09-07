@@ -58,9 +58,9 @@ const BACKUP_ORGANIZATIONS: Organization[] = [
   },
   {
     id: 2,
-    name: "Terrence Crutcher Foundation",
-    slug: "terrence-crutcher-foundation",
-    description: "The Terrence Crutcher Foundation works to improve police and community relations through education, advocacy, and community engagement. Founded in memory of Terence Crutcher, we focus on police violence prevention, mental health outreach, and supporting families affected by police violence in Tulsa's Black communities.",
+    name: "Terence Crutcher Foundation",
+    slug: "terence-crutcher-foundation",
+    description: "The Terence Crutcher Foundation works to improve police and community relations through education, advocacy, and community engagement. Founded in memory of Terence Crutcher, we focus on police violence prevention, mental health outreach, and supporting families affected by police violence in Tulsa's Black communities.",
     short_description: "Neighborhood organizing in Tulsa's Black communities, focusing on police violence and mental health outreach.",
     website_url: "https://www.terencecrutcherfoundation.org/",
     organization_type: "nonprofit",
